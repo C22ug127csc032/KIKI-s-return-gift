@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useLocation, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiSearch, FiFilter, FiX, FiChevronDown, FiChevronUp, FiSliders } from 'react-icons/fi';
 import { RiGiftLine } from 'react-icons/ri';
@@ -99,14 +99,24 @@ function FilterPanel({ filters, categories, hasActive, setFilter, clearFilters }
 }
 
 export default function ShopPage() {
+  const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
   const [filterOpen, setFilterOpen] = useState(false);
-  const preserveScrollRef = useRef(true);
+  const preserveScrollRef = useRef(false);
   const hasInitializedRef = useRef(false);
+  const resultsTopRef = useRef(null);
+
+  const scrollToResultsTop = () => {
+    if (!resultsTopRef.current) return;
+
+    const navbarOffset = 88;
+    const top = resultsTopRef.current.getBoundingClientRect().top + window.scrollY - navbarOffset;
+    window.scrollTo({ top: Math.max(top, 0) });
+  };
 
   const [filters, setFilters] = useState({
     search: searchParams.get('search') || '',
@@ -125,6 +135,20 @@ export default function ShopPage() {
   }, []);
 
   useEffect(() => {
+    const hasFilterLandingTarget = searchParams.get('category') || searchParams.get('occasion');
+
+    if (hasFilterLandingTarget) {
+      requestAnimationFrame(() => {
+        scrollToResultsTop();
+        setTimeout(scrollToResultsTop, 60);
+      });
+      return;
+    }
+
+    window.scrollTo(0, 0);
+  }, [location.pathname, location.search]);
+
+  useEffect(() => {
     setLoading(true);
     const params = Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== ''));
     params.limit = 12;
@@ -132,7 +156,7 @@ export default function ShopPage() {
     const scrollY = window.scrollY;
     const shouldPreserveScroll = hasInitializedRef.current && preserveScrollRef.current;
     hasInitializedRef.current = true;
-    preserveScrollRef.current = true;
+    preserveScrollRef.current = false;
 
     setSearchParams(params, { replace: true, preventScrollReset: true });
     if (shouldPreserveScroll) requestAnimationFrame(() => window.scrollTo(0, scrollY));
@@ -205,7 +229,7 @@ export default function ShopPage() {
           </aside>
 
           <div className="flex-1 min-w-0">
-            <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <div ref={resultsTopRef} className="flex flex-col sm:flex-row gap-3 mb-6">
               <div className="relative flex-1">
                 <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                 <input
