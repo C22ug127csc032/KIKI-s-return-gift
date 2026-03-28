@@ -8,6 +8,7 @@ import { cloudinary } from '../config/cloudinary.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { getProductDiscountPercentage } from '../utils/pricing.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -126,14 +127,22 @@ export const getProductById = asyncHandler(async (req, res) => {
 });
 
 export const createProduct = asyncHandler(async (req, res) => {
-  const { name, description, price, discountPercentage, stock, category, occasion, sku, featured, lowStockThreshold, isActive } = req.body;
+  const { name, description, mrp, price, stock, category, occasion, sku, featured, lowStockThreshold, isActive } = req.body;
   const images = req.files?.map((file) => buildProductImage(req, file)).filter(Boolean) || [];
   const bom = parseBom(req.body.bom);
+  const normalizedMrp = mrp === undefined || mrp === '' ? null : Number(mrp);
+  const sellingPrice = Number(price);
+
+  if (Number.isNaN(sellingPrice) || sellingPrice < 0) throw new ApiError(400, 'Selling price must be a valid number');
+  if (normalizedMrp !== null && (Number.isNaN(normalizedMrp) || normalizedMrp < 0)) throw new ApiError(400, 'MRP must be a valid number');
+  if (normalizedMrp !== null && sellingPrice > normalizedMrp) throw new ApiError(400, 'Selling price cannot be greater than MRP');
+
   const product = await Product.create({
     name,
     description,
-    price,
-    discountPercentage,
+    mrp: normalizedMrp,
+    price: sellingPrice,
+    discountPercentage: normalizedMrp ? getProductDiscountPercentage({ mrp: normalizedMrp, price: sellingPrice }) : 0,
     stock,
     category,
     occasion,
@@ -154,8 +163,14 @@ export const createProduct = asyncHandler(async (req, res) => {
 export const updateProduct = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id);
   if (!product) throw new ApiError(404, 'Product not found');
-  const fields = ['name', 'description', 'price', 'discountPercentage', 'stock', 'category', 'occasion', 'sku', 'featured', 'lowStockThreshold', 'isActive'];
+  const fields = ['name', 'description', 'stock', 'category', 'occasion', 'sku', 'featured', 'lowStockThreshold', 'isActive'];
   fields.forEach((f) => { if (req.body[f] !== undefined) product[f] = req.body[f]; });
+  if (req.body.mrp !== undefined) product.mrp = req.body.mrp === '' ? null : Number(req.body.mrp);
+  if (req.body.price !== undefined) product.price = Number(req.body.price);
+  if (Number(product.price) < 0 || Number.isNaN(Number(product.price))) throw new ApiError(400, 'Selling price must be a valid number');
+  if (product.mrp !== null && (Number.isNaN(Number(product.mrp)) || Number(product.mrp) < 0)) throw new ApiError(400, 'MRP must be a valid number');
+  if (product.mrp !== null && Number(product.price) > Number(product.mrp)) throw new ApiError(400, 'Selling price cannot be greater than MRP');
+  product.discountPercentage = product.mrp ? getProductDiscountPercentage(product) : 0;
   if (req.body.bom !== undefined) product.bom = parseBom(req.body.bom);
   if (req.files?.length) {
     for (const img of product.images) {

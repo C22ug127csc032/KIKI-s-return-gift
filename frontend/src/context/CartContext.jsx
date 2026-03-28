@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
-import { getDiscountedPrice } from '../utils/pricing.js';
+import { getMrpPrice, getSellingPrice } from '../utils/pricing.js';
 import { useAuth } from './AuthContext.jsx';
 
 const CartContext = createContext(null);
@@ -31,12 +31,12 @@ export const CartProvider = ({ children }) => {
   }, [items, cartStorageKey]);
 
   const normalizeCartItem = (product, quantity) => {
-    const discountedPrice = product.discountedPrice ?? getDiscountedPrice(product.price, product.discountPercentage);
+    const sellingPrice = product.discountedPrice ?? getSellingPrice(product);
     return {
       ...product,
       quantity,
-      originalPrice: product.price,
-      price: discountedPrice,
+      originalPrice: getMrpPrice(product),
+      price: sellingPrice,
     };
   };
 

@@ -7,11 +7,16 @@ import asyncHandler from '../utils/asyncHandler.js';
 import { sendResponse, sendPaginatedResponse } from '../utils/apiResponse.js';
 import { getPagination, buildSortQuery } from '../utils/pagination.js';
 import { generateOrderNumber, generateInvoiceNumber } from '../utils/generators.js';
-import { getProductSellingPrice } from '../utils/pricing.js';
+import { getProductMrp, getProductSellingPrice } from '../utils/pricing.js';
 
 const buildWhatsAppMessage = (order, settings) => {
   const itemsText = order.items
-    .map((i) => `- ${i.name} x${i.quantity} @ Rs.${i.price}`)
+    .map((i) => {
+      const baseLine = `- ${i.name} x${i.quantity} @ Rs.${i.price}`;
+      return i.originalPrice && Number(i.originalPrice) > Number(i.price)
+        ? `${baseLine} (was Rs.${i.originalPrice})`
+        : baseLine;
+    })
     .join('\n');
 
   return `*New Order - ${settings?.storeName || "KIKI'S RETURN GIFT STORE"}*\n\n` +
@@ -56,6 +61,7 @@ export const createOrder = asyncHandler(async (req, res) => {
       product: product._id,
       name: product.name,
       price: sellingPrice,
+      originalPrice: getProductMrp(product),
       quantity: item.quantity,
       image: product.images?.[0]?.url || '',
     });

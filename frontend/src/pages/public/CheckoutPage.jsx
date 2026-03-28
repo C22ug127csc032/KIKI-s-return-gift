@@ -180,7 +180,10 @@ export default function CheckoutPage() {
                   <FiShoppingBag size={18} className="text-rose-500" /> Order Items
                 </h2>
                 <div className="space-y-3 mb-5 max-h-56 overflow-y-auto pr-1">
-                  {items.map((item) => (
+                  {items.map((item) => {
+                    const hasDiscount = Number(item.originalPrice || 0) > Number(item.price || 0);
+
+                    return (
                     <div key={item._id} className="flex items-center gap-3">
                       <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 overflow-hidden flex-shrink-0">
                         {item.images?.[0]?.url ? (
@@ -193,11 +196,17 @@ export default function CheckoutPage() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-semibold text-gray-700 line-clamp-1">{item.name}</p>
-                        <p className="text-xs text-gray-400">x{item.quantity}</p>
+                        <div className="text-xs text-gray-400">
+                          <span>x{item.quantity}</span>
+                          <span className="ml-1.5 font-semibold text-gray-700">Rs.{Number(item.price).toFixed(2)}</span>
+                          {hasDiscount ? (
+                            <span className="ml-1.5 line-through">Rs.{Number(item.originalPrice).toFixed(2)}</span>
+                          ) : null}
+                        </div>
                       </div>
                       <p className="text-xs font-bold text-gray-800 flex-shrink-0">Rs.{(item.price * item.quantity).toFixed(2)}</p>
                     </div>
-                  ))}
+                  )})}
                 </div>
                 <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 mb-5">
                   Orders are confirmed through WhatsApp only. Payment instructions will be shown on the next page after the WhatsApp step.

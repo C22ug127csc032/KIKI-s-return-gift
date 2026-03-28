@@ -1,15 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { FiGift, FiSearch, FiShoppingBag, FiStar } from 'react-icons/fi';
 import api from '../../api/api.js';
 import { EmptyState, PageLoader, Pagination } from '../../components/ui/index.jsx';
-import { getDiscountedPrice } from '../../utils/pricing.js';
+import { getDiscountPercentage, getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
 
 const emptyForm = {
   name: '',
   description: '',
+  mrp: '',
   price: '',
-  discountPercentage: '',
   stock: '',
   category: '',
   occasion: '',
@@ -20,6 +20,7 @@ const emptyForm = {
 };
 
 export default function AdminProducts() {
+  const formRef = useRef(null);
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -59,8 +60,8 @@ export default function AdminProducts() {
     setForm({
       name: product.name,
       description: product.description,
+      mrp: product.mrp ?? product.price,
       price: product.price,
-      discountPercentage: product.discountPercentage || 0,
       stock: product.stock,
       category: product.category?._id || '',
       occasion: product.occasion || '',
@@ -70,10 +71,25 @@ export default function AdminProducts() {
       isActive: product.isActive,
     });
     setImages([]);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   };
 
   const handleSave = async () => {
+    const mrp = Number(form.mrp || 0);
+    const sellingPrice = Number(form.price || 0);
+
+    if (!mrp || mrp < 0 || !sellingPrice || sellingPrice < 0) {
+      toast.error('Enter valid MRP and selling price');
+      return;
+    }
+
+    if (sellingPrice > mrp) {
+      toast.error('Selling price cannot be greater than MRP');
+      return;
+    }
+
     setSaving(true);
     try {
       const fd = new FormData();
@@ -124,6 +140,8 @@ export default function AdminProducts() {
     setForm({ ...form, [key]: value });
   };
 
+  const computedDiscount = getDiscountPercentage(form.mrp, form.price);
+
   return (
     <div>
       <div className="mb-8">
@@ -131,7 +149,7 @@ export default function AdminProducts() {
         <p className="mt-1 text-sm text-gray-500">Create products, upload images, and manage basic catalog details from one page.</p>
       </div>
 
-      <div className="admin-card mb-6">
+      <div ref={formRef} className="admin-card mb-6">
         <div className="mb-5 flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-500">
             <FiShoppingBag size={22} />
@@ -144,8 +162,8 @@ export default function AdminProducts() {
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
           <input value={form.name} onChange={setField('name')} placeholder="Product Name *" className="input-field xl:col-span-2" />
-          <input type="number" value={form.price} onChange={setField('price')} min="0" placeholder="Price *" className="input-field" />
-          <input type="number" value={form.discountPercentage} onChange={setField('discountPercentage')} min="0" max="100" placeholder="Discount %" className="input-field" />
+          <input type="number" value={form.mrp} onChange={setField('mrp')} min="0" placeholder="MRP Price *" className="input-field" />
+          <input type="number" value={form.price} onChange={setField('price')} min="0" placeholder="Selling Price *" className="input-field" />
           <input type="number" value={form.stock} onChange={setField('stock')} min="0" placeholder="Stock *" className="input-field" />
           <input type="number" value={form.lowStockThreshold} onChange={setField('lowStockThreshold')} min="0" placeholder="Stock Alert Level" className="input-field" />
           <select value={form.category} onChange={setField('category')} className="input-field">
@@ -169,6 +187,9 @@ export default function AdminProducts() {
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-6">
+          <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700">
+            Auto Offer: {computedDiscount}% OFF
+          </div>
           <label className="flex items-center gap-2 text-sm text-gray-700">
             <input type="checkbox" checked={form.featured} onChange={setField('featured')} className="h-4 w-4 rounded text-brand-500" />
             Featured product
@@ -269,8 +290,8 @@ export default function AdminProducts() {
                       </td>
                       <td className="px-4 py-3 text-gray-600">{product.category?.name || '-'}</td>
                       <td className="px-4 py-3">
-                        <div className="font-semibold text-gray-800">Rs.{product.discountedPrice ?? getDiscountedPrice(product.price, product.discountPercentage)}</div>
-                        {Number(product.discountPercentage || 0) > 0 ? <div className="text-xs text-gray-400 line-through">Rs.{product.price}</div> : null}
+                        <div className="font-semibold text-gray-800">Rs.{product.discountedPrice ?? getSellingPrice(product)}</div>
+                        {getDiscountPercentage(product) > 0 ? <div className="text-xs text-gray-400 line-through">Rs.{getMrpPrice(product)}</div> : null}
                       </td>
                       <td className="px-4 py-3">
                         <span className={`font-semibold ${product.stock <= product.lowStockThreshold ? 'text-red-500' : 'text-gray-800'}`}>{product.stock}</span>

@@ -9,7 +9,7 @@ import { useCart } from '../../context/CartContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import ProductCard from '../../components/shop/ProductCard.jsx';
 import { PageLoader } from '../../components/ui/index.jsx';
-import { getDiscountedPrice } from '../../utils/pricing.js';
+import { getDiscountPercentage, getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
 
 export default function ProductDetailPage() {
   const { slug } = useParams();
@@ -47,12 +47,14 @@ export default function ProductDetailPage() {
 
   const { product, related } = data;
   const image = product.images?.[selectedImg]?.url;
-  const discountedPrice = product.discountedPrice ?? getDiscountedPrice(product.price, product.discountPercentage);
-  const hasDiscount = Number(product.discountPercentage || 0) > 0 && discountedPrice < Number(product.price || 0);
+  const sellingPrice = product.discountedPrice ?? getSellingPrice(product);
+  const mrpPrice = getMrpPrice(product);
+  const discountPercentage = getDiscountPercentage(product);
+  const hasDiscount = discountPercentage > 0 && sellingPrice < mrpPrice;
   const isOutOfStock = product.stock === 0;
   const isLowStock = product.stock <= product.lowStockThreshold && product.stock > 0;
   const notifyHref = `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hi! Please notify me when "${product.name}" is back in stock.`)}`;
-  const enquireHref = `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hi! I'm interested in "${product.name}" (Rs.${discountedPrice}). Can I get more details?`)}`;
+  const enquireHref = `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hi! I'm interested in "${product.name}" (Rs.${sellingPrice}). Can I get more details?`)}`;
 
   const guarantees = [
     { icon: FiTruck, label: 'Fast Delivery' },
@@ -135,12 +137,12 @@ export default function ProductDetailPage() {
             ) : null}
 
             <div className="flex flex-wrap items-center gap-3 mb-5 pb-5 border-b border-gray-100">
-              <span className="text-3xl font-bold text-gray-900">Rs.{discountedPrice}</span>
+              <span className="text-3xl font-bold text-gray-900">Rs.{sellingPrice}</span>
               {hasDiscount ? (
                 <>
-                  <span className="text-base text-gray-300 line-through">Rs.{product.price}</span>
+                  <span className="text-base text-gray-300 line-through">Rs.{mrpPrice}</span>
                   <span className="bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-full border border-emerald-200">
-                    {product.discountPercentage}% OFF
+                    {discountPercentage}% OFF
                   </span>
                 </>
               ) : null}

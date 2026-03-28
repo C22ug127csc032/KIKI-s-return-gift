@@ -149,18 +149,27 @@ export default function OrderConfirmationPage() {
                 <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
                   <h3 className="font-semibold text-gray-700 text-sm mb-4">Items Ordered</h3>
                   <div className="space-y-3">
-                    {order.items.map((item, index) => (
+                    {order.items.map((item, index) => {
+                      const hasDiscount = Number(item.originalPrice || 0) > Number(item.price || 0);
+
+                      return (
                       <div key={`${item.product || item.name}-${index}`} className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center flex-shrink-0">
                           <RiGiftLine size={16} className="text-rose-400" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-semibold text-gray-700 truncate">{item.name || item.product?.name || 'Product'}</p>
-                          <p className="text-xs text-gray-400">Qty: {item.quantity} x Rs.{item.price}</p>
+                          <div className="text-xs text-gray-400">
+                            <span>Qty: {item.quantity} x </span>
+                            <span className="font-semibold text-gray-700">Rs.{Number(item.price).toFixed(2)}</span>
+                            {hasDiscount ? (
+                              <span className="ml-1.5 line-through">Rs.{Number(item.originalPrice).toFixed(2)}</span>
+                            ) : null}
+                          </div>
                         </div>
                         <p className="text-sm font-bold text-gray-800">Rs.{(item.price * item.quantity).toFixed(2)}</p>
                       </div>
-                    ))}
+                    )})}
                     <div className="border-t border-gray-100 pt-3 space-y-2">
                       <div className="flex justify-between text-sm text-gray-500">
                         <span>Subtotal</span>

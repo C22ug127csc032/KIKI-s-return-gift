@@ -1,11 +1,13 @@
 import mongoose from 'mongoose';
 import slugify from 'slugify';
+import { getProductDiscountPercentage, getProductMrp, getProductSellingPrice } from '../utils/pricing.js';
 
 const productSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, trim: true },
     slug: { type: String, unique: true },
     description: { type: String, required: true },
+    mrp: { type: Number, min: 0, default: null },
     price: { type: Number, required: true, min: 0 },
     discountPercentage: { type: Number, default: 0, min: 0, max: 100 },
     stock: { type: Number, required: true, default: 0, min: 0 },
@@ -47,13 +49,15 @@ productSchema.virtual('isLowStock').get(function () {
 });
 
 productSchema.virtual('discountedPrice').get(function () {
-  const discount = Math.min(Math.max(Number(this.discountPercentage || 0), 0), 100);
-  const discounted = Number(this.price || 0) - (Number(this.price || 0) * discount) / 100;
-  return Math.round(discounted * 100) / 100;
+  return getProductSellingPrice(this);
 });
 
 productSchema.virtual('hasDiscount').get(function () {
-  return Number(this.discountPercentage || 0) > 0;
+  return getProductDiscountPercentage(this) > 0;
+});
+
+productSchema.virtual('originalPrice').get(function () {
+  return getProductMrp(this);
 });
 
 productSchema.index({ name: 'text', description: 'text' });

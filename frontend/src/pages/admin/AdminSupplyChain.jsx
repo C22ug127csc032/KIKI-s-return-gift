@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
   FiBox,
@@ -145,6 +145,7 @@ function SearchableOptionField({ options, value, onChange, placeholder = 'Search
 }
 
 export function AdminSuppliers() {
+  const formRef = useRef(null);
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editSupplier, setEditSupplier] = useState(null);
@@ -173,6 +174,9 @@ export function AdminSuppliers() {
       notes: supplier.notes || '',
       isActive: supplier.isActive ?? true,
     } : supplierFormDefaults);
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   };
 
   const resetForm = () => {
@@ -242,7 +246,7 @@ export function AdminSuppliers() {
         <p className="mt-1 text-sm text-gray-500">Create and manage supplier details from one place.</p>
       </div>
 
-      <div className="admin-card mb-6">
+      <div ref={formRef} className="admin-card mb-6">
         <div className="mb-5 flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-500">
             <FiTruck size={22} />
@@ -354,6 +358,7 @@ export function AdminSuppliers() {
 }
 
 export function AdminRawMaterials() {
+  const formRef = useRef(null);
   const [rawMaterials, setRawMaterials] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -398,6 +403,9 @@ export function AdminRawMaterials() {
       isActive: material.isActive ?? true,
     } : rawMaterialFormDefaults);
     setCreateItems([{ ...rawMaterialItemDefaults }]);
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   };
 
   const resetForm = () => {
@@ -532,7 +540,7 @@ export function AdminRawMaterials() {
         <button onClick={() => setShowPurchase(true)} className="btn-outline flex items-center gap-2"><FiShoppingCart size={16} /> Buy Material</button>
       </div>
 
-      <div className="admin-card mb-6">
+      <div ref={formRef} className="admin-card mb-6">
         <div className="mb-5 flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-500">
             <FiBox size={22} />
@@ -767,6 +775,7 @@ export function AdminRawMaterials() {
 }
 
 export function AdminProductBom() {
+  const formRef = useRef(null);
   const [products, setProducts] = useState([]);
   const [rawMaterials, setRawMaterials] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -833,6 +842,13 @@ export function AdminProductBom() {
     setBomItems([]);
   };
 
+  const openBomEditor = (productId) => {
+    setEditProductId(productId);
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+  };
+
   const handleSaveBom = async () => {
     if (!editProductId) {
       toast.error('Select a product first');
@@ -878,7 +894,7 @@ export function AdminProductBom() {
         <p className="mt-1 text-sm text-gray-500">Define the raw material recipe for each finished product from one dedicated page.</p>
       </div>
 
-      <div className="admin-card mb-6">
+        <div ref={formRef} className="admin-card mb-6">
         <div className="mb-5 flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-500">
             <FiLayers size={22} />
@@ -1058,7 +1074,7 @@ export function AdminProductBom() {
                     </td>
                     <td className="px-4 py-4 font-medium text-gray-900">{product.stock || 0}</td>
                     <td className="px-4 py-4">
-                      <button onClick={() => setEditProductId(product._id)} className="text-sm font-medium text-brand-500 hover:underline">
+                      <button onClick={() => openBomEditor(product._id)} className="text-sm font-medium text-brand-500 hover:underline">
                         {product.bom?.length ? 'Edit BOM' : 'Add BOM'}
                       </button>
                     </td>

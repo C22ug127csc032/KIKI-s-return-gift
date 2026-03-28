@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import { FiAlertTriangle, FiBox, FiDownload, FiFileText, FiPlus, FiSearch, FiTag, FiTrash2 } from 'react-icons/fi';
 import api from '../../api/api.js';
 import { EmptyState, Modal, PageLoader, Pagination } from '../../components/ui/index.jsx';
-import { getDiscountedPrice } from '../../utils/pricing.js';
+import { getSellingPrice } from '../../utils/pricing.js';
 
 const sortItems = (items, sortBy, accessors) => {
   const [field, direction] = sortBy.split('-');
@@ -23,6 +23,7 @@ const sortItems = (items, sortBy, accessors) => {
 };
 
 export function AdminCategories() {
+  const formRef = useRef(null);
   const [cats, setCats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editCat, setEditCat] = useState(null);
@@ -45,6 +46,9 @@ export function AdminCategories() {
     setEditCat(cat);
     setForm({ name: cat?.name || '', description: cat?.description || '' });
     setImage(null);
+    requestAnimationFrame(() => {
+      formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
   };
 
   const resetForm = () => {
@@ -116,7 +120,7 @@ export function AdminCategories() {
         <p className="mt-1 text-sm text-gray-500">Create and manage storefront categories in one place.</p>
       </div>
 
-      <div className="admin-card mb-6">
+      <div ref={formRef} className="admin-card mb-6">
         <div className="mb-5 flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-500">
             <FiTag size={22} />
@@ -602,7 +606,7 @@ export function AdminOfflineSales() {
               <div key={index} className="mb-2 flex gap-2">
                 <select value={item.productId} onChange={(e) => updateItem(index, 'productId', e.target.value)} className="input-field flex-1 text-sm">
                   <option value="">Select product</option>
-                  {products.map((product) => <option key={product._id} value={product._id}>{product.name} (Rs.{product.discountedPrice ?? getDiscountedPrice(product.price, product.discountPercentage)})</option>)}
+                  {products.map((product) => <option key={product._id} value={product._id}>{product.name} (Rs.{product.discountedPrice ?? getSellingPrice(product)})</option>)}
                 </select>
                 <input type="number" value={item.quantity} onChange={(e) => updateItem(index, 'quantity', e.target.value)} min="1" className="input-field w-20 text-sm" />
                 {cartItems.length > 1 ? <button onClick={() => removeItem(index)} className="px-2 text-red-400 hover:text-red-600"><FiTrash2 size={15} /></button> : null}
