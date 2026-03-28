@@ -1,0 +1,87 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    @apply text-gray-800 bg-white antialiased;
+  }
+  h1, h2, h3, h4 { font-family: 'Cormorant Garamond', serif; }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-rose-600 hover:bg-rose-700 text-white font-semibold px-6 py-3 rounded-full transition-all duration-200 shadow-sm active:scale-95 tracking-wide text-sm;
+  }
+  .btn-outline {
+    @apply border-2 border-rose-600 text-rose-600 hover:bg-rose-600 hover:text-white font-semibold px-6 py-3 rounded-full transition-all duration-200 text-sm tracking-wide;
+  }
+  .btn-ghost {
+    @apply text-rose-600 hover:bg-rose-50 font-medium px-4 py-2 rounded-full transition-all duration-200 text-sm;
+  }
+  .btn-white {
+    @apply bg-white text-rose-700 hover:bg-rose-50 font-bold px-8 py-4 rounded-full transition-all duration-200 shadow-xl hover:shadow-2xl text-base;
+  }
+  .card {
+    @apply bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:-translate-y-0.5;
+  }
+  .product-card {
+    @apply bg-white rounded-2xl overflow-hidden border border-gray-100 transition-all duration-300 hover:shadow-[0_8px_32px_rgba(225,29,72,0.1)] hover:-translate-y-1;
+  }
+  .input-field {
+    @apply w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-rose-300 focus:border-rose-400 transition-all bg-white text-sm;
+  }
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .badge-green { @apply badge bg-emerald-100 text-emerald-700; }
+  .badge-yellow { @apply badge bg-amber-100 text-amber-700; }
+  .badge-red { @apply badge bg-red-100 text-red-700; }
+  .badge-blue { @apply badge bg-blue-100 text-blue-700; }
+  .badge-orange { @apply badge bg-orange-100 text-orange-700; }
+  .badge-gray { @apply badge bg-gray-100 text-gray-600; }
+  .section-title {
+    @apply text-3xl md:text-4xl font-display font-bold text-gray-900 leading-tight;
+  }
+  .page-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  .skeleton {
+    @apply animate-pulse bg-gray-100 rounded;
+  }
+  .admin-card {
+    @apply bg-white rounded-2xl p-6 shadow-sm border border-gray-100;
+  }
+  .tag-chip {
+    @apply inline-flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-medium transition-all duration-200 cursor-pointer;
+  }
+}
+
+.admin-shell .btn-primary {
+  @apply rounded-xl px-5 py-2.5 text-sm font-semibold shadow-none hover:shadow-sm active:scale-100;
+}
+.admin-shell .btn-outline {
+  @apply rounded-xl px-5 py-2.5 text-sm font-semibold hover:bg-rose-50 hover:text-rose-600 border-rose-400;
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: #fdf2f2; }
+::-webkit-scrollbar-thumb { background: #e11d48; border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: #be123c; }
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee { animation: marquee 25s linear infinite; }
+.animate-marquee:hover { animation-play-state: paused; }
+
+.product-img-wrap { overflow: hidden; }
+.product-img-wrap img {
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.product-img-wrap:hover img { transform: scale(1.06); }

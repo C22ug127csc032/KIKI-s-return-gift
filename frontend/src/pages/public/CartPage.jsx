@@ -1,0 +1,119 @@
+import { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FiTrash2, FiMinus, FiPlus, FiShoppingBag, FiArrowRight, FiShoppingCart, FiTag } from 'react-icons/fi';
+import { RiGiftLine } from 'react-icons/ri';
+import { useCart } from '../../context/CartContext.jsx';
+import { EmptyState } from '../../components/ui/index.jsx';
+
+export default function CartPage() {
+  const { items, removeItem, updateQuantity, subtotal, totalItems } = useCart();
+  const navigate = useNavigate();
+
+  useEffect(() => { document.title = "Cart – KIKI'S Store"; }, []);
+
+  return (
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="page-container">
+        <div className="flex items-center gap-2 text-xs text-gray-400 font-medium mb-6">
+          <Link to="/" className="hover:text-rose-600">Home</Link><span>/</span>
+          <span className="text-gray-600">Cart</span>
+        </div>
+        <h1 className="font-display text-3xl font-bold text-gray-900 mb-8">
+          Your Cart {items.length > 0 && <span className="text-rose-600">({items.length})</span>}
+        </h1>
+
+        {items.length === 0 ? (
+          <EmptyState icon={<FiShoppingCart size={48} />}
+            title="Your cart is empty"
+            message="Add some beautiful gifts to get started!"
+            action={<Link to="/shop" className="btn-primary flex items-center gap-2"><FiShoppingBag size={16} /> Browse Gifts</Link>} />
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Items */}
+            <div className="lg:col-span-2 space-y-3">
+              <AnimatePresence>
+                {items.map((item) => (
+                  <motion.div key={item._id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }}
+                    className="bg-white rounded-2xl border border-gray-100 p-4 flex gap-4 shadow-sm hover:shadow-md transition-shadow">
+                    <Link to={`/product/${item.slug || item._id}`}
+                      className="w-20 h-20 rounded-xl overflow-hidden bg-gray-50 flex-shrink-0 border border-gray-100 product-img-wrap">
+                      {item.images?.[0]?.url
+                        ? <img src={item.images[0].url} alt={item.name} className="w-full h-full object-contain p-1" />
+                        : <div className="w-full h-full flex items-center justify-center text-rose-200"><RiGiftLine size={26} /></div>}
+                    </Link>
+                    <div className="flex-1 min-w-0">
+                      <Link to={`/product/${item.slug || item._id}`}
+                        className="font-semibold text-gray-800 hover:text-rose-600 transition-colors line-clamp-2 text-sm leading-snug">
+                        {item.name}
+                      </Link>
+                      <div className="mt-0.5">
+                        <span className="text-xs text-gray-400">₹{item.price} each</span>
+                        {item.originalPrice > item.price && (
+                          <span className="ml-2 text-xs text-gray-300 line-through">₹{item.originalPrice}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between mt-3">
+                        <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                          <button onClick={() => updateQuantity(item._id, item.quantity - 1)}
+                            className="px-3 py-1.5 hover:bg-rose-50 hover:text-rose-600 transition-colors text-gray-500">
+                            <FiMinus size={13} />
+                          </button>
+                          <span className="px-3 py-1.5 font-bold text-sm text-gray-800 border-x border-gray-200 min-w-[36px] text-center">{item.quantity}</span>
+                          <button onClick={() => updateQuantity(item._id, item.quantity + 1)}
+                            className="px-3 py-1.5 hover:bg-rose-50 hover:text-rose-600 transition-colors text-gray-500">
+                            <FiPlus size={13} />
+                          </button>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <span className="font-bold text-gray-900 text-sm">₹{(item.price * item.quantity).toFixed(2)}</span>
+                          <button onClick={() => removeItem(item._id)}
+                            className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                            <FiTrash2 size={15} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </div>
+
+            {/* Summary */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm sticky top-24">
+                <h2 className="font-display text-xl font-bold text-gray-900 mb-5">Order Summary</h2>
+                <div className="space-y-3 mb-5">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Subtotal ({totalItems} {totalItems === 1 ? 'item' : 'items'})</span>
+                    <span className="font-semibold text-gray-800">₹{subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Shipping</span>
+                    <span className="text-emerald-600 font-semibold text-xs">To be confirmed</span>
+                  </div>
+                  {subtotal >= 999 && (
+                    <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-2 rounded-xl border border-emerald-100">
+                      <FiTag size={12} /> Free shipping unlocked! 🎉
+                    </div>
+                  )}
+                  <div className="border-t border-gray-100 pt-3 flex justify-between">
+                    <span className="font-bold text-gray-900">Total</span>
+                    <span className="font-bold text-rose-600 text-lg">₹{subtotal.toFixed(2)}</span>
+                  </div>
+                </div>
+                <button onClick={() => navigate('/checkout')}
+                  className="btn-primary w-full flex items-center justify-center gap-2 py-3.5">
+                  Proceed to Checkout <FiArrowRight size={16} />
+                </button>
+                <Link to="/shop" className="block text-center text-xs text-gray-400 hover:text-rose-600 mt-4 transition-colors font-medium">
+                  ← Continue Shopping
+                </Link>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
