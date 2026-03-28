@@ -51,6 +51,17 @@ const floatingOccasions = [
   { label: 'Pooja', icon: PiHandsPrayingLight, pos: 'bottom-4 right-8', delay: 0.45 },
 ];
 
+const heroAmbientCards = [
+  { title: 'Premium Picks', subtitle: 'Curated daily', pos: 'top-16 right-0', delay: 0.2 },
+  { title: 'Gift Ready', subtitle: 'Elegant packing', pos: 'bottom-20 left-0', delay: 0.35 },
+];
+
+const heroSparkles = [
+  { icon: RiSparklingLine, pos: 'top-14 left-14', color: 'text-rose-200', delay: 0.1, size: 24 },
+  { icon: MdCelebration, pos: 'top-24 right-12', color: 'text-amber-200', delay: 0.3, size: 22 },
+  { icon: RiStarSmileLine, pos: 'bottom-14 right-14', color: 'text-rose-200', delay: 0.5, size: 22 },
+];
+
 const ctaIcons = [FaRing, RiGiftLine, FiSun, RiCake2Line, GiPartyPopper];
 
 export default function HomePage() {
@@ -121,15 +132,55 @@ export default function HomePage() {
 
             <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3, duration: 0.7 }}
               className="hidden lg:flex items-center justify-center relative">
-              <div className="relative w-full max-w-[20rem] aspect-square">
+              <div className="relative w-full max-w-[28rem] aspect-square">
+                <motion.div
+                  animate={{ scale: [1, 1.06, 1], opacity: [0.3, 0.45, 0.3] }}
+                  transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+                  className="absolute inset-10 rounded-full border border-rose-100/80"
+                />
+                <motion.div
+                  animate={{ scale: [1.04, 1, 1.04], opacity: [0.2, 0.35, 0.2] }}
+                  transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+                  className="absolute inset-2 rounded-full border border-amber-100/80"
+                />
+
+                {heroAmbientCards.map(({ title, subtitle, pos, delay }) => (
+                  <motion.div
+                    key={title}
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: [0, -8, 0] }}
+                    transition={{ opacity: { delay: delay + 0.5, duration: 0.5 }, y: { delay, duration: 5, repeat: Infinity, ease: 'easeInOut' } }}
+                    className={`absolute ${pos} rounded-2xl border border-white/80 bg-white/90 px-4 py-3 shadow-xl shadow-rose-100/60 backdrop-blur-sm`}
+                  >
+                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-rose-400">{title}</p>
+                    <p className="mt-1 text-sm font-semibold text-gray-700">{subtitle}</p>
+                  </motion.div>
+                ))}
+
+                {heroSparkles.map(({ icon: Icon, pos, color, delay, size }) => (
+                  <motion.div
+                    key={pos}
+                    initial={{ opacity: 0, scale: 0.7 }}
+                    animate={{ opacity: [0.2, 0.7, 0.2], scale: [0.9, 1.12, 0.9], y: [0, -10, 0] }}
+                    transition={{ delay: delay + 0.8, duration: 4.8, repeat: Infinity, ease: 'easeInOut' }}
+                    className={`absolute ${pos} ${color}`}
+                  >
+                    <Icon size={size} />
+                  </motion.div>
+                ))}
+
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-48 h-48 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center shadow-2xl shadow-rose-200">
+                  <motion.div
+                    animate={{ y: [0, -10, 0], rotate: [0, 3, 0] }}
+                    transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+                    className="w-52 h-52 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center shadow-2xl shadow-rose-200"
+                  >
                     <RiGiftLine size={68} className="text-white" />
-                  </div>
+                  </motion.div>
                 </div>
                 {floatingOccasions.map(({ label, icon: Icon, pos, delay }) => (
                   <motion.div key={label}
-                    initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: delay + 0.6, type: 'spring' }}
+                    initial={{ scale: 0 }} animate={{ scale: 1, y: [0, -6, 0] }} transition={{ scale: { delay: delay + 0.6, type: 'spring' }, y: { delay: delay + 1, duration: 4.4, repeat: Infinity, ease: 'easeInOut' } }}
                     className={`absolute ${pos} bg-white rounded-2xl shadow-lg px-4 py-2.5 flex items-center gap-2`}>
                     <Icon size={18} className="text-rose-500" />
                     <span className="text-sm font-semibold text-gray-700">{label}</span>

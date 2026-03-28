@@ -239,11 +239,11 @@ export default function ShopPage() {
                   className="input-field pl-10 py-2.5"
                 />
               </div>
-              <div className="flex gap-2 flex-shrink-0">
+              <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
                 <select
                   value={filters.sortBy}
                   onChange={(e) => setFilter('sortBy', e.target.value)}
-                  className="input-field py-2.5 w-auto text-xs pr-8 cursor-pointer"
+                  className="input-field py-2.5 w-full sm:w-auto text-xs pr-8 cursor-pointer"
                 >
                   <option value="latest">Latest</option>
                   <option value="price-asc">Price: Low to High</option>
@@ -320,11 +320,11 @@ export default function ShopPage() {
               onClick={() => setFilterOpen(false)}
             />
             <motion.div
-              initial={{ x: '100%' }}
+              initial={{ x: '-100%' }}
               animate={{ x: 0 }}
-              exit={{ x: '100%' }}
+              exit={{ x: '-100%' }}
               transition={{ type: 'tween', duration: 0.25 }}
-              className="absolute right-0 top-0 bottom-0 w-80 bg-white shadow-2xl flex flex-col"
+              className="absolute left-0 top-0 bottom-0 w-[86vw] max-w-80 bg-white shadow-2xl flex flex-col"
             >
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
                 <h3 className="font-bold text-gray-800 flex items-center gap-2">

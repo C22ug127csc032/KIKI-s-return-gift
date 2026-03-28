@@ -45,16 +45,21 @@ export default function Navbar() {
     <>
       <header className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? 'bg-rose-600 shadow-[0_2px_20px_rgba(190,24,93,0.28)]' : 'bg-rose-600/95 backdrop-blur-sm border-b border-rose-500'}`}>
         <div className="page-container">
-          <div className="flex items-center justify-between h-16 gap-4">
-            <Link to="/" className="flex items-center gap-2.5 flex-shrink-0">
-              <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm">
-                <RiGiftLine size={20} className="text-rose-700" />
-              </div>
-              <div className="leading-none">
-                <p className="font-display font-bold text-white text-base tracking-tight">KIKI'S</p>
-                <p className="text-[9px] text-rose-100 uppercase tracking-[0.22em] font-medium">Return Gifts</p>
-              </div>
-            </Link>
+          <div className="flex items-center justify-between h-16 gap-2 sm:gap-4">
+            <div className="flex items-center gap-2 min-w-0 flex-1 md:flex-none">
+              <button className="md:hidden p-2 text-white hover:bg-white/15 rounded-full flex-shrink-0" onClick={() => setMenuOpen(!menuOpen)}>
+                {menuOpen ? <FiX size={20} /> : <FiMenu size={20} />}
+              </button>
+              <Link to="/" className="flex items-center gap-2 sm:gap-2.5 flex-shrink min-w-0">
+                <div className="w-8 h-8 sm:w-9 sm:h-9 bg-white rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
+                  <RiGiftLine size={18} className="text-rose-700 sm:w-5 sm:h-5" />
+                </div>
+                <div className="leading-none min-w-0">
+                  <p className="font-display font-bold text-white text-sm sm:text-base tracking-tight truncate">KIKI'S</p>
+                  <p className="text-[8px] sm:text-[9px] text-rose-100 uppercase tracking-[0.18em] sm:tracking-[0.22em] font-medium truncate">Return Gifts</p>
+                </div>
+              </Link>
+            </div>
 
             <nav className="hidden md:flex items-center gap-1">
               {[{ to: '/', label: 'Home' }, { to: '/shop', label: 'Shop' }].map((l) => (
@@ -67,14 +72,14 @@ export default function Navbar() {
               ))}
             </nav>
 
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-0.5 sm:gap-1.5 flex-shrink-0">
               <button onClick={() => setSearchOpen(true)}
-                className="p-2.5 text-white hover:bg-white/15 rounded-full transition-all">
-                <FiSearch size={19} />
+                className="p-2 sm:p-2.5 text-white hover:bg-white/15 rounded-full transition-all">
+                <FiSearch size={18} />
               </button>
 
-              <Link to="/cart" className="relative p-2.5 text-white hover:bg-white/15 rounded-full transition-all">
-                <FiShoppingCart size={19} />
+              <Link to="/cart" className="relative p-2 sm:p-2.5 text-white hover:bg-white/15 rounded-full transition-all">
+                <FiShoppingCart size={18} />
                 <AnimatePresence>
                   {cartCount > 0 && (
                     <motion.span key="badge" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
@@ -88,11 +93,11 @@ export default function Navbar() {
               {user ? (
                 <div className="relative">
                   <button onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className="flex items-center gap-2 pl-2 pr-3 py-1.5 rounded-full hover:bg-white/15 transition-all border border-transparent hover:border-white/20">
-                    <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center border border-white/15">
+                    className="flex items-center gap-1 sm:gap-2 pl-1.5 sm:pl-2 pr-2 sm:pr-3 py-1.5 rounded-full hover:bg-white/15 transition-all border border-transparent hover:border-white/20 max-w-[112px] sm:max-w-none">
+                    <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center border border-white/15 flex-shrink-0">
                       <span className="text-white font-bold text-xs">{user.name[0].toUpperCase()}</span>
                     </div>
-                    <span className="hidden sm:block text-sm font-medium text-white max-w-[80px] truncate">{user.name.split(' ')[0]}</span>
+                    <span className="hidden min-[420px]:block text-sm font-medium text-white max-w-[56px] sm:max-w-[80px] truncate">{user.name.split(' ')[0]}</span>
                     <FiChevronDown size={13} className={`text-rose-100 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
                   <AnimatePresence>
@@ -129,37 +134,125 @@ export default function Navbar() {
                   </AnimatePresence>
                 </div>
               ) : (
-                <Link to="/login" className="bg-white text-rose-700 font-semibold py-2 px-5 rounded-full transition-all text-xs hidden sm:flex shadow-sm hover:bg-rose-50">Login</Link>
+                <Link to="/login" className="bg-white text-rose-700 font-semibold py-2 px-3 sm:px-5 rounded-full transition-all text-[11px] sm:text-xs flex shadow-sm hover:bg-rose-50 whitespace-nowrap">
+                  Login
+                </Link>
               )}
 
-              <button className="md:hidden p-2 text-white hover:bg-white/15 rounded-full" onClick={() => setMenuOpen(!menuOpen)}>
-                {menuOpen ? <FiX size={20} /> : <FiMenu size={20} />}
-              </button>
             </div>
           </div>
         </div>
 
-        <AnimatePresence>
-          {menuOpen && (
-            <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-              className="md:hidden bg-rose-600 border-t border-rose-500 overflow-hidden">
-              <div className="page-container py-4 flex flex-col gap-1">
+      </header>
+
+      <AnimatePresence>
+        {menuOpen && (
+          <div className="md:hidden fixed inset-0 z-[60]">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+              onClick={() => setMenuOpen(false)}
+            />
+            <motion.div
+              initial={{ x: '-100%' }}
+              animate={{ x: 0 }}
+              exit={{ x: '-100%' }}
+              transition={{ type: 'tween', duration: 0.25 }}
+              className="absolute left-0 top-0 bottom-0 w-[82vw] max-w-[320px] bg-rose-600 shadow-2xl border-r border-rose-500"
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm">
+                    <RiGiftLine size={20} className="text-rose-700" />
+                  </div>
+                  <div className="leading-none">
+                    <p className="font-display font-bold text-white text-base tracking-tight">KIKI'S</p>
+                    <p className="text-[9px] text-rose-100 uppercase tracking-[0.22em] font-medium">Return Gifts</p>
+                  </div>
+                </div>
+                <button className="p-2 text-white hover:bg-white/15 rounded-full" onClick={() => setMenuOpen(false)}>
+                  <FiX size={20} />
+                </button>
+              </div>
+
+              <div className="px-4 py-4 flex flex-col gap-1">
+                {user ? (
+                  <div className="mb-3 rounded-2xl bg-white/10 border border-white/10 px-4 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center border border-white/15 flex-shrink-0">
+                        <span className="text-white font-bold text-sm">{user.name[0].toUpperCase()}</span>
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold text-white truncate">{user.name}</p>
+                        <p className="text-xs text-rose-100 truncate">{user.email}</p>
+                      </div>
+                    </div>
+                  </div>
+                ) : null}
+
                 {[{ to: '/', label: 'Home' }, { to: '/shop', label: 'Shop' }].map((l) => (
-                  <NavLink key={l.to} to={l.to} end={l.to === '/'} onClick={() => setMenuOpen(false)}
-                    className={({ isActive }) => `text-sm font-medium py-2.5 px-3 rounded-xl ${isActive ? 'text-rose-700 bg-white' : 'text-white hover:bg-white/15'}`}>
+                  <NavLink
+                    key={l.to}
+                    to={l.to}
+                    end={l.to === '/'}
+                    onClick={() => setMenuOpen(false)}
+                    className={({ isActive }) => `text-sm font-medium py-3 px-4 rounded-2xl ${isActive ? 'text-rose-700 bg-white' : 'text-white hover:bg-white/15'}`}
+                  >
                     {l.label}
                   </NavLink>
                 ))}
+                {user ? (
+                  <>
+                    <Link
+                      to="/profile"
+                      onClick={() => setMenuOpen(false)}
+                      className="text-sm font-medium py-3 px-4 rounded-2xl text-white hover:bg-white/15 flex items-center gap-2.5"
+                    >
+                      <FiUser size={16} /> Profile
+                    </Link>
+                    <Link
+                      to="/my-orders"
+                      onClick={() => setMenuOpen(false)}
+                      className="text-sm font-medium py-3 px-4 rounded-2xl text-white hover:bg-white/15 flex items-center gap-2.5"
+                    >
+                      <FiPackage size={16} /> My Orders
+                    </Link>
+                    {isAdmin ? (
+                      <Link
+                        to="/admin/dashboard"
+                        onClick={() => setMenuOpen(false)}
+                        className="text-sm font-medium py-3 px-4 rounded-2xl text-white hover:bg-white/15 flex items-center gap-2.5"
+                      >
+                        <FiSettings size={16} /> Admin Panel
+                      </Link>
+                    ) : null}
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        handleLogout();
+                      }}
+                      className="text-sm font-medium py-3 px-4 rounded-2xl text-white hover:bg-white/15 flex items-center gap-2.5 text-left"
+                    >
+                      <FiLogOut size={16} /> Logout
+                    </button>
+                  </>
+                ) : null}
                 {!user && (
-                  <Link to="/login" onClick={() => setMenuOpen(false)} className="bg-rose-600 hover:bg-rose-700 text-white font-semibold rounded-full transition-all text-center text-sm mt-2 px-5 py-3">
+                  <Link
+                    to="/login"
+                    onClick={() => setMenuOpen(false)}
+                    className="bg-white text-rose-700 font-semibold rounded-full transition-all text-center text-sm mt-3 px-5 py-3"
+                  >
                     Login / Register
                   </Link>
                 )}
               </div>
             </motion.div>
-          )}
-        </AnimatePresence>
-      </header>
+          </div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {searchOpen && (

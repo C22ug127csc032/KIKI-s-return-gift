@@ -22,9 +22,12 @@ export default function Footer() {
             <h3 className="font-display text-2xl text-white font-bold">Need a Custom Gift Pack?</h3>
             <p className="text-rose-200 text-sm mt-1">Bulk orders, event gifting, personalized combos - we do it all!</p>
           </div>
-          <a href={`https://wa.me/${whatsapp}?text=Hi! I need help with a custom gift order.`}
-            target="_blank" rel="noopener noreferrer"
-            className="flex items-center gap-2.5 bg-white text-rose-700 font-bold px-6 py-3 rounded-full hover:bg-rose-50 transition-all shadow-lg text-sm flex-shrink-0">
+          <a
+            href={`https://wa.me/${whatsapp}?text=Hi! I need help with a custom gift order.`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2.5 bg-white text-rose-700 font-bold px-6 py-3 rounded-full hover:bg-rose-50 transition-all shadow-lg text-sm flex-shrink-0"
+          >
             <FaWhatsapp size={18} className="text-green-500" /> Chat on WhatsApp
           </a>
         </div>
@@ -46,20 +49,30 @@ export default function Footer() {
               India's trusted return gift store for weddings, birthdays, pooja, and every celebration. Quality you can feel, prices you'll love.
             </p>
             <div className="flex items-center gap-2">
-              <a href={`https://wa.me/${whatsapp}`} target="_blank" rel="noopener noreferrer"
-                className="w-9 h-9 bg-green-600 rounded-xl flex items-center justify-center hover:bg-green-500 transition-colors">
+              <a
+                href={`https://wa.me/${whatsapp}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-9 h-9 bg-green-600 rounded-xl flex items-center justify-center hover:bg-green-500 transition-colors"
+              >
                 <FaWhatsapp size={16} />
               </a>
-              <a href="mailto:support@kikisstore.com"
-                className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-colors">
+              <a
+                href="mailto:support@kikisstore.com"
+                className="w-9 h-9 bg-white/10 rounded-xl flex items-center justify-center hover:bg-white/20 transition-colors"
+              >
                 <FiMail size={15} />
               </a>
-              <a href="#"
-                className="w-9 h-9 bg-gradient-to-br from-pink-600 to-orange-400 rounded-xl flex items-center justify-center hover:opacity-90 transition-opacity">
+              <a
+                href="#"
+                className="w-9 h-9 bg-gradient-to-br from-pink-600 to-orange-400 rounded-xl flex items-center justify-center hover:opacity-90 transition-opacity"
+              >
                 <FiInstagram size={15} />
               </a>
-              <a href="#"
-                className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center hover:bg-blue-500 transition-colors">
+              <a
+                href="#"
+                className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center hover:bg-blue-500 transition-colors"
+              >
                 <FaFacebookF size={14} />
               </a>
             </div>
@@ -115,7 +128,7 @@ export default function Footer() {
 
       <div className="border-t border-white/5">
         <div className="page-container py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-600">
-          <p>© {new Date().getFullYear()} KIKI'S Return Gift Store. All rights reserved.</p>
+          <p>© All Rights Reserved. Powered by EMATIX Embedded and Software Solutions Inc.</p>
           <p className="inline-flex items-center gap-1">Made with <FiHeart size={12} className="text-rose-500" /> for every celebration in India</p>
         </div>
       </div>

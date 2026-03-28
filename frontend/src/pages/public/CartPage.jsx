@@ -13,13 +13,13 @@ export default function CartPage() {
   useEffect(() => { document.title = "Cart - KIKI'S Store"; }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
+    <div className="min-h-screen bg-gray-50 py-6 sm:py-8">
       <div className="page-container">
         <div className="flex items-center gap-2 text-xs text-gray-400 font-medium mb-6">
           <Link to="/" className="hover:text-rose-600">Home</Link><span>/</span>
           <span className="text-gray-600">Cart</span>
         </div>
-        <h1 className="font-display text-3xl font-bold text-gray-900 mb-8">
+        <h1 className="font-display text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8">
           Your Cart {items.length > 0 && <span className="text-rose-600">({items.length})</span>}
         </h1>
 
@@ -36,9 +36,9 @@ export default function CartPage() {
               <AnimatePresence>
                 {items.map((item) => (
                   <motion.div key={item._id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }}
-                    className="bg-white rounded-2xl border border-gray-100 p-4 flex gap-4 shadow-sm hover:shadow-md transition-shadow">
+                    className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-4 flex gap-3 sm:gap-4 shadow-sm hover:shadow-md transition-shadow items-start">
                     <Link to={`/product/${item.slug || item._id}`}
-                      className="w-20 h-20 rounded-xl overflow-hidden bg-gray-50 flex-shrink-0 border border-gray-100 product-img-wrap">
+                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-gray-50 flex-shrink-0 border border-gray-100 product-img-wrap">
                       {item.images?.[0]?.url
                         ? <img src={item.images[0].url} alt={item.name} className="w-full h-full object-contain p-1" />
                         : <div className="w-full h-full flex items-center justify-center text-rose-200"><RiGiftLine size={26} /></div>}
@@ -54,7 +54,7 @@ export default function CartPage() {
                           <span className="ml-2 text-xs text-gray-300 line-through">Rs.{item.originalPrice}</span>
                         )}
                       </div>
-                      <div className="flex items-center justify-between mt-3">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-3">
                         <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
                           <button onClick={() => updateQuantity(item._id, item.quantity - 1)}
                             className="px-3 py-1.5 hover:bg-rose-50 hover:text-rose-600 transition-colors text-gray-500">
@@ -66,7 +66,7 @@ export default function CartPage() {
                             <FiPlus size={13} />
                           </button>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
                           <span className="font-bold text-gray-900 text-sm">Rs.{(item.price * item.quantity).toFixed(2)}</span>
                           <button onClick={() => removeItem(item._id)}
                             className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
@@ -81,7 +81,7 @@ export default function CartPage() {
             </div>
 
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm sticky top-24">
+              <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 shadow-sm lg:sticky lg:top-24">
                 <h2 className="font-display text-xl font-bold text-gray-900 mb-5">Order Summary</h2>
                 <div className="space-y-3 mb-5">
                   <div className="flex justify-between text-sm">

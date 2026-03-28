@@ -78,23 +78,23 @@ export default function ProductCard({ product, index = 0 }) {
         </button>
       </Link>
 
-      <div className="p-3.5 pb-4">
+      <div className="p-3 sm:p-3.5 pb-4">
         {product.category ? (
           <p className="text-[10px] text-rose-500 font-semibold uppercase tracking-widest mb-1">
             {product.category.name}
           </p>
         ) : null}
         <Link to={productPath}>
-          <h3 className="font-semibold text-gray-800 text-sm leading-snug mb-2.5 line-clamp-2 hover:text-rose-600 transition-colors">
+          <h3 className="font-semibold text-gray-800 text-xs sm:text-sm leading-snug mb-2.5 line-clamp-2 hover:text-rose-600 transition-colors">
             {product.name}
           </h3>
         </Link>
 
-        <div className="flex items-center justify-between">
-          <div>
-            <span className="text-base font-bold text-gray-900">Rs.{sellingPrice}</span>
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
+            <span className="text-lg sm:text-base font-bold text-gray-900">Rs.{sellingPrice}</span>
             {hasDiscount ? (
-              <span className="text-xs text-gray-400 line-through ml-1.5">Rs.{mrpPrice}</span>
+              <span className="block sm:inline text-xs text-gray-400 line-through sm:ml-1.5">Rs.{mrpPrice}</span>
             ) : null}
           </div>
 
@@ -103,7 +103,7 @@ export default function ProductCard({ product, index = 0 }) {
               href={notifyHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
+              className="flex w-full sm:w-auto items-center justify-center gap-1 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
             >
               <FiBell size={12} /> Notify
             </a>
@@ -111,7 +111,7 @@ export default function ProductCard({ product, index = 0 }) {
             <motion.button
               whileTap={{ scale: 0.9 }}
               onClick={handleAddToCart}
-              className="flex items-center gap-1 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 transition-colors shadow-sm"
+              className="flex w-full sm:w-auto items-center justify-center gap-1 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 transition-colors shadow-sm"
             >
               <FiShoppingCart size={12} /> Add
             </motion.button>

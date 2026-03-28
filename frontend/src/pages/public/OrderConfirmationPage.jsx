@@ -119,17 +119,17 @@ export default function OrderConfirmationPage() {
   if (loading || !order) return null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-rose-50 to-white py-16">
-      <div className="page-container max-w-4xl mx-auto">
+    <div className="min-h-screen bg-gradient-to-b from-rose-50 to-white py-8 sm:py-16">
+      <div className="page-container max-w-4xl mx-auto px-3 sm:px-6">
         <motion.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="text-center">
-          <div className="w-24 h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
             <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: 0.2, type: 'spring' }}>
-              <FiCheckCircle size={48} className="text-emerald-600" />
+              <FiCheckCircle size={40} className="text-emerald-600 sm:w-12 sm:h-12" />
             </motion.div>
           </div>
 
-          <h1 className="font-display text-4xl font-bold text-gray-900 mb-2">Order Summary</h1>
-          <p className="text-gray-500 text-sm mb-8 max-w-2xl mx-auto">
+          <h1 className="font-display text-3xl sm:text-4xl font-bold text-gray-900 mb-2">Order Summary</h1>
+          <p className="text-gray-500 text-sm mb-6 sm:mb-8 max-w-2xl mx-auto">
             Your order has been saved. WhatsApp should open with your full order details so the store can confirm it. After payment, you can optionally upload the screenshot here.
           </p>
 
@@ -153,13 +153,13 @@ export default function OrderConfirmationPage() {
                       const hasDiscount = Number(item.originalPrice || 0) > Number(item.price || 0);
 
                       return (
-                      <div key={`${item.product || item.name}-${index}`} className="flex items-center gap-3">
+                      <div key={`${item.product || item.name}-${index}`} className="flex items-start gap-3">
                         <div className="w-10 h-10 rounded-xl bg-rose-50 flex items-center justify-center flex-shrink-0">
                           <RiGiftLine size={16} className="text-rose-400" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <p className="text-sm font-semibold text-gray-700 truncate">{item.name || item.product?.name || 'Product'}</p>
-                          <div className="text-xs text-gray-400">
+                          <p className="text-sm font-semibold text-gray-700 leading-snug break-words">{item.name || item.product?.name || 'Product'}</p>
+                          <div className="text-xs text-gray-400 flex flex-wrap gap-x-1.5">
                             <span>Qty: {item.quantity} x </span>
                             <span className="font-semibold text-gray-700">Rs.{Number(item.price).toFixed(2)}</span>
                             {hasDiscount ? (
@@ -167,7 +167,7 @@ export default function OrderConfirmationPage() {
                             ) : null}
                           </div>
                         </div>
-                        <p className="text-sm font-bold text-gray-800">Rs.{(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="text-sm font-bold text-gray-800 flex-shrink-0 self-start">Rs.{(item.price * item.quantity).toFixed(2)}</p>
                       </div>
                     )})}
                     <div className="border-t border-gray-100 pt-3 space-y-2">
@@ -199,7 +199,7 @@ export default function OrderConfirmationPage() {
               </div>
 
               <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-                <div className="flex items-center justify-between gap-3 mb-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
                   <h3 className="font-semibold text-gray-700 text-sm">Share Payment Screenshot</h3>
                   {order.paymentScreenshot ? <span className="badge badge-green">Uploaded</span> : <span className="text-xs text-gray-400">Optional</span>}
                 </div>
@@ -208,9 +208,9 @@ export default function OrderConfirmationPage() {
                     type="file"
                     accept="image/*"
                     onChange={(e) => setProofFile(e.target.files?.[0] || null)}
-                    className="input-field text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-rose-50 file:px-3 file:py-1 file:text-xs file:text-rose-600"
+                    className="input-field text-sm file:mr-2 sm:file:mr-3 file:rounded-lg file:border-0 file:bg-rose-50 file:px-3 file:py-1 file:text-xs file:text-rose-600"
                   />
-                  <button type="submit" disabled={uploading} className="btn-outline flex items-center gap-2">
+                  <button type="submit" disabled={uploading} className="btn-outline w-full sm:w-auto flex items-center justify-center gap-2">
                     {uploading ? <div className="w-4 h-4 border-2 border-gray-500 border-t-transparent rounded-full animate-spin" /> : <FiUploadCloud size={16} />}
                     Upload Screenshot
                   </button>
@@ -257,7 +257,7 @@ export default function OrderConfirmationPage() {
                   {paymentInfo?.upiQrImage ? (
                     <div>
                       <p className="text-xs uppercase tracking-wide text-gray-400 mb-2">UPI QR Code</p>
-                      <img src={paymentInfo.upiQrImage} alt="UPI QR Code" className="h-40 w-40 rounded-2xl border border-gray-100 object-contain p-2 bg-white" />
+                      <img src={paymentInfo.upiQrImage} alt="UPI QR Code" className="h-32 w-32 sm:h-40 sm:w-40 rounded-2xl border border-gray-100 object-contain p-2 bg-white" />
                     </div>
                   ) : null}
                   <div>
