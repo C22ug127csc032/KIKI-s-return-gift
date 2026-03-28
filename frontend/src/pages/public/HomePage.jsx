@@ -3,10 +3,14 @@ import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   FiArrowRight, FiStar, FiTruck, FiShield, FiHeart, FiGift,
-  FiSun, FiSmile, FiCheckCircle, FiPhone
+  FiSun, FiCheckCircle, FiHome, FiBriefcase
 } from 'react-icons/fi';
-import { RiGiftLine, RiSparklingLine, RiStarSmileLine } from 'react-icons/ri';
-import { FaWhatsapp } from 'react-icons/fa';
+import { RiGiftLine, RiSparklingLine, RiStarSmileLine, RiCake2Line } from 'react-icons/ri';
+import { FaWhatsapp, FaRing, FaBaby } from 'react-icons/fa';
+import { GiPartyPopper } from 'react-icons/gi';
+import { PiHandsPrayingLight } from 'react-icons/pi';
+import { MdCelebration, MdLocalShipping } from 'react-icons/md';
+import { TbRosetteDiscountCheck } from 'react-icons/tb';
 import api from '../../api/api.js';
 import ProductCard from '../../components/shop/ProductCard.jsx';
 import { SkeletonCard } from '../../components/ui/index.jsx';
@@ -14,14 +18,14 @@ import { SkeletonCard } from '../../components/ui/index.jsx';
 const fadeUp = { initial: { opacity: 0, y: 24 }, animate: { opacity: 1, y: 0 } };
 
 const occasions = [
-  { label: 'Wedding', emoji: '💍', color: 'bg-pink-50 text-pink-700 border-pink-200 hover:bg-pink-600 hover:text-white hover:border-pink-600' },
-  { label: 'Birthday', emoji: '🎂', color: 'bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-600 hover:text-white hover:border-violet-600' },
-  { label: 'Diwali', emoji: '🪔', color: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-500 hover:text-white hover:border-amber-500' },
-  { label: 'Pooja', emoji: '🙏', color: 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-500 hover:text-white hover:border-orange-500' },
-  { label: 'Baby Shower', emoji: '👶', color: 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-500 hover:text-white hover:border-blue-500' },
-  { label: 'Anniversary', emoji: '❤️', color: 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-600 hover:text-white hover:border-rose-600' },
-  { label: 'Housewarming', emoji: '🏠', color: 'bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-500 hover:text-white hover:border-teal-500' },
-  { label: 'Corporate', emoji: '💼', color: 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-600 hover:text-white hover:border-slate-600' },
+  { label: 'Wedding', icon: FaRing, color: 'bg-pink-50 text-pink-700 border-pink-200 hover:bg-pink-600 hover:text-white hover:border-pink-600' },
+  { label: 'Birthday', icon: RiCake2Line, color: 'bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-600 hover:text-white hover:border-violet-600' },
+  { label: 'Diwali', icon: FiSun, color: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-500 hover:text-white hover:border-amber-500' },
+  { label: 'Pooja', icon: PiHandsPrayingLight, color: 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-500 hover:text-white hover:border-orange-500' },
+  { label: 'Baby Shower', icon: FaBaby, color: 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-500 hover:text-white hover:border-blue-500' },
+  { label: 'Anniversary', icon: FiHeart, color: 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-600 hover:text-white hover:border-rose-600' },
+  { label: 'Housewarming', icon: FiHome, color: 'bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-500 hover:text-white hover:border-teal-500' },
+  { label: 'Corporate', icon: FiBriefcase, color: 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-600 hover:text-white hover:border-slate-600' },
 ];
 
 const trustBadges = [
@@ -34,11 +38,20 @@ const trustBadges = [
 ];
 
 const whyUs = [
-  { icon: '🎁', title: 'Curated Collections', desc: 'Every product handpicked for quality, aesthetics, and price.' },
-  { icon: '💰', title: 'Bulk Order Discounts', desc: 'Special pricing for events with 50+ gifts. WhatsApp us!' },
-  { icon: '🚀', title: 'Quick Dispatch', desc: 'Orders packed and shipped within 24 hours.' },
-  { icon: '✨', title: 'Gift Wrapping', desc: 'Beautiful packaging to make every gift special.' },
+  { icon: FiGift, title: 'Curated Collections', desc: 'Every product handpicked for quality, aesthetics, and price.' },
+  { icon: TbRosetteDiscountCheck, title: 'Bulk Order Discounts', desc: 'Special pricing for events with 50+ gifts. WhatsApp us!' },
+  { icon: MdLocalShipping, title: 'Quick Dispatch', desc: 'Orders packed and shipped within 24 hours.' },
+  { icon: RiSparklingLine, title: 'Gift Wrapping', desc: 'Beautiful packaging to make every gift special.' },
 ];
+
+const floatingOccasions = [
+  { label: 'Wedding', icon: FaRing, pos: 'top-2 left-4', delay: 0 },
+  { label: 'Birthday', icon: RiCake2Line, pos: 'top-4 right-4', delay: 0.15 },
+  { label: 'Diwali', icon: FiSun, pos: 'bottom-8 left-2', delay: 0.3 },
+  { label: 'Pooja', icon: PiHandsPrayingLight, pos: 'bottom-4 right-8', delay: 0.45 },
+];
+
+const ctaIcons = [FaRing, RiGiftLine, FiSun, RiCake2Line, GiPartyPopper];
 
 export default function HomePage() {
   const [featured, setFeatured] = useState([]);
@@ -47,7 +60,7 @@ export default function HomePage() {
   const whatsapp = import.meta.env.VITE_WHATSAPP_NUMBER || '919876543210';
 
   useEffect(() => {
-    document.title = "KIKI'S Return Gift Store – Perfect Gifts for Every Occasion";
+    document.title = "KIKI'S Return Gift Store - Perfect Gifts for Every Occasion";
     Promise.all([api.get('/products/featured'), api.get('/categories/all')])
       .then(([prodRes, catRes]) => {
         setFeatured(prodRes.data.data);
@@ -58,15 +71,12 @@ export default function HomePage() {
 
   return (
     <div className="overflow-x-hidden">
-
-      {/* ── HERO ── */}
       <section className="relative bg-gradient-to-br from-rose-50 via-white to-amber-50 overflow-hidden">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-bl from-rose-100/60 to-transparent rounded-full -translate-y-1/3 translate-x-1/4 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-amber-100/50 to-transparent rounded-full translate-y-1/3 -translate-x-1/4 pointer-events-none" />
 
         <div className="page-container relative z-10">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 items-center min-h-[88vh] py-16">
-            {/* Left */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center min-h-[74vh] pt-3 pb-10">
             <div>
               <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                 <span className="inline-flex items-center gap-2 bg-rose-100 text-rose-700 text-xs font-bold px-4 py-2 rounded-full mb-6 border border-rose-200">
@@ -87,7 +97,7 @@ export default function HomePage() {
                 Premium quality, affordable prices, delivered with love across India.
               </motion.p>
 
-              <motion.div {...fadeUp} transition={{ delay: 0.35 }} className="flex flex-wrap gap-3 mb-10">
+              <motion.div {...fadeUp} transition={{ delay: 0.35 }} className="flex flex-wrap gap-3 mb-3">
                 <Link to="/shop" className="btn-primary flex items-center gap-2 py-3.5 px-7 text-sm">
                   Shop Now <FiArrowRight size={15} />
                 </Link>
@@ -99,7 +109,7 @@ export default function HomePage() {
               </motion.div>
 
               <motion.div {...fadeUp} transition={{ delay: 0.45 }}
-                className="flex flex-wrap gap-8 pt-8 border-t border-rose-100">
+                className="flex flex-wrap gap-8 pt-2 border-t border-rose-100">
                 {[['500+', 'Happy Customers'], ['50+', 'Gift Varieties'], ['100%', 'Quality Assured']].map(([num, label]) => (
                   <div key={label}>
                     <p className="font-display text-3xl font-bold text-rose-600">{num}</p>
@@ -109,27 +119,19 @@ export default function HomePage() {
               </motion.div>
             </div>
 
-            {/* Right — floating gift cards */}
             <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3, duration: 0.7 }}
               className="hidden lg:flex items-center justify-center relative">
-              <div className="relative w-full max-w-sm aspect-square">
-                {/* Central circle */}
+              <div className="relative w-full max-w-[20rem] aspect-square">
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-56 h-56 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center shadow-2xl shadow-rose-200">
-                    <RiGiftLine size={80} className="text-white" />
+                  <div className="w-48 h-48 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center shadow-2xl shadow-rose-200">
+                    <RiGiftLine size={68} className="text-white" />
                   </div>
                 </div>
-                {/* Floating chips */}
-                {[
-                  { label: 'Wedding', emoji: '💍', pos: 'top-2 left-4', delay: 0 },
-                  { label: 'Birthday', emoji: '🎂', pos: 'top-4 right-4', delay: 0.15 },
-                  { label: 'Diwali', emoji: '🪔', pos: 'bottom-8 left-2', delay: 0.3 },
-                  { label: 'Pooja', emoji: '🙏', pos: 'bottom-4 right-8', delay: 0.45 },
-                ].map(({ label, emoji, pos, delay }) => (
+                {floatingOccasions.map(({ label, icon: Icon, pos, delay }) => (
                   <motion.div key={label}
                     initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: delay + 0.6, type: 'spring' }}
                     className={`absolute ${pos} bg-white rounded-2xl shadow-lg px-4 py-2.5 flex items-center gap-2`}>
-                    <span className="text-lg">{emoji}</span>
+                    <Icon size={18} className="text-rose-500" />
                     <span className="text-sm font-semibold text-gray-700">{label}</span>
                   </motion.div>
                 ))}
@@ -139,33 +141,31 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── TRUST BAR (marquee) ── */}
-      <div className="bg-rose-600 py-3.5 overflow-hidden">
+      <div className="bg-rose-600 py-2.5 overflow-hidden">
         <div className="flex whitespace-nowrap animate-marquee">
           {[...trustBadges, ...trustBadges].map((b, i) => (
             <div key={i} className="flex items-center gap-2 mx-8 text-white text-sm font-medium flex-shrink-0">
               <b.icon size={14} className="text-rose-200" />
               <span>{b.text}</span>
-              <span className="text-rose-400 ml-8">✦</span>
+              <RiSparklingLine size={14} className="text-rose-300 ml-8" />
             </div>
           ))}
         </div>
       </div>
 
-      {/* ── SHOP BY OCCASION ── */}
-      <section className="py-16 bg-white">
+      <section className="pt-10 pb-8 bg-white">
         <div className="page-container">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-10">
             <h2 className="section-title">Shop by Occasion</h2>
             <p className="text-gray-400 mt-2 text-sm">Find the perfect gift for every celebration</p>
           </motion.div>
           <div className="flex flex-wrap justify-center gap-3">
-            {occasions.map(({ label, emoji, color }, i) => (
+            {occasions.map(({ label, icon: Icon, color }, i) => (
               <motion.div key={label} initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }}
                 viewport={{ once: true }} transition={{ delay: i * 0.06 }}>
                 <Link to={`/shop?occasion=${label}`}
                   className={`inline-flex items-center gap-2 border font-semibold px-5 py-2.5 rounded-full text-sm transition-all duration-200 ${color}`}>
-                  <span>{emoji}</span> {label}
+                  <Icon size={16} /> {label}
                 </Link>
               </motion.div>
             ))}
@@ -173,9 +173,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── CATEGORIES ── */}
       {categories.length > 0 && (
-        <section className="py-16 bg-gray-50">
+        <section className="pt-8 pb-10 bg-gray-50">
           <div className="page-container">
             <div className="flex items-end justify-between mb-10">
               <div>
@@ -209,8 +208,7 @@ export default function HomePage() {
         </section>
       )}
 
-      {/* ── FEATURED PRODUCTS ── */}
-      <section className="py-16 bg-white">
+      <section className="py-10 bg-white">
         <div className="page-container">
           <div className="flex items-end justify-between mb-10">
             <div>
@@ -236,19 +234,20 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── WHY CHOOSE US ── */}
-      <section className="py-16 bg-rose-50">
+      <section className="py-10 bg-rose-50">
         <div className="page-container">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="text-center mb-12">
             <h2 className="section-title">Why Choose KIKI'S?</h2>
             <p className="text-gray-400 text-sm mt-2">We go the extra mile to make your celebrations memorable</p>
           </motion.div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {whyUs.map(({ icon, title, desc }, i) => (
+            {whyUs.map(({ icon: Icon, title, desc }, i) => (
               <motion.div key={title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }} transition={{ delay: i * 0.1 }}
                 className="bg-white rounded-2xl p-6 text-center shadow-sm hover:shadow-md transition-shadow">
-                <div className="text-4xl mb-4">{icon}</div>
+                <div className="mb-4 flex justify-center text-rose-500">
+                  <Icon size={34} />
+                </div>
                 <h3 className="font-display font-bold text-gray-800 text-lg mb-2">{title}</h3>
                 <p className="text-gray-400 text-sm leading-relaxed">{desc}</p>
               </motion.div>
@@ -257,11 +256,12 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── WHATSAPP CTA ── */}
-      <section className="py-20 bg-gradient-to-r from-rose-600 to-rose-800 relative overflow-hidden">
+      <section className="py-14 bg-gradient-to-r from-rose-600 to-rose-800 relative overflow-hidden">
         <div className="absolute inset-0 opacity-10">
-          {['💍','🎁','🪔','🎂','🎊'].map((e, i) => (
-            <span key={i} className="absolute text-5xl" style={{ top: `${10 + i * 18}%`, left: `${i * 20}%`, transform: 'rotate(15deg)' }}>{e}</span>
+          {ctaIcons.map((Icon, i) => (
+            <span key={i} className="absolute" style={{ top: `${10 + i * 18}%`, left: `${i * 20}%`, transform: 'rotate(15deg)' }}>
+              <Icon size={44} className="text-white" />
+            </span>
           ))}
         </div>
         <div className="page-container text-center relative z-10">

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { FiInstagram, FiMail, FiMapPin, FiPhone, FiArrowRight } from 'react-icons/fi';
+import { FiInstagram, FiMail, FiMapPin, FiPhone, FiArrowRight, FiHeart } from 'react-icons/fi';
 import { FaWhatsapp, FaFacebookF } from 'react-icons/fa';
 import { RiGiftLine } from 'react-icons/ri';
 
@@ -16,12 +16,11 @@ export default function Footer() {
 
   return (
     <footer className="bg-gray-950 text-gray-300">
-      {/* CTA strip */}
       <div className="bg-rose-600 py-8">
         <div className="page-container flex flex-col md:flex-row items-center justify-between gap-4">
           <div>
             <h3 className="font-display text-2xl text-white font-bold">Need a Custom Gift Pack?</h3>
-            <p className="text-rose-200 text-sm mt-1">Bulk orders, event gifting, personalized combos — we do it all!</p>
+            <p className="text-rose-200 text-sm mt-1">Bulk orders, event gifting, personalized combos - we do it all!</p>
           </div>
           <a href={`https://wa.me/${whatsapp}?text=Hi! I need help with a custom gift order.`}
             target="_blank" rel="noopener noreferrer"
@@ -33,7 +32,6 @@ export default function Footer() {
 
       <div className="page-container py-14">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-          {/* Brand */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-2.5 mb-4">
               <div className="w-9 h-9 bg-rose-600 rounded-xl flex items-center justify-center">
@@ -67,7 +65,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Quick Links */}
           <div>
             <h4 className="text-white font-semibold mb-5 text-sm uppercase tracking-widest">Quick Links</h4>
             <ul className="space-y-2.5">
@@ -82,7 +79,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Occasions */}
           <div>
             <h4 className="text-white font-semibold mb-5 text-sm uppercase tracking-widest">Shop by Occasion</h4>
             <ul className="space-y-2.5">
@@ -97,7 +93,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Contact */}
           <div>
             <h4 className="text-white font-semibold mb-5 text-sm uppercase tracking-widest">Contact Us</h4>
             <ul className="space-y-3">
@@ -121,7 +116,7 @@ export default function Footer() {
       <div className="border-t border-white/5">
         <div className="page-container py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-600">
           <p>© {new Date().getFullYear()} KIKI'S Return Gift Store. All rights reserved.</p>
-          <p>Made with ❤️ for every celebration in India</p>
+          <p className="inline-flex items-center gap-1">Made with <FiHeart size={12} className="text-rose-500" /> for every celebration in India</p>
         </div>
       </div>
     </footer>
