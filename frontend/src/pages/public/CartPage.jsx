@@ -19,7 +19,7 @@ export default function CartPage() {
           <Link to="/" className="hover:text-rose-600">Home</Link><span>/</span>
           <span className="text-gray-600">Cart</span>
         </div>
-        <h1 className="font-display text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8">
+        <h1 className="font-display text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8 text-center sm:text-left">
           Your Cart {items.length > 0 && <span className="text-rose-600">({items.length})</span>}
         </h1>
 
@@ -82,7 +82,7 @@ export default function CartPage() {
 
             <div className="lg:col-span-1">
               <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 shadow-sm lg:sticky lg:top-24">
-                <h2 className="font-display text-xl font-bold text-gray-900 mb-5">Order Summary</h2>
+                <h2 className="font-display text-xl font-bold text-gray-900 mb-5 text-center sm:text-left">Order Summary</h2>
                 <div className="space-y-3 mb-5">
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Subtotal ({totalItems} {totalItems === 1 ? 'item' : 'items'})</span>

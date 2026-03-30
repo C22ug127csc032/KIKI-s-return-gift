@@ -29,7 +29,7 @@ function FilterSection({ title, children, defaultOpen = true }) {
   );
 }
 
-function FilterPanel({ filters, categories, hasActive, setFilter, clearFilters }) {
+function FilterPanel({ filters, categories, hasActive, setFilter, clearFilters, onSelect }) {
   return (
     <div>
       <FilterSection title="Price Range">
@@ -55,7 +55,10 @@ function FilterPanel({ filters, categories, hasActive, setFilter, clearFilters }
       <FilterSection title="Category">
         <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
           <button
-            onClick={() => setFilter('category', '')}
+            onClick={() => {
+              setFilter('category', '');
+              onSelect?.();
+            }}
             className={`block w-full text-left text-sm px-3 py-2 rounded-xl transition-colors ${!filters.category ? 'bg-rose-50 text-rose-600 font-semibold' : 'text-gray-500 hover:bg-gray-50'}`}
           >
             All Categories
@@ -63,7 +66,10 @@ function FilterPanel({ filters, categories, hasActive, setFilter, clearFilters }
           {categories.map((category) => (
             <button
               key={category._id}
-              onClick={() => setFilter('category', category._id)}
+              onClick={() => {
+                setFilter('category', category._id);
+                onSelect?.();
+              }}
               className={`block w-full text-left text-sm px-3 py-2 rounded-xl transition-colors ${filters.category === category._id ? 'bg-rose-50 text-rose-600 font-semibold' : 'text-gray-500 hover:bg-gray-50'}`}
             >
               {category.name}
@@ -77,7 +83,10 @@ function FilterPanel({ filters, categories, hasActive, setFilter, clearFilters }
           {occasions.map((occasion) => (
             <button
               key={occasion}
-              onClick={() => setFilter('occasion', filters.occasion === occasion ? '' : occasion)}
+              onClick={() => {
+                setFilter('occasion', filters.occasion === occasion ? '' : occasion);
+                onSelect?.();
+              }}
               className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${filters.occasion === occasion ? 'bg-rose-600 text-white border-rose-600' : 'border-gray-200 text-gray-500 hover:border-rose-300 hover:text-rose-600'}`}
             >
               {occasion}
@@ -192,11 +201,11 @@ export default function ShopPage() {
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-100">
         <div className="page-container py-8">
-          <div className="flex items-center gap-2 text-xs text-gray-400 mb-2 font-medium">
+          <div className="flex items-center justify-center sm:justify-start gap-2 text-xs text-gray-400 mb-2 font-medium">
             <span>Home</span><span>/</span><span className="text-gray-600">Shop</span>
           </div>
-          <h1 className="section-title">Our Gift Collection</h1>
-          <p className="text-gray-400 text-sm mt-1">Discover the perfect return gift for every occasion</p>
+          <h1 className="section-title text-center sm:text-left">Our Gift Collection</h1>
+          <p className="text-gray-400 text-sm mt-1 text-center sm:text-left">Discover the perfect return gift for every occasion</p>
         </div>
       </div>
 
@@ -338,7 +347,7 @@ export default function ShopPage() {
                   {hasActive ? (
                     <button onClick={clearFilters} className="text-xs text-rose-500 hover:text-rose-700 font-semibold">Clear</button>
                   ) : null}
-                <button onClick={() => setFilterOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100"><FiX size={18} /></button>
+                  <button onClick={() => setFilterOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100"><FiX size={18} /></button>
                 </div>
               </div>
               <div className="flex-1 overflow-y-auto p-5">
@@ -348,6 +357,7 @@ export default function ShopPage() {
                   hasActive={hasActive}
                   setFilter={setFilter}
                   clearFilters={clearFilters}
+                  onSelect={() => setFilterOpen(false)}
                 />
               </div>
               <div className="p-5 border-t border-gray-100">

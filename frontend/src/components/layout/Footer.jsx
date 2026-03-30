@@ -17,7 +17,7 @@ export default function Footer() {
   return (
     <footer className="bg-gray-950 text-gray-300">
       <div className="bg-rose-600 py-8">
-        <div className="page-container flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="page-container flex flex-col md:flex-row items-center justify-between gap-4 text-center md:text-left">
           <div>
             <h3 className="font-display text-2xl text-white font-bold">Need a Custom Gift Pack?</h3>
             <p className="text-rose-200 text-sm mt-1">Bulk orders, event gifting, personalized combos - we do it all!</p>
@@ -34,9 +34,9 @@ export default function Footer() {
       </div>
 
       <div className="page-container py-14">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 text-center md:text-left">
           <div className="lg:col-span-1">
-            <div className="flex items-center gap-2.5 mb-4">
+            <div className="flex items-center justify-center md:justify-start gap-2.5 mb-4">
               <div className="w-9 h-9 bg-rose-600 rounded-xl flex items-center justify-center">
                 <RiGiftLine size={20} className="text-white" />
               </div>
@@ -48,7 +48,7 @@ export default function Footer() {
             <p className="text-sm text-gray-400 leading-relaxed mb-5">
               India's trusted return gift store for weddings, birthdays, pooja, and every celebration. Quality you can feel, prices you'll love.
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center md:justify-start gap-2">
               <a
                 href={`https://wa.me/${whatsapp}`}
                 target="_blank"
@@ -83,7 +83,7 @@ export default function Footer() {
             <ul className="space-y-2.5">
               {quickLinks.map(({ to, label }) => (
                 <li key={to}>
-                  <Link to={to} className="text-sm text-gray-400 hover:text-rose-400 flex items-center gap-1.5 transition-colors group">
+                  <Link to={to} className="text-sm text-gray-400 hover:text-rose-400 inline-flex md:flex items-center gap-1.5 transition-colors group">
                     <FiArrowRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity -ml-1" />
                     {label}
                   </Link>
@@ -97,7 +97,7 @@ export default function Footer() {
             <ul className="space-y-2.5">
               {['Pooja', 'Baby Shower', 'Anniversary', 'Housewarming', 'Corporate'].map((occ) => (
                 <li key={occ}>
-                  <Link to={`/shop?occasion=${occ}`} className="text-sm text-gray-400 hover:text-rose-400 flex items-center gap-1.5 transition-colors group">
+                  <Link to={`/shop?occasion=${occ}`} className="text-sm text-gray-400 hover:text-rose-400 inline-flex md:flex items-center gap-1.5 transition-colors group">
                     <FiArrowRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity -ml-1" />
                     {occ}
                   </Link>
@@ -109,15 +109,15 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-5 text-sm uppercase tracking-widest">Contact Us</h4>
             <ul className="space-y-3">
-              <li className="flex items-start gap-2.5 text-sm text-gray-400">
+              <li className="flex items-start justify-center md:justify-start gap-2.5 text-sm text-gray-400">
                 <FiPhone size={14} className="text-rose-400 mt-0.5 flex-shrink-0" />
                 <span>+91 {whatsapp.slice(-10)}</span>
               </li>
-              <li className="flex items-start gap-2.5 text-sm text-gray-400">
+              <li className="flex items-start justify-center md:justify-start gap-2.5 text-sm text-gray-400">
                 <FiMail size={14} className="text-rose-400 mt-0.5 flex-shrink-0" />
                 <span>support@kikisstore.com</span>
               </li>
-              <li className="flex items-start gap-2.5 text-sm text-gray-400">
+              <li className="flex items-start justify-center md:justify-start gap-2.5 text-sm text-gray-400">
                 <FiMapPin size={14} className="text-rose-400 mt-0.5 flex-shrink-0" />
                 <span>Madurai, Tamil Nadu, India</span>
               </li>
@@ -127,7 +127,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-white/5">
-        <div className="page-container py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-600">
+        <div className="page-container py-4 flex flex-col sm:flex-row items-center justify-between gap-2 text-xs text-gray-600 text-center sm:text-left">
           <p>© All Rights Reserved. Powered by EMATIX Embedded and Software Solutions Inc.</p>
           <p className="inline-flex items-center gap-1">Made with <FiHeart size={12} className="text-rose-500" /> for every celebration in India</p>
         </div>

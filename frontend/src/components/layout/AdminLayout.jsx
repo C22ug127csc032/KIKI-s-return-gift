@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -26,6 +26,14 @@ export default function AdminLayout() {
   const navigate = useNavigate();
 
   const handleLogout = () => { logout(); navigate('/'); };
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    if (sidebarOpen) document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [sidebarOpen]);
 
   const SidebarContent = () => (
     <div className="flex h-full min-h-0 flex-col">
@@ -102,22 +110,22 @@ export default function AdminLayout() {
       {/* Main */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top bar */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <button className="lg:hidden p-2 text-gray-600" onClick={() => setSidebarOpen(true)}>
+        <header className="flex items-center justify-between gap-3 border-b border-gray-200 bg-white px-4 py-3 sm:px-6 sm:py-4">
+          <button className="p-2 text-gray-600 lg:hidden" onClick={() => setSidebarOpen(true)}>
             <FiMenu size={22} />
           </button>
-          <div className="lg:hidden flex items-center gap-2">
+          <div className="flex min-w-0 items-center gap-2 lg:hidden">
             <FiGift size={18} className="text-brand-500" />
-            <span className="font-display font-bold text-gray-800 text-sm">Admin Panel</span>
+            <span className="truncate font-display text-xs font-bold text-gray-800 sm:text-sm">Admin Panel</span>
           </div>
           <div className="hidden lg:block" />
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-gray-600">Hello, <strong>{user?.name}</strong></span>
+          <div className="flex min-w-0 items-center justify-end">
+            <span className="truncate text-xs text-gray-600 sm:text-sm">Hello, <strong>{user?.name}</strong></span>
           </div>
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <Outlet />
         </main>
       </div>

@@ -95,8 +95,8 @@ export default function CheckoutPage() {
           <Link to="/cart" className="hover:text-rose-600">Cart</Link><span>/</span>
           <span className="text-gray-600">Checkout</span>
         </div>
-        <h1 className="font-display text-3xl font-bold text-gray-900 mb-3">Order Summary</h1>
-        <p className="mb-8 max-w-2xl text-sm text-gray-500">
+        <h1 className="font-display text-3xl font-bold text-gray-900 mb-3 text-center sm:text-left">Order Summary</h1>
+        <p className="mb-8 max-w-2xl text-sm text-gray-500 text-center sm:text-left sm:mx-0 mx-auto">
           Fill in your delivery details and place the order. We will open WhatsApp with your full order message for store confirmation.
         </p>
 

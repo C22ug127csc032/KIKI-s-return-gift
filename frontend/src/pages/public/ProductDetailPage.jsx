@@ -116,7 +116,7 @@ export default function ProductDetailPage() {
             ) : null}
           </motion.div>
 
-          <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col">
+          <motion.div initial={{ opacity: 0, x: 16 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col text-center lg:text-left items-center lg:items-start">
             {product.category ? (
               <Link
                 to={`/shop?category=${product.category._id}`}
@@ -136,7 +136,7 @@ export default function ProductDetailPage() {
               </span>
             ) : null}
 
-            <div className="flex flex-wrap items-center gap-3 mb-5 pb-5 border-b border-gray-100">
+            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mb-5 pb-5 border-b border-gray-100 w-full">
               <span className="text-3xl font-bold text-gray-900">Rs.{sellingPrice}</span>
               {hasDiscount ? (
                 <>
@@ -148,9 +148,9 @@ export default function ProductDetailPage() {
               ) : null}
             </div>
 
-            <p className="text-gray-500 leading-relaxed mb-5 text-sm">{product.description}</p>
+            <p className="text-gray-500 leading-relaxed mb-5 text-sm max-w-xl">{product.description}</p>
 
-            <div className="flex items-center gap-2 mb-5">
+            <div className="flex items-center justify-center lg:justify-start gap-2 mb-5">
               <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isOutOfStock ? 'bg-red-500' : isLowStock ? 'bg-amber-500' : 'bg-emerald-500'}`} />
               <span className={`text-sm font-semibold ${isOutOfStock ? 'text-red-600' : isLowStock ? 'text-amber-600' : 'text-emerald-600'}`}>
                 {isOutOfStock ? 'Out of Stock' : isLowStock ? `Only ${product.stock} left!` : `${product.stock} in stock`}
@@ -158,7 +158,7 @@ export default function ProductDetailPage() {
             </div>
 
             {!isOutOfStock ? (
-              <div className="flex items-center gap-4 mb-5">
+              <div className="flex items-center justify-center lg:justify-start gap-4 mb-5">
                 <span className="text-sm font-semibold text-gray-600">Qty:</span>
                 <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden bg-white">
                   <button

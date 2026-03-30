@@ -33,6 +33,15 @@ export default function Navbar() {
     if (searchOpen) setTimeout(() => searchRef.current?.focus(), 100);
   }, [searchOpen]);
 
+  useEffect(() => {
+    const shouldLockScroll = menuOpen || searchOpen;
+    const previousOverflow = document.body.style.overflow;
+    if (shouldLockScroll) document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [menuOpen, searchOpen]);
+
   const handleLogout = () => { logout(); setUserMenuOpen(false); navigate('/'); };
 
   const handleSearch = (e) => {
@@ -54,7 +63,7 @@ export default function Navbar() {
     <>
       <header className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? 'bg-rose-600 shadow-[0_2px_20px_rgba(190,24,93,0.28)]' : 'bg-rose-600/95 backdrop-blur-sm border-b border-rose-500'}`}>
         <div className="page-container">
-          <div className="flex items-center justify-between h-16 gap-2 sm:gap-4">
+          <div className="flex items-center justify-between h-16 gap-1.5 sm:gap-4">
             <div className="flex items-center gap-2 min-w-0 flex-1 md:flex-none">
               <button className="md:hidden p-2 text-white hover:bg-white/15 rounded-full flex-shrink-0" onClick={() => setMenuOpen(!menuOpen)}>
                 {menuOpen ? <FiX size={20} /> : <FiMenu size={20} />}
@@ -63,9 +72,9 @@ export default function Navbar() {
                 <div className="w-8 h-8 sm:w-9 sm:h-9 bg-white rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
                   <RiGiftLine size={18} className="text-rose-700 sm:w-5 sm:h-5" />
                 </div>
-                <div className="leading-none min-w-0">
-                  <p className="font-display font-bold text-white text-sm sm:text-base tracking-tight truncate">KIKI'S</p>
-                  <p className="text-[8px] sm:text-[9px] text-rose-100 uppercase tracking-[0.18em] sm:tracking-[0.22em] font-medium truncate">Return Gifts</p>
+                <div className="leading-none min-w-0 max-w-[84px] sm:max-w-none">
+                  <p className="font-display font-bold text-white text-xs sm:text-base tracking-tight">KIKI'S</p>
+                  <p className="text-[8px] sm:text-[9px] text-rose-100 uppercase tracking-[0.14em] sm:tracking-[0.22em] font-medium truncate">Return Gifts</p>
                 </div>
               </Link>
             </div>
@@ -81,7 +90,7 @@ export default function Navbar() {
               ))}
             </nav>
 
-            <div className="flex items-center gap-0.5 sm:gap-1.5 flex-shrink-0">
+            <div className="flex items-center gap-0 sm:gap-1.5 flex-shrink-0">
               <button onClick={() => setSearchOpen(true)}
                 className="p-2 sm:p-2.5 text-white hover:bg-white/15 rounded-full transition-all">
                 <FiSearch size={18} />
@@ -116,11 +125,11 @@ export default function Navbar() {
               {user ? (
                 <div className="relative">
                   <button onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className="flex items-center gap-1 sm:gap-2 pl-1.5 sm:pl-2 pr-2 sm:pr-3 py-1.5 rounded-full hover:bg-white/15 transition-all border border-transparent hover:border-white/20 max-w-[112px] sm:max-w-none">
+                    className="flex items-center gap-1 sm:gap-2 pl-1 sm:pl-2 pr-1.5 sm:pr-3 py-1.5 rounded-full hover:bg-white/15 transition-all border border-transparent hover:border-white/20 max-w-[46px] sm:max-w-none">
                     <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center border border-white/15 flex-shrink-0">
                       <span className="text-white font-bold text-xs">{user.name[0].toUpperCase()}</span>
                     </div>
-                    <span className="hidden min-[420px]:block text-sm font-medium text-white max-w-[56px] sm:max-w-[80px] truncate">{user.name.split(' ')[0]}</span>
+                    <span className="hidden sm:block text-sm font-medium text-white max-w-[80px] truncate">{user.name.split(' ')[0]}</span>
                     <FiChevronDown size={13} className={`text-rose-100 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
                   <AnimatePresence>

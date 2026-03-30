@@ -82,7 +82,7 @@ export default function HomePage() {
 
         <div className="page-container relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center min-h-[74vh] pt-3 pb-10">
-            <div>
+            <div className="text-center lg:text-left">
               <motion.div initial={{ opacity: 0, y: -8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
                 <span className="inline-flex items-center gap-2 bg-rose-100 text-rose-700 text-xs font-bold px-4 py-2 rounded-full mb-6 border border-rose-200">
                   <RiSparklingLine size={14} /> India's #1 Return Gift Store
@@ -97,12 +97,12 @@ export default function HomePage() {
               </motion.h1>
 
               <motion.p {...fadeUp} transition={{ delay: 0.25, duration: 0.5 }}
-                className="text-base text-gray-500 mb-8 leading-relaxed max-w-md">
+                className="text-base text-gray-500 mb-8 leading-relaxed max-w-md mx-auto lg:mx-0">
                 Curated return gifts for weddings, birthdays, pooja, and every special occasion.
                 Premium quality, affordable prices, delivered with love across India.
               </motion.p>
 
-              <motion.div {...fadeUp} transition={{ delay: 0.35 }} className="flex flex-wrap gap-3 mb-3">
+              <motion.div {...fadeUp} transition={{ delay: 0.35 }} className="flex flex-wrap justify-center lg:justify-start gap-3 mb-3">
                 <Link to="/shop" className="btn-primary flex items-center gap-2 py-3.5 px-7 text-sm">
                   Shop Now <FiArrowRight size={15} />
                 </Link>
@@ -113,66 +113,89 @@ export default function HomePage() {
                 </a>
               </motion.div>
 
-              <motion.div {...fadeUp} transition={{ delay: 0.45 }}
-                className="flex flex-wrap gap-8 pt-2 border-t border-rose-100">
+              <motion.div
+                {...fadeUp}
+                transition={{ delay: 0.42, duration: 0.55 }}
+                className="grid grid-cols-3 gap-3 sm:flex sm:flex-wrap sm:gap-8 pt-2 border-t border-rose-100 mb-5"
+              >
                 {[['500+', 'Happy Customers'], ['50+', 'Gift Varieties'], ['100%', 'Quality Assured']].map(([num, label]) => (
-                  <div key={label}>
+                  <div key={label} className="min-w-0 text-center lg:text-left">
                     <p className="font-display text-3xl font-bold text-rose-600">{num}</p>
-                    <p className="text-xs text-gray-400 font-medium mt-0.5">{label}</p>
+                    <p className="text-xs text-gray-400 font-medium mt-0.5 leading-tight">{label}</p>
                   </div>
                 ))}
               </motion.div>
-            </div>
 
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-              className="lg:hidden relative flex items-center justify-center"
-            >
-              <div className="relative w-full max-w-[18rem] aspect-square">
-                <motion.div
-                  animate={{ scale: [1, 1.04, 1], opacity: [0.25, 0.4, 0.25] }}
-                  transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
-                  className="absolute inset-6 rounded-full border border-rose-100/80"
-                />
-                <motion.div
-                  animate={{ scale: [1.03, 1, 1.03], opacity: [0.18, 0.3, 0.18] }}
-                  transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
-                  className="absolute inset-0 rounded-full border border-amber-100/80"
-                />
-
-                <div className="absolute inset-0 flex items-center justify-center">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.38, duration: 0.6 }}
+                className="lg:hidden relative flex items-center justify-center mb-5"
+              >
+                <div className="relative w-full max-w-[22rem] aspect-square mt-2">
                   <motion.div
-                    animate={{ y: [0, -8, 0], rotate: [0, 2, 0] }}
-                    transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut' }}
-                    className="w-36 h-36 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center shadow-xl shadow-rose-200"
+                    animate={{ scale: [1, 1.06, 1], opacity: [0.3, 0.45, 0.3] }}
+                    transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+                    className="absolute inset-10 rounded-full border border-rose-100/80"
+                  />
+                  <motion.div
+                    animate={{ scale: [1.04, 1, 1.04], opacity: [0.2, 0.35, 0.2] }}
+                    transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+                    className="absolute inset-2 rounded-full border border-amber-100/80"
+                  />
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: [0, -7, 0] }}
+                    transition={{ opacity: { delay: 0.8, duration: 0.45 }, y: { delay: 0.5, duration: 5, repeat: Infinity, ease: 'easeInOut' } }}
+                    className="absolute top-5 right-1 rounded-2xl border border-white/80 bg-white/90 px-3 py-2 shadow-lg shadow-rose-100/60 backdrop-blur-sm"
                   >
-                    <RiGiftLine size={48} className="text-white" />
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-rose-400">Premium Picks</p>
+                    <p className="mt-0.5 text-xs font-semibold text-gray-700">Curated daily</p>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: [0, -7, 0] }}
+                    transition={{ opacity: { delay: 0.95, duration: 0.45 }, y: { delay: 0.7, duration: 5.2, repeat: Infinity, ease: 'easeInOut' } }}
+                    className="absolute bottom-16 left-2 rounded-2xl border border-white/80 bg-white/90 px-3 py-2 shadow-lg shadow-rose-100/60 backdrop-blur-sm max-w-[8.5rem]"
+                  >
+                    <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-rose-400">Gift Ready</p>
+                    <p className="mt-0.5 text-xs font-semibold text-gray-700 leading-tight">Elegant packing</p>
+                  </motion.div>
+
+                  <div className="absolute inset-0 flex items-center justify-center pt-7">
+                    <motion.div
+                      animate={{ y: [0, -10, 0], rotate: [0, 3, 0] }}
+                      transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+                      className="w-44 h-44 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center shadow-2xl shadow-rose-200"
+                    >
+                      <RiGiftLine size={60} className="text-white" />
+                    </motion.div>
+                  </div>
+
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1, y: [0, -6, 0] }}
+                    transition={{ scale: { delay: 0.65, type: 'spring' }, y: { delay: 1, duration: 4.4, repeat: Infinity, ease: 'easeInOut' } }}
+                    className="absolute top-4 left-4 bg-white rounded-2xl shadow-lg px-3 py-2 flex items-center gap-2"
+                  >
+                    <FaRing size={15} className="text-rose-500" />
+                    <span className="text-xs font-semibold text-gray-700">Wedding</span>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1, y: [0, -6, 0] }}
+                    transition={{ scale: { delay: 0.8, type: 'spring' }, y: { delay: 1.2, duration: 4.2, repeat: Infinity, ease: 'easeInOut' } }}
+                    className="absolute bottom-7 right-3 bg-white rounded-2xl shadow-lg px-3 py-2 flex items-center gap-2"
+                  >
+                    <RiCake2Line size={15} className="text-rose-500" />
+                    <span className="text-xs font-semibold text-gray-700">Birthday</span>
                   </motion.div>
                 </div>
-
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1, y: [0, -5, 0] }}
-                  transition={{ scale: { delay: 0.55, type: 'spring' }, y: { delay: 1, duration: 4.2, repeat: Infinity, ease: 'easeInOut' } }}
-                  className="absolute top-3 left-3 bg-white rounded-2xl shadow-lg px-3 py-2 flex items-center gap-2"
-                >
-                  <FaRing size={14} className="text-rose-500" />
-                  <span className="text-xs font-semibold text-gray-700">Wedding</span>
-                </motion.div>
-
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1, y: [0, -5, 0] }}
-                  transition={{ scale: { delay: 0.7, type: 'spring' }, y: { delay: 1.2, duration: 4.4, repeat: Infinity, ease: 'easeInOut' } }}
-                  className="absolute bottom-5 right-2 bg-white rounded-2xl shadow-lg px-3 py-2 flex items-center gap-2"
-                >
-                  <RiCake2Line size={14} className="text-rose-500" />
-                  <span className="text-xs font-semibold text-gray-700">Birthday</span>
-                </motion.div>
-              </div>
-            </motion.div>
+              </motion.div>
+            </div>
 
             <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3, duration: 0.7 }}
               className="hidden lg:flex items-center justify-center relative">
@@ -259,7 +282,7 @@ export default function HomePage() {
       {categories.length > 0 && (
         <section className="pt-8 pb-10 bg-gray-50">
           <div className="page-container">
-            <div className="flex items-end justify-between mb-10">
+            <div className="flex flex-col items-center text-center sm:text-left sm:flex-row sm:items-end sm:justify-between mb-10 gap-3">
               <div>
                 <h2 className="section-title">Browse Categories</h2>
                 <p className="text-gray-400 text-sm mt-1">Explore our wide range of gift collections</p>
@@ -293,7 +316,7 @@ export default function HomePage() {
 
       <section className="py-10 bg-white">
         <div className="page-container">
-          <div className="flex items-end justify-between mb-10">
+          <div className="flex flex-col items-center text-center sm:text-left sm:flex-row sm:items-end sm:justify-between mb-10 gap-3">
             <div>
               <h2 className="section-title">Featured Gifts</h2>
               <p className="text-gray-400 text-sm mt-1">Handpicked bestsellers loved by our customers</p>
