@@ -6,15 +6,15 @@ import dotenv from 'dotenv';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import authRoutes from './routes/authRoutes.js';
-import categoryRoutes from './routes/categoryRoutes.js';
-import productRoutes from './routes/productRoutes.js';
-import orderRoutes from './routes/orderRoutes.js';
-import supplierRoutes from './routes/supplierRoutes.js';
-import rawMaterialRoutes from './routes/rawMaterialRoutes.js';
-import productionRoutes from './routes/productionRoutes.js';
-import { inventoryRouter, offlineSaleRouter, dashboardRouter, settingsRouter } from './routes/index.js';
-import errorHandler from './middlewares/errorHandler.js';
+import authRoutes from './src/routes/authRoutes.js';
+import categoryRoutes from './src/routes/categoryRoutes.js';
+import productRoutes from './src/routes/productRoutes.js';
+import orderRoutes from './src/routes/orderRoutes.js';
+import supplierRoutes from './src/routes/supplierRoutes.js';
+import rawMaterialRoutes from './src/routes/rawMaterialRoutes.js';
+import productionRoutes from './src/routes/productionRoutes.js';
+import { inventoryRouter, offlineSaleRouter, dashboardRouter, settingsRouter } from './src/routes/index.js';
+import errorHandler from './src/middlewares/errorHandler.js';
 
 dotenv.config();
 
@@ -30,7 +30,7 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use('/uploads', express.static(path.resolve(__dirname, '../uploads')));
+app.use('/uploads', express.static(path.resolve(__dirname, 'uploads')));
 if (process.env.NODE_ENV !== 'test') app.use(morgan('dev'));
 
 // Health check

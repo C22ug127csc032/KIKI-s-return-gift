@@ -5,9 +5,11 @@ import {
   FiShoppingCart, FiUser, FiMenu, FiX, FiLogOut,
   FiPackage, FiSettings, FiChevronDown, FiSearch
 } from 'react-icons/fi';
+import { RiHeart3Line, RiHeart3Fill } from 'react-icons/ri';
 import { RiGiftLine } from 'react-icons/ri';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useCart } from '../../context/CartContext.jsx';
+import { useWishlist } from '../../context/WishlistContext.jsx';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -17,6 +19,7 @@ export default function Navbar() {
   const [searchQ, setSearchQ] = useState('');
   const { user, logout, isAdmin } = useAuth();
   const { cartCount } = useCart();
+  const { items: wishlistItems } = useWishlist();
   const navigate = useNavigate();
   const searchRef = useRef(null);
 
@@ -41,6 +44,12 @@ export default function Navbar() {
     }
   };
 
+  const navLinks = [
+    { to: '/', label: 'Home', end: true },
+    { to: '/shop', label: 'Shop' },
+    ...(user ? [{ to: '/my-orders', label: 'My Orders' }] : []),
+  ];
+
   return (
     <>
       <header className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? 'bg-rose-600 shadow-[0_2px_20px_rgba(190,24,93,0.28)]' : 'bg-rose-600/95 backdrop-blur-sm border-b border-rose-500'}`}>
@@ -62,8 +71,8 @@ export default function Navbar() {
             </div>
 
             <nav className="hidden md:flex items-center gap-1">
-              {[{ to: '/', label: 'Home' }, { to: '/shop', label: 'Shop' }].map((l) => (
-                <NavLink key={l.to} to={l.to} end={l.to === '/'}
+              {navLinks.map((l) => (
+                <NavLink key={l.to} to={l.to} end={l.end}
                   className={({ isActive }) =>
                     `px-4 py-2 rounded-full text-sm font-medium transition-all ${isActive ? 'text-rose-700 bg-white shadow-sm' : 'text-white hover:bg-white/15 hover:text-white'}`
                   }>
@@ -77,6 +86,20 @@ export default function Navbar() {
                 className="p-2 sm:p-2.5 text-white hover:bg-white/15 rounded-full transition-all">
                 <FiSearch size={18} />
               </button>
+
+              {user ? (
+                <Link to="/wishlist" className="relative p-2 sm:p-2.5 text-white hover:bg-white/15 rounded-full transition-all">
+                  {wishlistItems.length > 0 ? <RiHeart3Fill size={18} /> : <RiHeart3Line size={18} />}
+                  <AnimatePresence>
+                    {wishlistItems.length > 0 && (
+                      <motion.span key="wishlist-badge" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                        className="absolute -top-0.5 -right-0.5 bg-white text-rose-700 text-[10px] min-w-[20px] h-5 rounded-full flex items-center justify-center font-bold leading-none px-1">
+                        {wishlistItems.length > 9 ? '9+' : wishlistItems.length}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </Link>
+              ) : null}
 
               <Link to="/cart" className="relative p-2 sm:p-2.5 text-white hover:bg-white/15 rounded-full transition-all">
                 <FiShoppingCart size={18} />
@@ -110,6 +133,7 @@ export default function Navbar() {
                         </div>
                         {[
                           { to: '/profile', icon: FiUser, label: 'Profile' },
+                          { to: '/wishlist', icon: wishlistItems.length > 0 ? RiHeart3Fill : RiHeart3Line, label: 'My Wishlist' },
                           { to: '/my-orders', icon: FiPackage, label: 'My Orders' },
                         ].map(({ to, icon: Icon, label }) => (
                           <Link key={to} to={to} onClick={() => setUserMenuOpen(false)}
@@ -192,11 +216,11 @@ export default function Navbar() {
                   </div>
                 ) : null}
 
-                {[{ to: '/', label: 'Home' }, { to: '/shop', label: 'Shop' }].map((l) => (
+                {navLinks.map((l) => (
                   <NavLink
                     key={l.to}
                     to={l.to}
-                    end={l.to === '/'}
+                    end={l.end}
                     onClick={() => setMenuOpen(false)}
                     className={({ isActive }) => `text-sm font-medium py-3 px-4 rounded-2xl ${isActive ? 'text-rose-700 bg-white' : 'text-white hover:bg-white/15'}`}
                   >
@@ -211,6 +235,13 @@ export default function Navbar() {
                       className="text-sm font-medium py-3 px-4 rounded-2xl text-white hover:bg-white/15 flex items-center gap-2.5"
                     >
                       <FiUser size={16} /> Profile
+                    </Link>
+                    <Link
+                      to="/wishlist"
+                      onClick={() => setMenuOpen(false)}
+                      className="text-sm font-medium py-3 px-4 rounded-2xl text-white hover:bg-white/15 flex items-center gap-2.5"
+                    >
+                      {wishlistItems.length > 0 ? <RiHeart3Fill size={16} /> : <RiHeart3Line size={16} />} My Wishlist
                     </Link>
                     <Link
                       to="/my-orders"

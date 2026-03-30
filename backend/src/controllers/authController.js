@@ -1,4 +1,5 @@
 import User from '../models/User.js';
+import Product from '../models/Product.js';
 import ApiError from '../utils/apiError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { sendResponse } from '../utils/apiResponse.js';
@@ -47,4 +48,47 @@ export const changePassword = asyncHandler(async (req, res) => {
   user.password = newPassword;
   await user.save();
   sendResponse(res, 200, 'Password changed successfully');
+});
+
+export const getWishlist = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id).populate({
+    path: 'wishlist',
+    match: { isActive: true },
+    populate: { path: 'category', select: 'name slug' },
+  });
+  sendResponse(res, 200, 'Wishlist fetched', user?.wishlist || []);
+});
+
+export const addToWishlist = asyncHandler(async (req, res) => {
+  const product = await Product.findById(req.params.productId);
+  if (!product || !product.isActive) throw new ApiError(404, 'Product not found');
+
+  const user = await User.findById(req.user._id);
+  const exists = user.wishlist.some((item) => item.toString() === product._id.toString());
+  if (!exists) {
+    user.wishlist.push(product._id);
+    await user.save();
+  }
+
+  const populatedUser = await User.findById(req.user._id).populate({
+    path: 'wishlist',
+    match: { isActive: true },
+    populate: { path: 'category', select: 'name slug' },
+  });
+
+  sendResponse(res, 200, 'Added to wishlist', populatedUser?.wishlist || []);
+});
+
+export const removeFromWishlist = asyncHandler(async (req, res) => {
+  const user = await User.findById(req.user._id);
+  user.wishlist = user.wishlist.filter((item) => item.toString() !== req.params.productId);
+  await user.save();
+
+  const populatedUser = await User.findById(req.user._id).populate({
+    path: 'wishlist',
+    match: { isActive: true },
+    populate: { path: 'category', select: 'name slug' },
+  });
+
+  sendResponse(res, 200, 'Removed from wishlist', populatedUser?.wishlist || []);
 });

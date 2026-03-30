@@ -56,12 +56,6 @@ const heroAmbientCards = [
   { title: 'Gift Ready', subtitle: 'Elegant packing', pos: 'bottom-20 left-0', delay: 0.35 },
 ];
 
-const heroSparkles = [
-  { icon: RiSparklingLine, pos: 'top-14 left-14', color: 'text-rose-200', delay: 0.1, size: 24 },
-  { icon: MdCelebration, pos: 'top-24 right-12', color: 'text-amber-200', delay: 0.3, size: 22 },
-  { icon: RiStarSmileLine, pos: 'bottom-14 right-14', color: 'text-rose-200', delay: 0.5, size: 22 },
-];
-
 const ctaIcons = [FaRing, RiGiftLine, FiSun, RiCake2Line, GiPartyPopper];
 
 export default function HomePage() {
@@ -154,18 +148,6 @@ export default function HomePage() {
                   >
                     <p className="text-xs font-bold uppercase tracking-[0.18em] text-rose-400">{title}</p>
                     <p className="mt-1 text-sm font-semibold text-gray-700">{subtitle}</p>
-                  </motion.div>
-                ))}
-
-                {heroSparkles.map(({ icon: Icon, pos, color, delay, size }) => (
-                  <motion.div
-                    key={pos}
-                    initial={{ opacity: 0, scale: 0.7 }}
-                    animate={{ opacity: [0.2, 0.7, 0.2], scale: [0.9, 1.12, 0.9], y: [0, -10, 0] }}
-                    transition={{ delay: delay + 0.8, duration: 4.8, repeat: Infinity, ease: 'easeInOut' }}
-                    className={`absolute ${pos} ${color}`}
-                  >
-                    <Icon size={size} />
                   </motion.div>
                 ))}
 

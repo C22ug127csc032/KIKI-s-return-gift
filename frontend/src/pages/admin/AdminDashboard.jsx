@@ -2,20 +2,25 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-import { FiShoppingBag, FiPackage, FiUsers, FiAlertTriangle, FiTrendingUp, FiDollarSign } from 'react-icons/fi';
+import { FiShoppingBag, FiPackage, FiUsers, FiAlertTriangle } from 'react-icons/fi';
+import { BiRupee } from 'react-icons/bi';
 import api from '../../api/api.js';
 import { Badge, PageLoader } from '../../components/ui/index.jsx';
 
 const StatCard = ({ icon: Icon, label, value, sub, color, delay }) => (
-  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay }}
-    className="admin-card flex items-start gap-4">
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay }}
+    className="admin-card flex items-start gap-4"
+  >
     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${color}`}>
       <Icon size={22} className="text-white" />
     </div>
     <div>
       <p className="text-2xl font-bold text-gray-900">{value}</p>
       <p className="text-sm font-medium text-gray-600">{label}</p>
-      {sub && <p className="text-xs text-gray-400 mt-0.5">{sub}</p>}
+      {sub ? <p className="text-xs text-gray-400 mt-0.5">{sub}</p> : null}
     </div>
   </motion.div>
 );
@@ -25,7 +30,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    document.title = 'Dashboard – Admin';
+    document.title = 'Dashboard - Admin';
     api.get('/dashboard/stats').then((r) => setStats(r.data.data)).finally(() => setLoading(false));
   }, []);
 
@@ -41,15 +46,13 @@ export default function AdminDashboard() {
         <p className="text-gray-500 text-sm mt-1">Welcome back! Here's what's happening at your store.</p>
       </div>
 
-      {/* Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <StatCard icon={FiPackage} label="Total Orders" value={overview.totalOrders} sub={`${overview.monthlyOrders} this month`} color="bg-brand-500" delay={0} />
-        <StatCard icon={FiDollarSign} label="Total Revenue" value={`₹${overview.totalRevenue?.toLocaleString('en-IN')}`} sub={`₹${overview.monthlyRevenue?.toLocaleString('en-IN')} this month`} color="bg-green-500" delay={0.05} />
+        <StatCard icon={BiRupee} label="Total Revenue" value={`₹${overview.totalRevenue?.toLocaleString('en-IN')}`} sub={`₹${overview.monthlyRevenue?.toLocaleString('en-IN')} this month`} color="bg-green-500" delay={0.05} />
         <StatCard icon={FiShoppingBag} label="Products" value={overview.totalProducts} sub={`${overview.lowStockProducts} low stock`} color="bg-brand-400" delay={0.1} />
         <StatCard icon={FiUsers} label="Customers" value={overview.totalUsers} sub={`${overview.offlineSalesCount} offline sales`} color="bg-blue-500" delay={0.15} />
       </div>
 
-      {/* Order Status Row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
         {[
           ['Pending', overview.pendingOrders, 'bg-yellow-50 border-yellow-200 text-yellow-700'],
@@ -65,9 +68,8 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-        {/* Revenue Chart */}
         <div className="lg:col-span-2 admin-card">
-          <h2 className="font-semibold text-gray-800 mb-5">Revenue – Last 7 Days</h2>
+          <h2 className="font-semibold text-gray-800 mb-5">Revenue - Last 7 Days</h2>
           <ResponsiveContainer width="100%" height={200}>
             <AreaChart data={revenueByDay}>
               <defs>
@@ -84,11 +86,10 @@ export default function AdminDashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Top Products */}
         <div className="admin-card">
           <h2 className="font-semibold text-gray-800 mb-5">Top Selling Products</h2>
           <div className="space-y-3">
-            {topProducts?.length === 0 && <p className="text-sm text-gray-400">No sales yet.</p>}
+            {topProducts?.length === 0 ? <p className="text-sm text-gray-400">No sales yet.</p> : null}
             {topProducts?.map((p, i) => (
               <div key={p._id} className="flex items-center gap-3">
                 <span className="w-6 h-6 bg-brand-100 text-brand-600 text-xs font-bold rounded-full flex items-center justify-center">{i + 1}</span>
@@ -102,7 +103,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recent Orders */}
       <div className="admin-card">
         <div className="flex items-center justify-between mb-5">
           <h2 className="font-semibold text-gray-800">Recent Orders</h2>
@@ -126,7 +126,7 @@ export default function AdminDashboard() {
                 {recentOrders?.map((o) => (
                   <tr key={o._id} className="hover:bg-gray-50 transition-colors">
                     <td className="py-3">
-                      <Link to={`/admin/orders`} className="text-brand-500 font-medium hover:underline">{o.orderNumber}</Link>
+                      <Link to="/admin/orders" className="text-brand-500 font-medium hover:underline">{o.orderNumber}</Link>
                     </td>
                     <td className="py-3 text-gray-700">{o.customerName}</td>
                     <td className="py-3 font-semibold text-gray-800">₹{o.totalAmount}</td>
@@ -140,10 +140,13 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* Low Stock Alert */}
-      {overview.lowStockProducts > 0 && (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
-          className="mt-6 bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3">
+      {overview.lowStockProducts > 0 ? (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="mt-6 bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-3"
+        >
           <FiAlertTriangle size={20} className="text-red-500 shrink-0" />
           <div className="flex-1">
             <p className="font-semibold text-red-800 text-sm">{overview.lowStockProducts} products have low stock!</p>
@@ -151,7 +154,7 @@ export default function AdminDashboard() {
           </div>
           <Link to="/admin/inventory" className="text-sm text-red-600 font-semibold hover:underline shrink-0">View →</Link>
         </motion.div>
-      )}
+      ) : null}
     </div>
   );
 }

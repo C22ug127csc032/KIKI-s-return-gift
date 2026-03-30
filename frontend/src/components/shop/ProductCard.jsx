@@ -2,15 +2,15 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiShoppingCart, FiStar, FiGift, FiBell } from 'react-icons/fi';
 import { RiHeartLine, RiHeartFill } from 'react-icons/ri';
-import { useState } from 'react';
 import { useCart } from '../../context/CartContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { useWishlist } from '../../context/WishlistContext.jsx';
 import { getDiscountPercentage, getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
 
 export default function ProductCard({ product, index = 0 }) {
   const { addItem } = useCart();
   const { user } = useAuth();
-  const [wished, setWished] = useState(false);
+  const { wishlistIds, toggleWishlist } = useWishlist();
   const navigate = useNavigate();
   const location = useLocation();
   const productPath = `/product/${product.slug || product._id}`;
@@ -21,6 +21,7 @@ export default function ProductCard({ product, index = 0 }) {
   const hasDiscount = discountPercentage > 0 && sellingPrice < mrpPrice;
   const isLowStock = product.stock <= product.lowStockThreshold && product.stock > 0;
   const isOutOfStock = product.stock === 0;
+  const wished = wishlistIds.has(product._id);
   const whatsapp = import.meta.env.VITE_WHATSAPP_NUMBER || '919876543210';
   const notifyHref = `https://wa.me/${whatsapp}?text=Hi! Please notify me when "${product.name}" is back in stock.`;
 
@@ -30,6 +31,22 @@ export default function ProductCard({ product, index = 0 }) {
       return;
     }
     addItem(product);
+  };
+
+  const handleWishlistToggle = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!user) {
+      navigate('/login', { state: { from: location } });
+      return;
+    }
+
+    try {
+      await toggleWishlist(product);
+    } catch {
+      // Toast is handled in the context.
+    }
   };
 
   return (
@@ -68,11 +85,9 @@ export default function ProductCard({ product, index = 0 }) {
         </div>
 
         <button
-          onClick={(e) => {
-            e.preventDefault();
-            setWished(!wished);
-          }}
-          className="absolute top-2.5 right-2.5 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all opacity-0 group-hover:opacity-100"
+          onClick={handleWishlistToggle}
+          className="absolute top-2.5 right-2.5 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-sm hover:shadow-md transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
+          aria-label={wished ? 'Remove from wishlist' : 'Add to wishlist'}
         >
           {wished ? <RiHeartFill size={16} className="text-rose-500" /> : <RiHeartLine size={16} className="text-gray-400" />}
         </button>

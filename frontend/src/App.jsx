@@ -1,6 +1,7 @@
 import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext.jsx';
 import { CartProvider } from './context/CartContext.jsx';
+import { WishlistProvider } from './context/WishlistContext.jsx';
 import PublicLayout from './components/layout/PublicLayout.jsx';
 import AdminLayout from './components/layout/AdminLayout.jsx';
 import ScrollToTop from './components/ScrollToTop.jsx';
@@ -22,6 +23,7 @@ import RegisterPage from './pages/auth/RegisterPage.jsx';
 // User pages
 import ProfilePage from './pages/user/ProfilePage.jsx';
 import MyOrdersPage from './pages/user/MyOrdersPage.jsx';
+import MyWishlistPage from './pages/user/MyWishlistPage.jsx';
 
 // Admin pages
 import AdminLoginPage from './pages/admin/AdminLoginPage.jsx';
@@ -34,47 +36,50 @@ import { AdminProductBom, AdminProduction, AdminRawMaterials, AdminSuppliers } f
 export default function App() {
   return (
     <AuthProvider>
-      <CartProvider>
-        <ScrollToTop />
-        <Routes>
-          {/* Public routes with layout */}
-          <Route element={<PublicLayout />}>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/shop" element={<ShopPage />} />
-            <Route path="/product/:slug" element={<ProductDetailPage />} />
-            <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
-            <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
-            <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
-            {/* Auth */}
-            <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
-            <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
-            {/* User */}
-            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-            <Route path="/my-orders" element={<ProtectedRoute><MyOrdersPage /></ProtectedRoute>} />
-          </Route>
+      <WishlistProvider>
+        <CartProvider>
+          <ScrollToTop />
+          <Routes>
+            {/* Public routes with layout */}
+            <Route element={<PublicLayout />}>
+              <Route path="/" element={<HomePage />} />
+              <Route path="/shop" element={<ShopPage />} />
+              <Route path="/product/:slug" element={<ProductDetailPage />} />
+              <Route path="/cart" element={<ProtectedRoute><CartPage /></ProtectedRoute>} />
+              <Route path="/checkout" element={<ProtectedRoute><CheckoutPage /></ProtectedRoute>} />
+              <Route path="/order-confirmation" element={<OrderConfirmationPage />} />
+              {/* Auth */}
+              <Route path="/login" element={<GuestRoute><LoginPage /></GuestRoute>} />
+              <Route path="/register" element={<GuestRoute><RegisterPage /></GuestRoute>} />
+              {/* User */}
+              <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+              <Route path="/my-orders" element={<ProtectedRoute><MyOrdersPage /></ProtectedRoute>} />
+              <Route path="/wishlist" element={<ProtectedRoute><MyWishlistPage /></ProtectedRoute>} />
+            </Route>
 
-          {/* Admin login - standalone */}
-          <Route path="/admin/login" element={<AdminLoginPage />} />
+            {/* Admin login - standalone */}
+            <Route path="/admin/login" element={<AdminLoginPage />} />
 
-          {/* Admin routes with sidebar layout */}
-          <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
-            <Route path="dashboard" element={<AdminDashboard />} />
-            <Route path="orders" element={<AdminOrders />} />
-            <Route path="products" element={<AdminProducts />} />
-            <Route path="categories" element={<AdminCategories />} />
-            <Route path="suppliers" element={<AdminSuppliers />} />
-            <Route path="raw-materials" element={<AdminRawMaterials />} />
-            <Route path="product-bom" element={<AdminProductBom />} />
-            <Route path="production" element={<AdminProduction />} />
-            <Route path="inventory" element={<AdminInventory />} />
-            <Route path="offline-sales" element={<AdminOfflineSales />} />
-            <Route path="settings" element={<AdminSettings />} />
-          </Route>
+            {/* Admin routes with sidebar layout */}
+            <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
+              <Route path="dashboard" element={<AdminDashboard />} />
+              <Route path="orders" element={<AdminOrders />} />
+              <Route path="products" element={<AdminProducts />} />
+              <Route path="categories" element={<AdminCategories />} />
+              <Route path="suppliers" element={<AdminSuppliers />} />
+              <Route path="raw-materials" element={<AdminRawMaterials />} />
+              <Route path="product-bom" element={<AdminProductBom />} />
+              <Route path="production" element={<AdminProduction />} />
+              <Route path="inventory" element={<AdminInventory />} />
+              <Route path="offline-sales" element={<AdminOfflineSales />} />
+              <Route path="settings" element={<AdminSettings />} />
+            </Route>
 
-          {/* 404 */}
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </CartProvider>
+            {/* 404 */}
+            <Route path="*" element={<NotFoundPage />} />
+          </Routes>
+        </CartProvider>
+      </WishlistProvider>
     </AuthProvider>
   );
 }
