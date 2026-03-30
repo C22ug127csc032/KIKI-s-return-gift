@@ -91,9 +91,9 @@ export default function Navbar() {
                 <div className="w-8 h-8 sm:w-9 sm:h-9 bg-white rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
                   <RiGiftLine size={18} className="text-rose-700 sm:w-5 sm:h-5" />
                 </div>
-                <div className="leading-none min-w-0 max-w-[84px] sm:max-w-none">
-                  <p className="font-display font-bold text-white text-xs sm:text-base tracking-tight">KIKI'S</p>
-                  <p className="text-[8px] sm:text-[9px] text-rose-100 uppercase tracking-[0.14em] sm:tracking-[0.22em] font-medium truncate">Return Gifts</p>
+                <div className="min-w-0 max-w-[108px] leading-none sm:max-w-none">
+                  <p className="font-display text-sm font-bold tracking-[0.01em] text-white sm:text-xl">KIKI'S</p>
+                  <p className="truncate text-[8px] font-semibold uppercase tracking-[0.18em] text-rose-100 sm:text-[10px] sm:tracking-[0.24em]">Return Gifts</p>
                 </div>
               </Link>
             </div>

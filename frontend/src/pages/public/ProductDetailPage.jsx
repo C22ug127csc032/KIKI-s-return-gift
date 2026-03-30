@@ -178,23 +178,23 @@ export default function ProductDetailPage() {
               </div>
             ) : null}
 
-            <div className="flex flex-col gap-2.5 mb-6 max-w-md">
+            <div className="mb-6 flex w-full max-w-md flex-col gap-3">
               {isOutOfStock ? (
                 <a
                   href={notifyHref}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 font-semibold py-3 rounded-xl transition-all bg-amber-50 text-amber-700 hover:bg-amber-100 border border-amber-200 text-sm"
+                  className="group flex min-h-[52px] items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-700 shadow-[0_10px_24px_rgba(251,191,36,0.12)] transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-100 hover:shadow-[0_14px_28px_rgba(251,191,36,0.18)]"
                 >
-                  <FiBell size={16} /> Notify Me When Available
+                  <FiBell size={16} className="transition-transform group-hover:scale-110" /> Notify Me When Available
                 </a>
               ) : (
                 <motion.button
                   whileTap={{ scale: 0.98 }}
                   onClick={handleAddToCart}
-                  className="btn-primary flex items-center justify-center gap-2 py-3 rounded-xl text-sm"
+                  className="group flex min-h-[54px] items-center justify-center gap-2 rounded-2xl bg-rose-600 px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(225,29,72,0.22)] transition-all hover:-translate-y-0.5 hover:bg-rose-700 hover:shadow-[0_18px_36px_rgba(225,29,72,0.28)]"
                 >
-                  <FiShoppingCart size={16} /> Add to Cart
+                  <FiShoppingCart size={17} className="transition-transform group-hover:-rotate-6 group-hover:scale-110" /> Add to Cart
                 </motion.button>
               )}
 
@@ -202,15 +202,15 @@ export default function ProductDetailPage() {
                 href={enquireHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white font-semibold py-3 rounded-xl transition-all text-sm shadow-sm"
+                className="group flex min-h-[54px] items-center justify-center gap-2 rounded-2xl bg-green-500 px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(34,197,94,0.2)] transition-all hover:-translate-y-0.5 hover:bg-green-600 hover:shadow-[0_18px_36px_rgba(34,197,94,0.26)]"
               >
-                <FaWhatsapp size={16} /> Enquire on WhatsApp
+                <FaWhatsapp size={17} className="transition-transform group-hover:scale-110" /> Enquire on WhatsApp
               </a>
             </div>
 
-            <div className="flex flex-wrap gap-3 px-4 py-3 bg-rose-50/50 rounded-xl border border-rose-100 max-w-md">
+            <div className="flex w-full max-w-md flex-wrap gap-2.5 rounded-2xl border border-rose-100 bg-rose-50/60 px-4 py-3.5">
               {guarantees.map(({ icon: Icon, label }) => (
-                <div key={label} className="flex items-center gap-1.5 text-xs text-gray-600 font-medium">
+                <div key={label} className="flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-medium text-gray-600 shadow-sm">
                   <Icon size={13} className="text-rose-500 flex-shrink-0" /> {label}
                 </div>
               ))}
