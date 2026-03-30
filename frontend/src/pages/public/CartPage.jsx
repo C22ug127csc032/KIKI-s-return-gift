@@ -55,15 +55,15 @@ export default function CartPage() {
                         )}
                       </div>
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-3">
-                        <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50">
+                        <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50 w-fit">
                           <button onClick={() => updateQuantity(item._id, item.quantity - 1)}
-                            className="px-3 py-1.5 hover:bg-rose-50 hover:text-rose-600 transition-colors text-gray-500">
-                            <FiMinus size={13} />
+                            className="px-2.5 sm:px-3 py-1.5 hover:bg-rose-50 hover:text-rose-600 transition-colors text-gray-500">
+                            <FiMinus size={12} />
                           </button>
-                          <span className="px-3 py-1.5 font-bold text-sm text-gray-800 border-x border-gray-200 min-w-[36px] text-center">{item.quantity}</span>
+                          <span className="px-2.5 sm:px-3 py-1.5 font-bold text-sm text-gray-800 border-x border-gray-200 min-w-[32px] sm:min-w-[36px] text-center">{item.quantity}</span>
                           <button onClick={() => updateQuantity(item._id, item.quantity + 1)}
-                            className="px-3 py-1.5 hover:bg-rose-50 hover:text-rose-600 transition-colors text-gray-500">
-                            <FiPlus size={13} />
+                            className="px-2.5 sm:px-3 py-1.5 hover:bg-rose-50 hover:text-rose-600 transition-colors text-gray-500">
+                            <FiPlus size={12} />
                           </button>
                         </div>
                         <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">

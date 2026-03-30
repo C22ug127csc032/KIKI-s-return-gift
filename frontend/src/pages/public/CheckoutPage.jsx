@@ -189,7 +189,7 @@ export default function CheckoutPage() {
                     const hasDiscount = Number(item.originalPrice || 0) > Number(item.price || 0);
 
                     return (
-                    <div key={item._id} className="flex items-center gap-3">
+                    <div key={item._id} className="flex items-start gap-3">
                       <div className="w-12 h-12 rounded-xl bg-gray-50 border border-gray-100 overflow-hidden flex-shrink-0">
                         {item.images?.[0]?.url ? (
                           <img src={item.images[0].url} alt={item.name} className="w-full h-full object-contain p-1" />
@@ -200,16 +200,21 @@ export default function CheckoutPage() {
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-semibold text-gray-700 line-clamp-1">{item.name}</p>
-                        <div className="text-xs text-gray-400">
+                        <p className="text-xs font-semibold text-gray-700 line-clamp-2 leading-snug pr-2">{item.name}</p>
+                        <div className="text-xs text-gray-400 mt-0.5">
                           <span>x{item.quantity}</span>
                           <span className="ml-1.5 font-semibold text-gray-700">Rs.{Number(item.price).toFixed(2)}</span>
                           {hasDiscount ? (
                             <span className="ml-1.5 line-through">Rs.{Number(item.originalPrice).toFixed(2)}</span>
                           ) : null}
                         </div>
+                        <p className="text-sm font-bold text-gray-800 mt-1 sm:hidden">
+                          Rs.{(item.price * item.quantity).toFixed(2)}
+                        </p>
                       </div>
-                      <p className="text-xs font-bold text-gray-800 flex-shrink-0">Rs.{(item.price * item.quantity).toFixed(2)}</p>
+                      <p className="hidden sm:block text-xs font-bold text-gray-800 flex-shrink-0 pt-0.5">
+                        Rs.{(item.price * item.quantity).toFixed(2)}
+                      </p>
                     </div>
                   )})}
                 </div>

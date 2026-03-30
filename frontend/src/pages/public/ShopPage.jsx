@@ -327,10 +327,19 @@ export default function ShopPage() {
               className="absolute left-0 top-0 bottom-0 w-[86vw] max-w-80 bg-white shadow-2xl flex flex-col"
             >
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <h3 className="font-bold text-gray-800 flex items-center gap-2">
-                  <FiSliders size={16} className="text-rose-600" /> Filters
-                </h3>
+                <div className="flex items-center gap-2">
+                  <FiSliders size={16} className="text-rose-600" />
+                  <h3 className="font-bold text-gray-800">Filters</h3>
+                  {activeCount > 0 ? (
+                    <span className="bg-rose-600 text-white text-[10px] w-5 h-5 rounded-full flex items-center justify-center font-bold">{activeCount}</span>
+                  ) : null}
+                </div>
+                <div className="flex items-center gap-2">
+                  {hasActive ? (
+                    <button onClick={clearFilters} className="text-xs text-rose-500 hover:text-rose-700 font-semibold">Clear</button>
+                  ) : null}
                 <button onClick={() => setFilterOpen(false)} className="p-1.5 rounded-lg hover:bg-gray-100"><FiX size={18} /></button>
+                </div>
               </div>
               <div className="flex-1 overflow-y-auto p-5">
                 <FilterPanel

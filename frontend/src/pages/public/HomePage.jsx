@@ -124,6 +124,56 @@ export default function HomePage() {
               </motion.div>
             </div>
 
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 0.6 }}
+              className="lg:hidden relative flex items-center justify-center"
+            >
+              <div className="relative w-full max-w-[18rem] aspect-square">
+                <motion.div
+                  animate={{ scale: [1, 1.04, 1], opacity: [0.25, 0.4, 0.25] }}
+                  transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+                  className="absolute inset-6 rounded-full border border-rose-100/80"
+                />
+                <motion.div
+                  animate={{ scale: [1.03, 1, 1.03], opacity: [0.18, 0.3, 0.18] }}
+                  transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut', delay: 0.4 }}
+                  className="absolute inset-0 rounded-full border border-amber-100/80"
+                />
+
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <motion.div
+                    animate={{ y: [0, -8, 0], rotate: [0, 2, 0] }}
+                    transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut' }}
+                    className="w-36 h-36 bg-gradient-to-br from-rose-500 to-rose-700 rounded-full flex items-center justify-center shadow-xl shadow-rose-200"
+                  >
+                    <RiGiftLine size={48} className="text-white" />
+                  </motion.div>
+                </div>
+
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1, y: [0, -5, 0] }}
+                  transition={{ scale: { delay: 0.55, type: 'spring' }, y: { delay: 1, duration: 4.2, repeat: Infinity, ease: 'easeInOut' } }}
+                  className="absolute top-3 left-3 bg-white rounded-2xl shadow-lg px-3 py-2 flex items-center gap-2"
+                >
+                  <FaRing size={14} className="text-rose-500" />
+                  <span className="text-xs font-semibold text-gray-700">Wedding</span>
+                </motion.div>
+
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1, y: [0, -5, 0] }}
+                  transition={{ scale: { delay: 0.7, type: 'spring' }, y: { delay: 1.2, duration: 4.4, repeat: Infinity, ease: 'easeInOut' } }}
+                  className="absolute bottom-5 right-2 bg-white rounded-2xl shadow-lg px-3 py-2 flex items-center gap-2"
+                >
+                  <RiCake2Line size={14} className="text-rose-500" />
+                  <span className="text-xs font-semibold text-gray-700">Birthday</span>
+                </motion.div>
+              </div>
+            </motion.div>
+
             <motion.div initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3, duration: 0.7 }}
               className="hidden lg:flex items-center justify-center relative">
               <div className="relative w-full max-w-[28rem] aspect-square">
