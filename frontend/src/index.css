@@ -80,8 +80,39 @@
 .animate-marquee { animation: marquee 25s linear infinite; }
 .animate-marquee:hover { animation-play-state: paused; }
 
+@keyframes heroRainFloat {
+  0% {
+    transform: translate3d(0, -18%, 0) scale(0.88) rotate(0deg);
+    opacity: 0;
+  }
+  8% {
+    opacity: 0.98;
+  }
+  78% {
+    opacity: 0.94;
+  }
+  100% {
+    transform: translate3d(var(--drift, 0px), 100vh, 0) scale(1.08) rotate(18deg);
+    opacity: 0;
+  }
+}
+
+.hero-rain-item {
+  animation: heroRainFloat var(--duration, 12s) linear infinite;
+  animation-delay: var(--delay, 0s);
+  filter: drop-shadow(0 12px 28px rgba(244, 114, 182, 0.28));
+  will-change: transform, opacity;
+}
+
 .product-img-wrap { overflow: hidden; }
 .product-img-wrap img {
   transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 .product-img-wrap:hover img { transform: scale(1.06); }
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-rain-item {
+    animation: none;
+    opacity: 0.2;
+  }
+}

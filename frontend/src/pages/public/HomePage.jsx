@@ -6,7 +6,7 @@ import {
   FiSun, FiCheckCircle, FiHome, FiBriefcase
 } from 'react-icons/fi';
 import { RiGiftLine, RiSparklingLine, RiStarSmileLine, RiCake2Line } from 'react-icons/ri';
-import { FaWhatsapp, FaRing, FaBaby } from 'react-icons/fa';
+import { FaWhatsapp, FaRing, FaBaby, FaHeart } from 'react-icons/fa';
 import { GiPartyPopper } from 'react-icons/gi';
 import { PiHandsPrayingLight } from 'react-icons/pi';
 import { MdCelebration, MdLocalShipping } from 'react-icons/md';
@@ -58,6 +58,18 @@ const heroAmbientCards = [
 
 const ctaIcons = [FaRing, RiGiftLine, FiSun, RiCake2Line, GiPartyPopper];
 
+const heroRainItems = [
+  { Icon: FaHeart, left: '5%', size: 18, delay: '0s', duration: '6.4s', drift: '-18px', color: 'text-rose-500' },
+  { Icon: RiSparklingLine, left: '14%', size: 20, delay: '0.9s', duration: '5.5s', drift: '24px', color: 'text-amber-500' },
+  { Icon: FaHeart, left: '24%', size: 16, delay: '1.7s', duration: '5.9s', drift: '18px', color: 'text-pink-500' },
+  { Icon: MdCelebration, left: '35%', size: 18, delay: '1.1s', duration: '6.8s', drift: '-20px', color: 'text-rose-400' },
+  { Icon: RiSparklingLine, left: '48%', size: 22, delay: '0.4s', duration: '5.8s', drift: '16px', color: 'text-amber-500' },
+  { Icon: FaHeart, left: '61%', size: 17, delay: '2.2s', duration: '6.1s', drift: '-16px', color: 'text-rose-500' },
+  { Icon: RiSparklingLine, left: '72%', size: 18, delay: '0.7s', duration: '5.7s', drift: '22px', color: 'text-fuchsia-400' },
+  { Icon: FaHeart, left: '82%', size: 19, delay: '1.5s', duration: '6.6s', drift: '-22px', color: 'text-pink-500' },
+  { Icon: RiSparklingLine, left: '91%', size: 17, delay: '2.4s', duration: '5.6s', drift: '14px', color: 'text-amber-500' },
+];
+
 export default function HomePage() {
   const [featured, setFeatured] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -79,6 +91,18 @@ export default function HomePage() {
       <section className="relative bg-gradient-to-br from-rose-50 via-white to-amber-50 overflow-hidden">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-gradient-to-bl from-rose-100/60 to-transparent rounded-full -translate-y-1/3 translate-x-1/4 pointer-events-none" />
         <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-amber-100/50 to-transparent rounded-full translate-y-1/3 -translate-x-1/4 pointer-events-none" />
+        <div className="pointer-events-none fixed inset-x-0 top-0 z-[5] h-screen overflow-hidden">
+          {heroRainItems.map(({ Icon, left, size, delay, duration, drift, color }, index) => (
+            <span
+              key={`${left}-${index}`}
+              className={`hero-rain-item absolute -top-12 flex h-9 w-9 items-center justify-center rounded-full bg-white/70 shadow-[0_10px_24px_rgba(244,114,182,0.18)] ring-1 ring-white/80 backdrop-blur-[2px] sm:h-10 sm:w-10 ${color}`}
+              style={{ left, ['--delay']: delay, ['--duration']: duration, ['--drift']: drift }}
+              aria-hidden="true"
+            >
+              <Icon size={size} />
+            </span>
+          ))}
+        </div>
 
         <div className="page-container relative z-10">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center min-h-[74vh] pt-3 pb-10">
