@@ -4,6 +4,7 @@ import { FiAlertTriangle, FiBox, FiDownload, FiFileText, FiPlus, FiSearch, FiTag
 import api from '../../api/api.js';
 import { EmptyState, Modal, PageLoader, Pagination } from '../../components/ui/index.jsx';
 import { getSellingPrice } from '../../utils/pricing.js';
+import { isValidEmail, isValidPhone, normalizePhone } from '../../utils/validation.js';
 
 const sortItems = (items, sortBy, accessors) => {
   const [field, direction] = sortBy.split('-');
@@ -490,6 +491,10 @@ export function AdminOfflineSales() {
   };
 
   const handleCreate = async () => {
+    if (form.phone && !isValidPhone(form.phone)) {
+      toast.error('Phone number must be exactly 10 digits');
+      return;
+    }
     setSaving(true);
     try {
       const items = cartItems.filter((item) => item.productId).map((item) => ({ product: item.productId, quantity: Number(item.quantity) }));
@@ -593,7 +598,7 @@ export function AdminOfflineSales() {
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div><label className="mb-1.5 block text-sm font-medium">Customer Name *</label><input value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} className="input-field" /></div>
-            <div><label className="mb-1.5 block text-sm font-medium">Phone</label><input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="input-field" /></div>
+            <div><label className="mb-1.5 block text-sm font-medium">Phone</label><input value={form.phone} onChange={(e) => setForm({ ...form, phone: normalizePhone(e.target.value) })} className="input-field" /></div>
             <div className="col-span-2"><label className="mb-1.5 block text-sm font-medium">Address</label><input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="input-field" /></div>
           </div>
 
@@ -638,6 +643,14 @@ export function AdminSettings() {
 
   const handleSave = async (e) => {
     e.preventDefault();
+    if (form.supportPhone && !isValidPhone(form.supportPhone)) {
+      toast.error('Support phone number must be exactly 10 digits');
+      return;
+    }
+    if (form.supportEmail && !isValidEmail(form.supportEmail)) {
+      toast.error('Enter a valid support email address');
+      return;
+    }
     setSaving(true);
     try {
       const fd = new FormData();
@@ -647,8 +660,8 @@ export function AdminSettings() {
       if (qrFile) fd.append('qrImage', qrFile);
       await api.put('/settings', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
       toast.success('Settings saved!');
-    } catch {
-      toast.error('Failed to save settings');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to save settings');
     } finally {
       setSaving(false);
     }

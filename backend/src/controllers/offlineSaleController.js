@@ -8,9 +8,12 @@ import { sendResponse, sendPaginatedResponse } from '../utils/apiResponse.js';
 import { getPagination } from '../utils/pagination.js';
 import { generateInvoiceNumber } from '../utils/generators.js';
 import { getProductSellingPrice } from '../utils/pricing.js';
+import { isValidPhone, normalizePhone } from '../utils/validation.js';
 
 export const createOfflineSale = asyncHandler(async (req, res) => {
-  const { customerName, phone, address, items, notes } = req.body;
+  const { customerName, address, items, notes } = req.body;
+  const phone = normalizePhone(req.body.phone);
+  if (phone && !isValidPhone(phone)) throw new ApiError(400, 'Phone number must be exactly 10 digits');
   const settings = await AppSetting.findOne();
   const taxRate = settings?.gstPercentage || 0;
 

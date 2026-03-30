@@ -1,9 +1,16 @@
 import mongoose from 'mongoose';
+import { PHONE_REGEX } from '../utils/validation.js';
 
 const offlineSaleSchema = new mongoose.Schema(
   {
     customerName: { type: String, required: true },
-    phone: { type: String },
+    phone: {
+      type: String,
+      validate: {
+        validator: (value) => !value || PHONE_REGEX.test(value),
+        message: 'Phone number must be exactly 10 digits',
+      },
+    },
     address: { type: String },
     items: [
       {

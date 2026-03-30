@@ -4,9 +4,14 @@ import ApiError from '../utils/apiError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { sendResponse } from '../utils/apiResponse.js';
 import { generateToken } from '../middlewares/auth.js';
+import { isValidEmail, isValidPhone, normalizeEmail, normalizePhone } from '../utils/validation.js';
 
 export const register = asyncHandler(async (req, res) => {
-  const { name, email, password, phone } = req.body;
+  const { name, password } = req.body;
+  const email = normalizeEmail(req.body.email);
+  const phone = normalizePhone(req.body.phone);
+  if (!isValidEmail(email)) throw new ApiError(400, 'Enter a valid email address');
+  if (phone && !isValidPhone(phone)) throw new ApiError(400, 'Phone number must be exactly 10 digits');
   const exists = await User.findOne({ email });
   if (exists) throw new ApiError(400, 'Email already registered');
   const user = await User.create({ name, email, password, phone });
@@ -15,7 +20,8 @@ export const register = asyncHandler(async (req, res) => {
 });
 
 export const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { password } = req.body;
+  const email = normalizeEmail(req.body.email);
   const user = await User.findOne({ email });
   if (!user || !(await user.comparePassword(password))) {
     throw new ApiError(401, 'Invalid email or password');
@@ -30,7 +36,9 @@ export const getMe = asyncHandler(async (req, res) => {
 });
 
 export const updateProfile = asyncHandler(async (req, res) => {
-  const { name, phone, addresses } = req.body;
+  const { name, addresses } = req.body;
+  const phone = normalizePhone(req.body.phone);
+  if (phone && !isValidPhone(phone)) throw new ApiError(400, 'Phone number must be exactly 10 digits');
   const user = await User.findByIdAndUpdate(
     req.user._id,
     { name, phone, ...(addresses && { addresses }) },

@@ -2,6 +2,25 @@ import Supplier from '../models/Supplier.js';
 import ApiError from '../utils/apiError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { sendResponse } from '../utils/apiResponse.js';
+import { isValidEmail, isValidPhone, normalizeEmail, normalizePhone } from '../utils/validation.js';
+
+const validateSupplierPayload = (payload) => {
+  if (payload.phone !== undefined) {
+    payload.phone = normalizePhone(payload.phone);
+    if (payload.phone && !isValidPhone(payload.phone)) {
+      throw new ApiError(400, 'Phone number must be exactly 10 digits');
+    }
+  }
+
+  if (payload.email !== undefined) {
+    payload.email = normalizeEmail(payload.email);
+    if (payload.email && !isValidEmail(payload.email)) {
+      throw new ApiError(400, 'Enter a valid email address');
+    }
+  }
+
+  return payload;
+};
 
 export const getSuppliers = asyncHandler(async (req, res) => {
   const filter = {};
@@ -18,12 +37,12 @@ export const getSuppliers = asyncHandler(async (req, res) => {
 });
 
 export const createSupplier = asyncHandler(async (req, res) => {
-  const supplier = await Supplier.create(req.body);
+  const supplier = await Supplier.create(validateSupplierPayload({ ...req.body }));
   sendResponse(res, 201, 'Supplier created', supplier);
 });
 
 export const updateSupplier = asyncHandler(async (req, res) => {
-  const supplier = await Supplier.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
+  const supplier = await Supplier.findByIdAndUpdate(req.params.id, validateSupplierPayload({ ...req.body }), { new: true, runValidators: true });
   if (!supplier) throw new ApiError(404, 'Supplier not found');
   sendResponse(res, 200, 'Supplier updated', supplier);
 });

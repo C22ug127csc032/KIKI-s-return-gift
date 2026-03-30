@@ -8,6 +8,7 @@ import { sendResponse, sendPaginatedResponse } from '../utils/apiResponse.js';
 import { getPagination, buildSortQuery } from '../utils/pagination.js';
 import { generateOrderNumber, generateInvoiceNumber } from '../utils/generators.js';
 import { getProductMrp, getProductSellingPrice } from '../utils/pricing.js';
+import { isValidEmail, isValidPhone, normalizeEmail, normalizePhone } from '../utils/validation.js';
 
 const buildWhatsAppMessage = (order, settings) => {
   const itemsText = order.items
@@ -46,7 +47,11 @@ const buildPaymentInfo = (settings) => ({
 });
 
 export const createOrder = asyncHandler(async (req, res) => {
-  const { customerName, customerEmail, customerPhone, customerAddress, items, customerNotes } = req.body;
+  const { customerName, customerAddress, items, customerNotes } = req.body;
+  const customerEmail = normalizeEmail(req.body.customerEmail);
+  const customerPhone = normalizePhone(req.body.customerPhone);
+  if (!isValidPhone(customerPhone)) throw new ApiError(400, 'Phone number must be exactly 10 digits');
+  if (customerEmail && !isValidEmail(customerEmail)) throw new ApiError(400, 'Enter a valid email address');
 
   const orderItems = [];
   let subtotal = 0;

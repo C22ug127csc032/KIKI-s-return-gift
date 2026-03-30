@@ -14,6 +14,7 @@ import {
 } from 'react-icons/fi';
 import api from '../../api/api.js';
 import { EmptyState, Modal, PageLoader, Pagination } from '../../components/ui/index.jsx';
+import { isValidEmail, isValidPhone, normalizePhone } from '../../utils/validation.js';
 
 const supplierFormDefaults = {
   name: '',
@@ -251,6 +252,14 @@ export function AdminSuppliers() {
   };
 
   const handleSave = async () => {
+    if (form.phone && !isValidPhone(form.phone)) {
+      toast.error('Phone number must be exactly 10 digits');
+      return;
+    }
+    if (form.email && !isValidEmail(form.email)) {
+      toast.error('Enter a valid email address');
+      return;
+    }
     setSaving(true);
     try {
       if (editSupplier) await api.put(`/suppliers/${editSupplier._id}`, form);
@@ -325,7 +334,7 @@ export function AdminSuppliers() {
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
           <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Supplier Name *" className="input-field" />
-          <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Mobile Number *" className="input-field" />
+          <input value={form.phone} onChange={(e) => setForm({ ...form, phone: normalizePhone(e.target.value) })} placeholder="Mobile Number *" className="input-field" />
           <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email" className="input-field" />
           <input value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} placeholder="Contact Person" className="input-field" />
           <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Address" className="input-field xl:col-span-2" />

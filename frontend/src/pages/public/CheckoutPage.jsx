@@ -7,6 +7,7 @@ import { useCart } from '../../context/CartContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import api from '../../api/api.js';
 import toast from 'react-hot-toast';
+import { isValidPhone, normalizePhone } from '../../utils/validation.js';
 
 function InputWrap({ icon: Icon, label, required, children }) {
   return (
@@ -53,13 +54,17 @@ export default function CheckoutPage() {
       toast.error('Please fill all required fields');
       return;
     }
+    if (!isValidPhone(form.phone)) {
+      toast.error('Phone number must be exactly 10 digits');
+      return;
+    }
 
     setSubmitting(true);
     try {
       const payload = {
         customerName: form.name,
         customerEmail: user?.email || '',
-        customerPhone: form.phone,
+        customerPhone: normalizePhone(form.phone),
         customerAddress: `${form.address}, ${form.city}, ${form.state || ''} - ${form.pincode}`.replace(',  -', ' -').replace(/\s+,/g, ','),
         customerNotes: form.notes,
         items: items.map((item) => ({
@@ -115,7 +120,7 @@ export default function CheckoutPage() {
                   <InputWrap icon={FiPhone} label="Phone Number" required>
                     <input
                       value={form.phone}
-                      onChange={(e) => updateField('phone', e.target.value)}
+                      onChange={(e) => updateField('phone', normalizePhone(e.target.value))}
                       className="input-field pl-9"
                       placeholder="+91 XXXXXXXXXX"
                       required

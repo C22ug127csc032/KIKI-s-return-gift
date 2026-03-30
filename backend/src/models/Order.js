@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { EMAIL_REGEX, PHONE_REGEX } from '../utils/validation.js';
 
 const orderItemSchema = new mongoose.Schema({
   product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product', required: true },
@@ -14,8 +15,21 @@ const orderSchema = new mongoose.Schema(
     orderNumber: { type: String, unique: true, required: true },
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
     customerName: { type: String, required: true },
-    customerEmail: { type: String },
-    customerPhone: { type: String, required: true },
+    customerEmail: {
+      type: String,
+      validate: {
+        validator: (value) => !value || EMAIL_REGEX.test(value),
+        message: 'Enter a valid email address',
+      },
+    },
+    customerPhone: {
+      type: String,
+      required: true,
+      validate: {
+        validator: (value) => PHONE_REGEX.test(value),
+        message: 'Phone number must be exactly 10 digits',
+      },
+    },
     customerAddress: { type: String, required: true },
     items: [orderItemSchema],
     subtotal: { type: Number, required: true },

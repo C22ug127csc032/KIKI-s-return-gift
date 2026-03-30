@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { FiUser, FiMail, FiLock, FiPhone, FiEye, FiEyeOff } from 'react-icons/fi';
 import { RiGiftLine } from 'react-icons/ri';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { isValidEmail, isValidPhone, normalizePhone } from '../../utils/validation.js';
 
 export default function RegisterPage() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirm: '' });
@@ -18,8 +19,10 @@ export default function RegisterPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isValidEmail(form.email)) { alert('Enter a valid email address'); return; }
+    if (form.phone && !isValidPhone(form.phone)) { alert('Phone number must be exactly 10 digits'); return; }
     if (form.password !== form.confirm) { alert('Passwords do not match'); return; }
-    const result = await register(form.name, form.email, form.password, form.phone);
+    const result = await register(form.name, form.email.trim().toLowerCase(), form.password, normalizePhone(form.phone));
     if (result.success) navigate('/');
   };
 
@@ -47,7 +50,7 @@ export default function RegisterPage() {
               <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">{label}</label>
               <div className="relative">
                 <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300" size={15} />
-                <input type={type} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                <input type={type} value={form[key]} onChange={(e) => setForm({ ...form, [key]: key === 'phone' ? normalizePhone(e.target.value) : e.target.value })}
                   placeholder={placeholder} className="input-field pl-10" required={key !== 'phone'} />
               </div>
             </div>

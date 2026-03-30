@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { FiUser, FiPhone, FiMail, FiSave, FiLock, FiShield } from 'react-icons/fi';
 import api from '../../api/api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
+import { isValidPhone, normalizePhone } from '../../utils/validation.js';
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth();
@@ -16,6 +17,10 @@ export default function ProfilePage() {
 
   const saveProfile = async (e) => {
     e.preventDefault();
+    if (form.phone && !isValidPhone(form.phone)) {
+      toast.error('Phone number must be exactly 10 digits');
+      return;
+    }
     setSaving(true);
     try {
       const { data } = await api.put('/auth/profile', form);
@@ -70,7 +75,7 @@ export default function ProfilePage() {
                 <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">{label}</label>
                 <div className="relative">
                   <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300" size={14} />
-                  <input type={type} value={form[key]} onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+                  <input type={type} value={form[key]} onChange={(e) => setForm({ ...form, [key]: key === 'phone' ? normalizePhone(e.target.value) : e.target.value })}
                     className="input-field pl-9" required={key === 'name'} />
                 </div>
               </div>
