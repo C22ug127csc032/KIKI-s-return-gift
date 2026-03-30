@@ -22,6 +22,7 @@ export default function Navbar() {
   const { items: wishlistItems } = useWishlist();
   const navigate = useNavigate();
   const searchRef = useRef(null);
+  const userMenuRef = useRef(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
@@ -41,6 +42,24 @@ export default function Navbar() {
       document.body.style.overflow = previousOverflow;
     };
   }, [menuOpen, searchOpen]);
+
+  useEffect(() => {
+    if (!userMenuOpen) return;
+
+    const handlePointerDown = (event) => {
+      if (!userMenuRef.current?.contains(event.target)) {
+        setUserMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handlePointerDown);
+    document.addEventListener('touchstart', handlePointerDown);
+
+    return () => {
+      document.removeEventListener('mousedown', handlePointerDown);
+      document.removeEventListener('touchstart', handlePointerDown);
+    };
+  }, [userMenuOpen]);
 
   const handleLogout = () => { logout(); setUserMenuOpen(false); navigate('/'); };
 
@@ -123,7 +142,7 @@ export default function Navbar() {
               </Link>
 
               {user ? (
-                <div className="relative">
+                <div ref={userMenuRef} className="relative">
                   <button onClick={() => setUserMenuOpen(!userMenuOpen)}
                     className="flex items-center gap-1 sm:gap-2 pl-1 sm:pl-2 pr-1.5 sm:pr-3 py-1.5 rounded-full hover:bg-white/15 transition-all border border-transparent hover:border-white/20 max-w-[46px] sm:max-w-none">
                     <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center border border-white/15 flex-shrink-0">
