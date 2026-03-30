@@ -30,7 +30,7 @@ export function AdminCategories() {
   const [form, setForm] = useState({ name: '', description: '' });
   const [image, setImage] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [listFilters, setListFilters] = useState({ search: '', status: '', sortBy: 'name-asc', page: 1, pageSize: 5 });
+  const [listFilters, setListFilters] = useState({ search: '', status: '', sortBy: 'name-asc', page: 1, pageSize: 10 });
 
   useEffect(() => {
     document.title = 'Categories - Admin';
@@ -212,7 +212,7 @@ export function AdminCategories() {
               <option value="status-desc">Status Z-A</option>
             </select>
             <select value={listFilters.pageSize} onChange={(e) => setListFilters({ ...listFilters, pageSize: Number(e.target.value), page: 1 })} className="input-field h-11 w-full max-w-[130px] py-2 text-sm">
-              {[5, 10, 20].map((size) => <option key={size} value={size}>{size} / page</option>)}
+              {[10, 20, 50].map((size) => <option key={size} value={size}>{size} / page</option>)}
             </select>
           </div>
           <div className="overflow-x-auto">
@@ -468,7 +468,7 @@ export function AdminOfflineSales() {
   const [form, setForm] = useState({ customerName: '', phone: '', address: '', notes: '' });
   const [cartItems, setCartItems] = useState([{ productId: '', quantity: 1 }]);
   const [saving, setSaving] = useState(false);
-  const [listFilters, setListFilters] = useState({ search: '', sortBy: 'date-desc', page: 1, pageSize: 5 });
+  const [listFilters, setListFilters] = useState({ search: '', sortBy: 'date-desc', page: 1, pageSize: 10 });
 
   useEffect(() => {
     document.title = 'Offline Sales - Admin';
@@ -559,7 +559,7 @@ export function AdminOfflineSales() {
               <option value="customer-asc">Customer A-Z</option>
             </select>
             <select value={listFilters.pageSize} onChange={(e) => setListFilters({ ...listFilters, pageSize: Number(e.target.value), page: 1 })} className="input-field h-11 w-full max-w-[130px] py-2 text-sm">
-              {[5, 10, 20].map((size) => <option key={size} value={size}>{size} / page</option>)}
+              {[10, 20, 50].map((size) => <option key={size} value={size}>{size} / page</option>)}
             </select>
           </div>
           <div className="overflow-x-auto">

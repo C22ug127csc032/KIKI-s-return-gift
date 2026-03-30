@@ -1,7 +1,8 @@
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
 import {
   FiBox,
+  FiChevronDown,
   FiLayers,
   FiPackage,
   FiSearch,
@@ -9,6 +10,7 @@ import {
   FiTool,
   FiTrash2,
   FiTruck,
+  FiX,
 } from 'react-icons/fi';
 import api from '../../api/api.js';
 import { EmptyState, Modal, PageLoader, Pagination } from '../../components/ui/index.jsx';
@@ -59,61 +61,38 @@ const sortItems = (items, sortBy, accessors) => {
   });
 };
 
-function SearchableSupplierField({ suppliers, value, onChange, placeholder = 'Search supplier by name or phone' }) {
-  const listId = useId();
-  const getOptionLabel = (supplier) => `${supplier.name}${supplier.phone ? ` - ${supplier.phone}` : ''}`;
+function SearchableSelectField({ options, value, onChange, placeholder = 'Search option', disabled = false }) {
+  const fieldRef = useRef(null);
   const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
-    const selectedSupplier = suppliers.find((supplier) => supplier._id === value);
-    setQuery(selectedSupplier ? getOptionLabel(selectedSupplier) : '');
-  }, [suppliers, value]);
-
-  const handleChange = (event) => {
-    const nextQuery = event.target.value;
-    setQuery(nextQuery);
-
-    const exactMatch = suppliers.find((supplier) => getOptionLabel(supplier) === nextQuery);
-    if (exactMatch) {
-      onChange(exactMatch._id);
+    if (!value) {
+      setQuery('');
       return;
     }
-
-    if (!nextQuery.trim()) {
-      onChange('');
-    }
-  };
-
-  return (
-    <div>
-      <input
-        list={listId}
-        value={query}
-        onChange={handleChange}
-        placeholder={placeholder}
-        className="input-field"
-      />
-      <datalist id={listId}>
-        {suppliers.map((supplier) => (
-          <option key={supplier._id} value={getOptionLabel(supplier)} />
-        ))}
-      </datalist>
-    </div>
-  );
-}
-
-function SearchableOptionField({ options, value, onChange, placeholder = 'Search option' }) {
-  const listId = useId();
-  const [query, setQuery] = useState('');
+    const selectedOption = options.find((option) => option.value === value);
+    if (selectedOption) setQuery(selectedOption.label);
+  }, [value, options.length]);
 
   useEffect(() => {
-    const selectedOption = options.find((option) => option.value === value);
-    setQuery(selectedOption ? selectedOption.label : '');
-  }, [options, value]);
+    const handleOutsideClick = (event) => {
+      if (!fieldRef.current?.contains(event.target)) setOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const filteredOptions = options.filter((option) =>
+    option.label.toLowerCase().includes(query.toLowerCase())
+  );
 
   const handleChange = (event) => {
+    if (disabled) return;
     const nextQuery = event.target.value;
     setQuery(nextQuery);
+    setOpen(true);
 
     const exactMatch = options.find((option) => option.label === nextQuery);
     if (exactMatch) {
@@ -126,21 +105,108 @@ function SearchableOptionField({ options, value, onChange, placeholder = 'Search
     }
   };
 
+  const handleSelect = (option) => {
+    setQuery(option.label);
+    onChange(option.value);
+    setOpen(false);
+  };
+
+  const handleClear = () => {
+    setQuery('');
+    onChange('');
+    setOpen(false);
+  };
+
   return (
-    <div>
+    <div ref={fieldRef} className="relative">
       <input
-        list={listId}
         value={query}
         onChange={handleChange}
         placeholder={placeholder}
-        className="input-field"
+        disabled={disabled}
+        onFocus={() => {
+          if (!disabled) setOpen(true);
+        }}
+        className={`input-field pr-20 ${disabled ? 'cursor-not-allowed bg-gray-100 text-gray-400' : ''}`}
       />
-      <datalist id={listId}>
-        {options.map((option) => (
-          <option key={option.value} value={option.label} />
-        ))}
-      </datalist>
+      <div className="pointer-events-none absolute inset-y-0 right-11 flex items-center text-gray-300">
+        <div className="h-5 border-l border-gray-200" />
+      </div>
+      {query ? (
+        <button
+          type="button"
+          onClick={handleClear}
+          className="absolute inset-y-0 right-10 flex items-center justify-center px-2 text-gray-400 transition hover:text-rose-500"
+          aria-label="Clear selection"
+        >
+          <FiX size={15} />
+        </button>
+      ) : null}
+      <button
+        type="button"
+        onClick={() => {
+          if (!disabled) setOpen((current) => !current);
+        }}
+        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-500 transition hover:text-rose-600 disabled:cursor-not-allowed"
+        disabled={disabled}
+        aria-label="Toggle options"
+      >
+        <FiChevronDown size={16} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && !disabled ? (
+        <div className="absolute left-0 right-0 top-[calc(100%+0.45rem)] z-20 overflow-hidden rounded-2xl border border-rose-100 bg-white shadow-[0_18px_40px_rgba(225,29,72,0.16)]">
+          <div className="border-b border-rose-50 bg-gradient-to-r from-rose-50 to-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-rose-400">
+            Select Option
+          </div>
+          <div className="max-h-56 overflow-y-auto p-2">
+            {filteredOptions.length ? filteredOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleSelect(option)}
+                className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition ${
+                  option.value === value ? 'bg-rose-100 text-rose-700' : 'text-gray-700 hover:bg-rose-50 hover:text-rose-600'
+                }`}
+              >
+                <FiSearch size={14} className="text-rose-300" />
+                <span className="truncate">{option.label}</span>
+              </button>
+            )) : (
+              <div className="px-3 py-3 text-sm text-gray-400">
+                No matching options found.
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
     </div>
+  );
+}
+
+function SearchableSupplierField({ suppliers, value, onChange, placeholder = 'Search supplier by name or phone' }) {
+  const supplierOptions = suppliers.map((supplier) => ({
+    value: supplier._id,
+    label: `${supplier.name}${supplier.phone ? ` - ${supplier.phone}` : ''}`,
+  }));
+  return (
+    <SearchableSelectField
+      options={supplierOptions}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+    />
+  );
+}
+
+function SearchableOptionField({ options, value, onChange, placeholder = 'Search option', disabled = false }) {
+  return (
+    <SearchableSelectField
+      options={options}
+      value={value}
+      onChange={onChange}
+      placeholder={placeholder}
+      disabled={disabled}
+    />
   );
 }
 
@@ -151,7 +217,7 @@ export function AdminSuppliers() {
   const [editSupplier, setEditSupplier] = useState(null);
   const [form, setForm] = useState(supplierFormDefaults);
   const [saving, setSaving] = useState(false);
-  const [listFilters, setListFilters] = useState({ search: '', status: '', sortBy: 'name-asc', page: 1, pageSize: 5 });
+  const [listFilters, setListFilters] = useState({ search: '', status: '', sortBy: 'name-asc', page: 1, pageSize: 10 });
 
   const fetchSuppliers = () => {
     setLoading(true);
@@ -306,7 +372,7 @@ export function AdminSuppliers() {
               <option value="status-desc">Status Z-A</option>
             </select>
             <select value={listFilters.pageSize} onChange={(e) => setListFilters({ ...listFilters, pageSize: Number(e.target.value), page: 1 })} className="input-field h-11 w-full max-w-[130px] py-2 text-sm">
-              {[5, 10, 20].map((size) => <option key={size} value={size}>{size} / page</option>)}
+              {[10, 20, 50].map((size) => <option key={size} value={size}>{size} / page</option>)}
             </select>
           </div>
           <div className="overflow-x-auto">
@@ -372,7 +438,7 @@ export function AdminRawMaterials() {
     items: [{ rawMaterialId: '', quantity: '', purchasePrice: '' }],
   });
   const [saving, setSaving] = useState(false);
-  const [listFilters, setListFilters] = useState({ search: '', status: '', sortBy: 'name-asc', page: 1, pageSize: 5 });
+  const [listFilters, setListFilters] = useState({ search: '', status: '', sortBy: 'name-asc', page: 1, pageSize: 10 });
   const rawMaterialOptions = rawMaterials.map((material) => ({
     value: material._id,
     label: `${material.name}${material.unit ? ` (${material.unit})` : ''}`,
@@ -676,7 +742,7 @@ export function AdminRawMaterials() {
               <option value="stock-desc">Stock High-Low</option>
             </select>
             <select value={listFilters.pageSize} onChange={(e) => setListFilters({ ...listFilters, pageSize: Number(e.target.value), page: 1 })} className="input-field h-11 w-full max-w-[130px] py-2 text-sm">
-              {[5, 10, 20].map((size) => <option key={size} value={size}>{size} / page</option>)}
+              {[10, 20, 50].map((size) => <option key={size} value={size}>{size} / page</option>)}
             </select>
           </div>
           <div className="overflow-x-auto">
@@ -782,7 +848,7 @@ export function AdminProductBom() {
   const [editProductId, setEditProductId] = useState('');
   const [bomItems, setBomItems] = useState([]);
   const [savingBom, setSavingBom] = useState(false);
-  const [listFilters, setListFilters] = useState({ search: '', sortBy: 'name-asc', page: 1, pageSize: 5 });
+  const [listFilters, setListFilters] = useState({ search: '', sortBy: 'name-asc', page: 1, pageSize: 10 });
   const productOptions = products.map((product) => ({
     value: product._id,
     label: `${product.name}${product.sku ? ` - ${product.sku}` : ''}`,
@@ -822,6 +888,7 @@ export function AdminProductBom() {
   }, [editProductId, products]);
 
   const selectedBomProduct = products.find((product) => product._id === editProductId);
+  const hasRawMaterials = rawMaterials.length > 0;
 
   const addBomItem = () => {
     setBomItems([...bomItems, { rawMaterial: '', quantity: '' }]);
@@ -857,7 +924,7 @@ export function AdminProductBom() {
 
     setSavingBom(true);
     try {
-      await api.put(`/products/${editProductId}`, {
+      await api.put(`/products/${editProductId}/bom`, {
         bom: JSON.stringify(bomItems.filter((item) => item.rawMaterial && Number(item.quantity) > 0)),
       });
       toast.success('BOM updated');
@@ -929,6 +996,11 @@ export function AdminProductBom() {
                     No BOM saved yet for this product. Start by filling the first row below.
                   </div>
                 )}
+                {!hasRawMaterials ? (
+                  <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    No raw materials available yet. Add and purchase raw materials first, then come back to create this product BOM.
+                  </div>
+                ) : null}
                 {bomItems.map((item, index) => (
                   <div key={index}>
                     <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[minmax(0,1fr)_180px_auto]">
@@ -936,7 +1008,8 @@ export function AdminProductBom() {
                         options={rawMaterialOptions}
                         value={item.rawMaterial}
                         onChange={(selectedId) => updateBomItem(index, 'rawMaterial', selectedId)}
-                        placeholder="Search raw material"
+                        placeholder={hasRawMaterials ? 'Search raw material' : 'No raw materials available'}
+                        disabled={!hasRawMaterials}
                       />
                       <input
                         type="number"
@@ -945,7 +1018,8 @@ export function AdminProductBom() {
                         value={item.quantity}
                         onChange={(e) => updateBomItem(index, 'quantity', e.target.value)}
                         placeholder="Qty per unit"
-                        className="input-field"
+                        disabled={!hasRawMaterials}
+                        className={`input-field ${!hasRawMaterials ? 'cursor-not-allowed bg-gray-100 text-gray-400' : ''}`}
                       />
                       <button type="button" onClick={() => removeBomItem(index)} className="flex h-11 w-11 items-center justify-center rounded-xl border border-red-100 text-red-500 transition hover:bg-red-50">
                         <FiTrash2 size={16} />
@@ -973,7 +1047,12 @@ export function AdminProductBom() {
                   </div>
                 ))}
                 <div className="flex justify-start border-t border-gray-100 pt-3">
-                  <button type="button" onClick={addBomItem} className="text-sm font-medium text-brand-500 hover:underline">
+                  <button
+                    type="button"
+                    onClick={addBomItem}
+                    disabled={!hasRawMaterials}
+                    className={`text-sm font-medium ${hasRawMaterials ? 'text-brand-500 hover:underline' : 'cursor-not-allowed text-gray-400'}`}
+                  >
                     + Add Row
                   </button>
                 </div>
@@ -983,7 +1062,7 @@ export function AdminProductBom() {
                 <button onClick={resetBomEditor} className="btn-outline">
                   Cancel
                 </button>
-                <button onClick={handleSaveBom} disabled={savingBom} className="btn-primary min-w-[160px]">
+                <button onClick={handleSaveBom} disabled={savingBom || !hasRawMaterials} className="btn-primary min-w-[160px] disabled:cursor-not-allowed disabled:opacity-60">
                   {savingBom ? 'Saving...' : 'Save BOM'}
                 </button>
               </div>
@@ -1031,7 +1110,7 @@ export function AdminProductBom() {
               <option value="bom-asc">Fewest Materials</option>
             </select>
             <select value={listFilters.pageSize} onChange={(e) => setListFilters({ ...listFilters, pageSize: Number(e.target.value), page: 1 })} className="input-field h-11 w-full max-w-[130px] py-2 text-sm">
-              {[5, 10, 20].map((size) => (
+              {[10, 20, 50].map((size) => (
                 <option key={size} value={size}>
                   {size} / page
                 </option>
@@ -1099,7 +1178,7 @@ export function AdminProduction() {
   const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ productId: '', quantityProduced: '', note: '' });
   const [saving, setSaving] = useState(false);
-  const [listFilters, setListFilters] = useState({ search: '', sortBy: 'date-desc', page: 1, pageSize: 5 });
+  const [listFilters, setListFilters] = useState({ search: '', sortBy: 'date-desc', page: 1, pageSize: 10 });
   const productOptions = products.map((product) => ({
     value: product._id,
     label: `${product.name}${product.sku ? ` - ${product.sku}` : ''}`,
@@ -1217,7 +1296,7 @@ export function AdminProduction() {
                 <option value="product-desc">Product Z-A</option>
               </select>
               <select value={listFilters.pageSize} onChange={(e) => setListFilters({ ...listFilters, pageSize: Number(e.target.value), page: 1 })} className="input-field h-11 w-full max-w-[130px] py-2 text-sm">
-                {[5, 10, 20].map((size) => <option key={size} value={size}>{size} / page</option>)}
+                {[10, 20, 50].map((size) => <option key={size} value={size}>{size} / page</option>)}
               </select>
             </div>
           </div>

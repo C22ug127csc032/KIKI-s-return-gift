@@ -259,7 +259,7 @@ export default function AdminProducts() {
                 onChange={(e) => setFilters({ ...filters, limit: Number(e.target.value), page: 1 })}
                 className="input-field h-11 w-full max-w-[130px] py-2 text-sm"
               >
-                {[5, 10, 20].map((size) => <option key={size} value={size}>{size} / page</option>)}
+                {[10, 20, 50].map((size) => <option key={size} value={size}>{size} / page</option>)}
               </select>
             </div>
 

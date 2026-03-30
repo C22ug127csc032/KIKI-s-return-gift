@@ -34,7 +34,7 @@ const removeLocalProductImage = (imageUrl) => {
 };
 
 const buildProductFilter = (query) => {
-  const filter = { isActive: true };
+  const filter = { isActive: true, stock: { $gt: 0 } };
   if (query.category) filter.category = query.category;
   if (query.occasion) filter.occasion = new RegExp(query.occasion, 'i');
   if (query.featured === 'true') filter.featured = true;
@@ -114,6 +114,7 @@ export const getProductBySlug = asyncHandler(async (req, res) => {
     category: product.category._id,
     _id: { $ne: product._id },
     isActive: true,
+    stock: { $gt: 0 },
   }).limit(4).populate('category', 'name slug');
   sendResponse(res, 200, 'Product fetched', { product, related });
 });
@@ -187,6 +188,20 @@ export const updateProduct = asyncHandler(async (req, res) => {
   sendResponse(res, 200, 'Product updated', product);
 });
 
+export const updateProductBom = asyncHandler(async (req, res) => {
+  const product = await Product.findById(req.params.id);
+  if (!product) throw new ApiError(404, 'Product not found');
+
+  product.bom = parseBom(req.body.bom);
+  await product.save();
+  await product.populate([
+    { path: 'category', select: 'name slug' },
+    { path: 'bom.rawMaterial', select: 'name unit' },
+  ]);
+
+  sendResponse(res, 200, 'BOM updated', product);
+});
+
 export const deleteProduct = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id);
   if (!product) throw new ApiError(404, 'Product not found');
@@ -199,7 +214,7 @@ export const deleteProduct = asyncHandler(async (req, res) => {
 });
 
 export const getFeaturedProducts = asyncHandler(async (req, res) => {
-  const products = await Product.find({ featured: true, isActive: true })
+  const products = await Product.find({ featured: true, isActive: true, stock: { $gt: 0 } })
     .populate('category', 'name slug').limit(8).sort({ createdAt: -1 });
   sendResponse(res, 200, 'Featured products fetched', products);
 });
