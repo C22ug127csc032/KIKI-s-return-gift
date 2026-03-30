@@ -245,8 +245,18 @@ export default function ShopPage() {
                   placeholder="Search gifts, occasions..."
                   value={filters.search}
                   onChange={(e) => setFilter('search', e.target.value)}
-                  className="input-field pl-10 py-2.5"
+                  className="input-field py-2.5 pl-10 pr-11"
                 />
+                {filters.search ? (
+                  <button
+                    type="button"
+                    onClick={() => setFilter('search', '')}
+                    className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors hover:bg-rose-50 hover:text-rose-600 sm:hidden"
+                    aria-label="Clear search"
+                  >
+                    <FiX size={14} />
+                  </button>
+                ) : null}
               </div>
               <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
                 <select
@@ -259,13 +269,25 @@ export default function ShopPage() {
                   <option value="price-desc">Price: High to Low</option>
                   <option value="name-asc">Name A-Z</option>
                 </select>
-                <button
-                  onClick={() => setFilterOpen(true)}
-                  className="lg:hidden flex items-center gap-1.5 bg-white border border-gray-200 text-gray-600 font-semibold text-xs px-4 py-2.5 rounded-xl hover:border-rose-300 hover:text-rose-600 transition-all"
-                >
-                  <FiFilter size={15} /> Filters
-                  {activeCount > 0 ? <span className="bg-rose-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{activeCount}</span> : null}
-                </button>
+                <div className="lg:hidden flex items-center gap-2">
+                  <button
+                    onClick={() => setFilterOpen(true)}
+                    className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-600 font-semibold text-xs px-4 py-2.5 rounded-xl hover:border-rose-300 hover:text-rose-600 transition-all"
+                  >
+                    <FiFilter size={15} /> Filters
+                    {activeCount > 0 ? <span className="bg-rose-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{activeCount}</span> : null}
+                  </button>
+                  {activeCount > 0 ? (
+                    <button
+                      type="button"
+                      onClick={clearFilters}
+                      className="flex h-[42px] w-[42px] items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition-all hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600"
+                      aria-label="Clear filters"
+                    >
+                      <FiX size={18} />
+                    </button>
+                  ) : null}
+                </div>
               </div>
             </div>
 

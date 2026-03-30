@@ -82,18 +82,18 @@ export default function Navbar() {
     <>
       <header className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? 'bg-rose-600 shadow-[0_2px_20px_rgba(190,24,93,0.28)]' : 'bg-rose-600/95 backdrop-blur-sm border-b border-rose-500'}`}>
         <div className="page-container">
-          <div className="flex items-center justify-between h-16 gap-1.5 sm:gap-4">
-            <div className="flex items-center gap-2 min-w-0 flex-1 md:flex-none">
-              <button className="md:hidden p-2 text-white hover:bg-white/15 rounded-full flex-shrink-0" onClick={() => setMenuOpen(!menuOpen)}>
+          <div className="flex min-h-[68px] items-center justify-between gap-2 py-2 sm:h-16 sm:min-h-0 sm:gap-4 sm:py-0">
+            <div className="flex min-w-0 flex-1 items-center gap-2 md:flex-none">
+              <button className="rounded-full p-2.5 text-white hover:bg-white/15 md:hidden flex-shrink-0" onClick={() => setMenuOpen(!menuOpen)}>
                 {menuOpen ? <FiX size={20} /> : <FiMenu size={20} />}
               </button>
-              <Link to="/" className="flex items-center gap-2 sm:gap-2.5 flex-shrink min-w-0">
-                <div className="w-8 h-8 sm:w-9 sm:h-9 bg-white rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
-                  <RiGiftLine size={18} className="text-rose-700 sm:w-5 sm:h-5" />
+              <Link to="/" className="flex min-w-0 flex-shrink items-center gap-2 sm:gap-2.5">
+                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-sm sm:h-9 sm:w-9">
+                  <RiGiftLine size={17} className="text-rose-700 sm:w-5 sm:h-5" />
                 </div>
-                <div className="min-w-0 max-w-[108px] leading-none sm:max-w-none">
-                  <p className="font-display text-sm font-bold tracking-[0.01em] text-white sm:text-xl">KIKI'S</p>
-                  <p className="truncate text-[8px] font-semibold uppercase tracking-[0.18em] text-rose-100 sm:text-[10px] sm:tracking-[0.24em]">Return Gifts</p>
+                <div className="min-w-0 leading-none sm:max-w-none">
+                  <p className="truncate font-display text-base font-bold tracking-[0.01em] text-white sm:text-xl">KIKI'S</p>
+                  <p className="hidden truncate pt-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-rose-100 sm:block sm:text-[10px] sm:tracking-[0.24em]">Return Gifts</p>
                 </div>
               </Link>
             </div>
@@ -109,10 +109,10 @@ export default function Navbar() {
               ))}
             </nav>
 
-            <div className="flex items-center gap-0 sm:gap-1.5 flex-shrink-0">
+            <div className="flex flex-shrink-0 items-center gap-0.5 sm:gap-1.5">
               <button onClick={() => setSearchOpen(true)}
-                className="p-2 sm:p-2.5 text-white hover:bg-white/15 rounded-full transition-all">
-                <FiSearch size={18} />
+                className="rounded-full p-2 text-white transition-all hover:bg-white/15 sm:p-2.5">
+                <FiSearch size={17} />
               </button>
 
               {user ? (
@@ -129,8 +129,8 @@ export default function Navbar() {
                 </Link>
               ) : null}
 
-              <Link to="/cart" className="relative p-2 sm:p-2.5 text-white hover:bg-white/15 rounded-full transition-all">
-                <FiShoppingCart size={18} />
+              <Link to="/cart" className="relative rounded-full p-2 text-white transition-all hover:bg-white/15 sm:p-2.5">
+                <FiShoppingCart size={17} />
                 <AnimatePresence>
                   {cartCount > 0 && (
                     <motion.span key="badge" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
@@ -186,7 +186,7 @@ export default function Navbar() {
                   </AnimatePresence>
                 </div>
               ) : (
-                <Link to="/login" className="bg-white text-rose-700 font-semibold py-2 px-3 sm:px-5 rounded-full transition-all text-[11px] sm:text-xs flex shadow-sm hover:bg-rose-50 whitespace-nowrap">
+                <Link to="/login" className="flex whitespace-nowrap rounded-full bg-white px-3.5 py-2 text-[11px] font-semibold text-rose-700 shadow-sm transition-all hover:bg-rose-50 sm:px-5 sm:text-xs">
                   Login
                 </Link>
               )}
