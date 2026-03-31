@@ -153,7 +153,7 @@ export default function Footer() {
               </li>
               <li className="flex items-start justify-center gap-2.5 text-sm text-gray-400 md:justify-start">
                 <FiMapPin size={14} className="mt-0.5 flex-shrink-0 text-rose-400" />
-                <span>Madurai, Tamil Nadu, India</span>
+                <span>Salem, Tamil Nadu, India</span>
               </li>
             </ul>
           </div>
