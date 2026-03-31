@@ -149,6 +149,7 @@ export default function AdminDashboard() {
             <table className="min-w-[620px] w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
+                  <th className="pb-3 font-medium">#</th>
                   <th className="pb-3 font-medium">Order #</th>
                   <th className="pb-3 font-medium">Customer</th>
                   <th className="pb-3 font-medium">Amount</th>
@@ -157,8 +158,9 @@ export default function AdminDashboard() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {recentOrders?.map((order) => (
+                {recentOrders?.map((order, index) => (
                   <tr key={order._id} className="transition-colors hover:bg-gray-50">
+                    <td className="py-3 text-gray-500">{index + 1}</td>
                     <td className="py-3">
                       <Link to="/admin/orders" className="font-medium text-brand-500 hover:underline">{order.orderNumber}</Link>
                     </td>

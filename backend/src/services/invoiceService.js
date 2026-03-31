@@ -16,282 +16,292 @@ const formatDate = (value) => new Date(value).toLocaleDateString('en-IN', {
   year: 'numeric',
 });
 
-const drawLine = (doc, y, color = '#D7DCE2') => {
+const drawLine = (doc, x1, y1, x2, y2, color = '#D8DEE9', width = 1) => {
   doc
-    .moveTo(48, y)
-    .lineTo(doc.page.width - 48, y)
-    .lineWidth(1)
+    .moveTo(x1, y1)
+    .lineTo(x2, y2)
+    .lineWidth(width)
     .strokeColor(color)
     .stroke();
 };
 
-const fitTextInBox = (doc, text, x, y, width, options = {}) => {
-  const {
-    maxFontSize = 18,
-    minFontSize = 10,
-    lineGap = 2,
-    color = '#FFFFFF',
-    font = 'Helvetica-Bold',
-  } = options;
+const drawSoftBackground = (doc) => {
+  const { width, height } = doc.page;
 
-  let fontSize = maxFontSize;
-  while (fontSize > minFontSize) {
-    const height = doc.heightOfString(text, { width, align: 'center', lineGap });
-    if (height <= fontSize * 2.4) break;
-    fontSize -= 1;
+  doc.rect(0, 0, width, height).fill('#FFFDFC');
+
+  doc.save();
+  doc.fillOpacity(0.55);
+  doc.circle(86, 72, 82).fill('#F9D3E1');
+  doc.circle(width - 88, 90, 110).fill('#D6F2F2');
+  doc.circle(120, height - 110, 104).fill('#E5F5D9');
+  doc.circle(width - 100, height - 96, 118).fill('#E2E7FF');
+  doc.fillOpacity(0.22);
+  doc.circle(width / 2, 128, 72).fill('#F5D0FE');
+  doc.restore();
+
+  const glitterLines = [
+    [32, 118, 192, 82],
+    [doc.page.width - 210, 132, doc.page.width - 42, 96],
+    [54, height - 148, 214, height - 106],
+    [doc.page.width - 236, height - 172, doc.page.width - 54, height - 122],
+  ];
+
+  glitterLines.forEach(([x1, y1, x2, y2]) => {
+    drawLine(doc, x1, y1, x2, y2, '#D6B35E', 1.2);
+  });
+};
+
+const drawHeader = (doc, settings, invoiceNumber) => {
+  const { width } = doc.page;
+  const storeName = settings?.storeName || "KIKI'S RETURN GIFT STORE";
+  const storeTagline = settings?.storeTagline || 'Premium gifts and memorable celebrations';
+  const supportPhone = settings?.supportPhone || settings?.whatsappNumber || '';
+
+  doc
+    .roundedRect(34, 28, width - 68, 118, 24)
+    .fillOpacity(0.96)
+    .fill('#FFFFFF')
+    .fillOpacity(1);
+
+  doc
+    .roundedRect(34, 28, width - 68, 118, 24)
+    .strokeColor('#F3C4D7')
+    .lineWidth(1)
+    .stroke();
+
+  doc
+    .roundedRect(50, 44, 126, 88, 22)
+    .fill('#FFF6E7');
+
+  doc
+    .fillColor('#111111')
+    .font('Helvetica-Bold')
+    .fontSize(34)
+    .text('K', 92, 56);
+
+  doc
+    .font('Helvetica-Oblique')
+    .fontSize(24)
+    .text("iki's", 122, 72);
+
+  doc
+    .font('Helvetica-Bold')
+    .fontSize(16)
+    .text('RETURN GIFT STORE', 184, 60, { width: 220 });
+
+  doc
+    .font('Helvetica')
+    .fontSize(10.5)
+    .fillColor('#5B6472')
+    .text(storeName, 184, 88, { width: 230 })
+    .text(storeTagline, 184, 104, { width: 230 });
+
+  if (supportPhone) {
+    doc
+      .font('Helvetica-Bold')
+      .fontSize(12)
+      .fillColor('#111111')
+      .text(`Call / WhatsApp: ${supportPhone}`, 184, 121, { width: 240 });
   }
 
   doc
-    .fillColor(color)
-    .font(font)
-    .fontSize(fontSize)
-    .text(text, x, y, { width, align: 'center', lineGap });
+    .roundedRect(width - 208, 42, 142, 90, 24)
+    .fill('#E11D48');
+
+  doc
+    .fillColor('#FFE9F1')
+    .font('Helvetica-Bold')
+    .fontSize(10)
+    .text('INVOICE', width - 188, 58, { width: 102, align: 'center' });
+
+  doc
+    .fillColor('#FFFFFF')
+    .font('Helvetica-Bold')
+    .fontSize(18)
+    .text(invoiceNumber, width - 194, 82, { width: 114, align: 'center' });
 };
 
-const generateInvoicePDF = (doc, data, settings) => {
+const drawInfoCards = (doc, data, settings, topY) => {
+  const { width } = doc.page;
+  const cardWidth = (width - 84) / 2;
+  const leftX = 34;
+  const rightX = leftX + cardWidth + 16;
+  const cardHeight = 136;
+
   const {
-    items,
     customerName,
     customerPhone,
     customerAddress,
-    subtotal,
-    tax,
-    totalAmount,
     invoiceNumber,
     date,
   } = data;
 
-  const storeName = settings?.storeName || "KIKI'S RETURN GIFT STORE";
-  const storeAddress = settings?.storeAddress || '';
-  const gstNumber = settings?.gstNumber || '';
-  const supportEmail = settings?.supportEmail || '';
-  const taxRate = settings?.gstPercentage || 0;
+  doc.roundedRect(leftX, topY, cardWidth, cardHeight, 20).fill('#FFFFFF');
+  doc.roundedRect(leftX, topY, cardWidth, cardHeight, 20).strokeColor('#EADFE5').lineWidth(1).stroke();
+  doc.roundedRect(rightX, topY, cardWidth, cardHeight, 20).fill('#FFFFFF');
+  doc.roundedRect(rightX, topY, cardWidth, cardHeight, 20).strokeColor('#D6EEE8').lineWidth(1).stroke();
 
-  const pageWidth = doc.page.width;
-  const contentWidth = pageWidth - 96;
-  const summaryBoxWidth = 196;
+  doc.fillColor('#BE123C').font('Helvetica-Bold').fontSize(11).text('BILLED TO', leftX + 20, topY + 18);
+  doc.fillColor('#0891B2').text('INVOICE DETAILS', rightX + 20, topY + 18);
 
-  doc.rect(0, 0, pageWidth, doc.page.height).fill('#FFF8F4');
-
-  doc
-    .roundedRect(36, 28, pageWidth - 72, 92, 16)
-    .fill('#FFFFFF');
-
-  doc
-    .roundedRect(36, 28, pageWidth - 72, 92, 16)
-    .fillOpacity(0.88)
-    .fill('#FFF1EB')
-    .fillOpacity(1);
-
-  doc
-    .roundedRect(36, 28, pageWidth - 72, 92, 16)
-    .strokeColor('#FBCFE8')
-    .lineWidth(1)
-    .stroke();
-
-  doc
-    .fillColor('#111827')
-    .font('Helvetica-Bold')
-    .fontSize(24)
-    .text(storeName, 56, 52, { width: contentWidth - 160 });
-
-  doc
-    .font('Helvetica')
-    .fontSize(10)
-    .fillColor('#6B7280')
-    .text(storeAddress || 'Premium gifts and memorable celebrations', 56, 84, {
-      width: contentWidth - 220,
-    });
-
-  if (gstNumber) {
-    doc
-      .fontSize(10)
-      .fillColor('#9A3412')
-      .text(`GST No: ${gstNumber}`, 56, 99, { width: 220 });
-  }
-
-  doc
-    .roundedRect(pageWidth - 212, 40, 148, 70, 18)
-    .fill('#E11D48');
-
-  doc
-    .fillColor('#FFE4E6')
-    .font('Helvetica-Bold')
-    .fontSize(10)
-    .text('INVOICE', pageWidth - 190, 56, { width: 104, align: 'center' });
-
-  fitTextInBox(doc, invoiceNumber, pageWidth - 196, 74, 116, {
-    maxFontSize: 15,
-    minFontSize: 10,
-    lineGap: 0,
-    color: '#FFFFFF',
-  });
-
-  let y = 152;
-
-  doc
-    .roundedRect(36, y, pageWidth - 72, 132, 16)
-    .fill('#FFFFFF');
-
-  doc
-    .roundedRect(36, y, pageWidth - 72, 132, 16)
-    .strokeColor('#FCE7F3')
-    .lineWidth(1)
-    .stroke();
-
-  doc
-    .fillColor('#BE123C')
-    .font('Helvetica-Bold')
-    .fontSize(11)
-    .text('Billed To', 56, y + 20);
-
-  doc
-    .fontSize(11)
-    .text('Invoice Details', pageWidth - 220, y + 20);
-
-  doc
-    .fillColor('#1F2937')
-    .font('Helvetica-Bold')
-    .fontSize(14)
-    .text(customerName || 'Customer', 56, y + 44, { width: 240 });
-
-  doc
-    .font('Helvetica')
-    .fontSize(10.5)
-    .fillColor('#4B5563');
-
-  let customerY = y + 68;
+  doc.fillColor('#111827').font('Helvetica-Bold').fontSize(15).text(customerName || 'Customer', leftX + 20, topY + 42, { width: cardWidth - 40 });
+  doc.font('Helvetica').fontSize(10.5).fillColor('#4B5563');
+  let customerY = topY + 68;
   if (customerPhone) {
-    doc.text(`Phone: ${customerPhone}`, 56, customerY, { width: 250 });
+    doc.text(`Phone: ${customerPhone}`, leftX + 20, customerY, { width: cardWidth - 40 });
     customerY += 18;
   }
   if (customerAddress) {
-    doc.text(`Address: ${customerAddress}`, 56, customerY, { width: 260 });
+    doc.text(`Address: ${customerAddress}`, leftX + 20, customerY, { width: cardWidth - 40 });
   }
 
-  doc
-    .fillColor('#4B5563')
-    .font('Helvetica')
-    .fontSize(10.5)
-    .text(`Invoice No: ${invoiceNumber}`, pageWidth - 220, y + 46, { width: 150, align: 'left' })
-    .text(`Date: ${formatDate(date)}`, pageWidth - 220, y + 66, { width: 150, align: 'left' });
+  const detailRows = [
+    ['Invoice No', invoiceNumber],
+    ['Date', formatDate(date)],
+    ['GST Number', settings?.gstNumber || 'Not set'],
+    ['GST (%)', String(settings?.gstPercentage ?? 0)],
+  ];
 
-  if (gstNumber) {
-    doc.text(`GST Reg: ${gstNumber}`, pageWidth - 220, y + 86, { width: 150, align: 'left' });
-  }
-
-  y += 164;
-
-  doc
-    .fillColor('#BE123C')
-    .font('Helvetica-Bold')
-    .fontSize(12)
-    .text('Items', 40, y);
-
-  const tableTop = y + 24;
-  const itemX = 56;
-  const qtyX = 348;
-  const priceX = 404;
-  const totalX = 482;
-  const rowHeight = 30;
-
-  doc
-    .roundedRect(36, tableTop, pageWidth - 72, 32, 10)
-    .fill('#FFF1F2');
-
-  doc
-    .fillColor('#9F1239')
-    .font('Helvetica-Bold')
-    .fontSize(10.5)
-    .text('Description', itemX, tableTop + 10, { width: 250 })
-    .text('Qty', qtyX, tableTop + 10, { width: 32, align: 'right' })
-    .text('Price', priceX, tableTop + 10, { width: 60, align: 'right' })
-    .text('Amount', totalX, tableTop + 10, { width: 74, align: 'right' });
-
-  let rowY = tableTop + 42;
-  doc.font('Helvetica').fontSize(10).fillColor('#1F2937');
-
-  items.forEach((item, index) => {
-    if (index % 2 === 0) {
-      doc
-        .roundedRect(36, rowY - 7, pageWidth - 72, rowHeight, 8)
-        .fill('#FFFFFF');
-      doc.fillColor('#1F2937');
-    } else {
-      doc
-        .roundedRect(36, rowY - 7, pageWidth - 72, rowHeight, 8)
-        .fill('#FFFDFB');
-      doc.fillColor('#1F2937');
-    }
-
-    const itemTotal = Number(item.price || 0) * Number(item.quantity || 0);
-
-    doc.text(item.name || 'Item', itemX, rowY, { width: 240 });
-    doc.text(String(item.quantity || 0), qtyX, rowY, { width: 32, align: 'right' });
-    doc.text(formatCurrency(item.price), priceX, rowY, { width: 60, align: 'right' });
-    doc.text(formatCurrency(itemTotal), totalX, rowY, { width: 74, align: 'right' });
-
-    rowY += rowHeight;
+  let detailY = topY + 44;
+  detailRows.forEach(([label, value]) => {
+    doc.fillColor('#6B7280').font('Helvetica').fontSize(10).text(label, rightX + 20, detailY, { width: 92 });
+    doc.fillColor('#111827').font('Helvetica-Bold').text(value, rightX + 118, detailY, { width: cardWidth - 138, align: 'right' });
+    detailY += 22;
   });
 
-  const summaryTop = rowY + 18;
-  drawLine(doc, summaryTop - 8);
+  return topY + cardHeight + 24;
+};
 
-  doc
-    .roundedRect(pageWidth - summaryBoxWidth - 36, summaryTop + 8, summaryBoxWidth, tax > 0 ? 118 : 92, 14)
-    .fill('#FFFFFF');
+const buildInvoiceRows = (items = []) => items.map((item, index) => {
+  const quantity = Number(item.quantity || 0);
+  const price = Number(item.price || 0);
+  const originalPrice = Number(item.originalPrice || 0);
+  const amount = quantity * price;
+  const perUnitDiscount = originalPrice > price ? originalPrice - price : 0;
+  const discountAmount = perUnitDiscount * quantity;
+  const discountPercent = originalPrice > price && originalPrice > 0
+    ? Math.round((perUnitDiscount / originalPrice) * 100)
+    : 0;
 
-  doc
-    .roundedRect(pageWidth - summaryBoxWidth - 36, summaryTop + 8, summaryBoxWidth, tax > 0 ? 118 : 92, 14)
-    .strokeColor('#FBCFE8')
-    .lineWidth(1)
-    .stroke();
+  return {
+    sno: index + 1,
+    description: item.name || 'Item',
+    quantity,
+    rate: originalPrice > price ? originalPrice : price,
+    discountAmount,
+    discountPercent,
+    amount,
+  };
+});
 
-  const labelX = pageWidth - summaryBoxWidth - 12;
-  const valueWidth = 92;
+const drawItemsTable = (doc, rows, startY) => {
+  const tableX = 34;
+  const tableWidth = doc.page.width - 68;
+  const rowHeight = 28;
+  const columns = [
+    { key: 'sno', label: '#', x: tableX + 14, width: 26, align: 'left' },
+    { key: 'description', label: 'Item Description', x: tableX + 48, width: 210, align: 'left' },
+    { key: 'quantity', label: 'Qty', x: tableX + 266, width: 34, align: 'right' },
+    { key: 'rate', label: 'Rate', x: tableX + 314, width: 74, align: 'right' },
+    { key: 'discountAmount', label: 'Discount', x: tableX + 394, width: 84, align: 'right' },
+    { key: 'amount', label: 'Amount', x: tableX + 458, width: 72, align: 'right' },
+  ];
 
-  doc
-    .fillColor('#4B5563')
-    .font('Helvetica')
-    .fontSize(10.5)
-    .text('Subtotal', labelX, summaryTop + 24, { width: 90 })
-    .text(formatCurrency(subtotal), pageWidth - 132, summaryTop + 24, { width: valueWidth, align: 'right' });
+  doc.fillColor('#111827').font('Helvetica-Bold').fontSize(12).text('Invoice Items', tableX, startY);
 
-  let summaryY = summaryTop + 48;
-  if (tax > 0) {
-    doc
-      .text(`GST${taxRate ? ` (${taxRate}%)` : ''}`, labelX, summaryY, { width: 90 })
-      .text(formatCurrency(tax), pageWidth - 132, summaryY, { width: valueWidth, align: 'right' });
-    summaryY += 24;
-  }
+  const headerY = startY + 18;
+  doc.roundedRect(tableX, headerY, tableWidth, 34, 12).fill('#F8E9EF');
 
-  drawLine(doc, summaryY + 4, '#E5E7EB');
+  doc.fillColor('#9F1239').font('Helvetica-Bold').fontSize(10.5);
+  columns.forEach((column) => {
+    doc.text(column.label, column.x, headerY + 11, { width: column.width, align: column.align });
+  });
 
-  doc
-    .fillColor('#BE123C')
-    .font('Helvetica-Bold')
-    .fontSize(12.5)
-    .text('Total Due', labelX, summaryY + 16, { width: 90 })
-    .text(formatCurrency(totalAmount), pageWidth - 132, summaryY + 16, { width: valueWidth, align: 'right' });
+  let y = headerY + 42;
+  doc.font('Helvetica').fontSize(10).fillColor('#1F2937');
 
-  const footerY = doc.page.height - 82;
-  drawLine(doc, footerY, '#D7DCE2');
+  rows.forEach((row, index) => {
+    const fill = index % 2 === 0 ? '#FFFFFF' : '#FFFCFD';
+    doc.roundedRect(tableX, y - 6, tableWidth, rowHeight, 10).fill(fill);
+
+    columns.forEach((column) => {
+      const rawValue = row[column.key];
+      const text = column.key === 'rate' || column.key === 'amount'
+        ? formatCurrency(rawValue)
+        : column.key === 'discountAmount'
+          ? (row.discountAmount > 0 ? `${row.discountPercent}% (${formatCurrency(row.discountAmount)})` : formatCurrency(0))
+          : String(rawValue);
+      doc.fillColor(column.key === 'discountAmount' && Number(rawValue) > 0 ? '#BE123C' : '#1F2937');
+      doc.text(text, column.x, y + 2, { width: column.width, align: column.align });
+    });
+
+    y += rowHeight;
+  });
+
+  return y + 8;
+};
+
+const drawSummary = (doc, data, rows, startY, settings) => {
+  const { width } = doc.page;
+  const boxWidth = 214;
+  const boxX = width - boxWidth - 34;
+  const boxHeight = 132;
+  const taxRate = settings?.gstPercentage || 0;
+  const totalDiscount = rows.reduce((sum, row) => sum + Number(row.discountAmount || 0), 0);
+  const grossSubtotal = Number(data.subtotal || 0) + totalDiscount;
+
+  doc.roundedRect(boxX, startY, boxWidth, boxHeight, 18).fill('#FFFFFF');
+  doc.roundedRect(boxX, startY, boxWidth, boxHeight, 18).strokeColor('#E7D9E1').lineWidth(1).stroke();
+
+  const summaryRows = [
+    ['Subtotal', formatCurrency(grossSubtotal)],
+    ['Discount', totalDiscount > 0 ? `- ${formatCurrency(totalDiscount)}` : formatCurrency(0)],
+    [`GST${taxRate ? ` (${taxRate}%)` : ''}`, formatCurrency(data.tax)],
+  ];
+
+  let y = startY + 20;
+  summaryRows.forEach(([label, value]) => {
+    doc.fillColor('#4B5563').font('Helvetica').fontSize(10.5).text(label, boxX + 16, y, { width: 80 });
+    doc.fillColor(label === 'Discount' && totalDiscount > 0 ? '#BE123C' : '#111827').font('Helvetica-Bold').text(value, boxX + 108, y, { width: 88, align: 'right' });
+    y += 24;
+  });
+
+  drawLine(doc, boxX + 14, y + 2, boxX + boxWidth - 14, y + 2, '#D9DEE6');
+
+  doc.fillColor('#111827').font('Helvetica-Bold').fontSize(12).text('Total Due', boxX + 16, y + 16, { width: 80 });
+  doc.fillColor('#E11D48').fontSize(13.5).text(formatCurrency(data.totalAmount), boxX + 90, y + 14, { width: 106, align: 'right' });
+};
+
+const drawFooter = (doc, settings) => {
+  const footerY = doc.page.height - 70;
+  drawLine(doc, 34, footerY, doc.page.width - 34, footerY, '#DADCE4');
+
+  const footerParts = [
+    'Thank you for choosing KIKI\'S RETURN GIFT STORE.',
+    settings?.supportEmail ? `Support: ${settings.supportEmail}` : null,
+    settings?.whatsappNumber ? `WhatsApp: ${settings.whatsappNumber}` : null,
+  ].filter(Boolean);
 
   doc
     .fillColor('#6B7280')
     .font('Helvetica')
     .fontSize(9.5)
-    .text('Thank you for choosing us for your gifting needs.', 48, footerY + 18, {
-      width: contentWidth,
+    .text(footerParts.join('   |   '), 46, footerY + 18, {
+      width: doc.page.width - 92,
       align: 'center',
     });
+};
 
-  if (supportEmail) {
-    doc.text(`Support: ${supportEmail}`, 48, footerY + 34, {
-      width: contentWidth,
-      align: 'center',
-    });
-  }
+const generateInvoicePDF = (doc, data, settings) => {
+  drawSoftBackground(doc);
+  drawHeader(doc, settings, data.invoiceNumber);
+
+  let y = drawInfoCards(doc, data, settings, 164);
+  const rows = buildInvoiceRows(data.items);
+  y = drawItemsTable(doc, rows, y);
+  drawSummary(doc, data, rows, y, settings);
+  drawFooter(doc, settings);
 };
 
 export const generateOrderInvoice = asyncHandler(async (req, res) => {

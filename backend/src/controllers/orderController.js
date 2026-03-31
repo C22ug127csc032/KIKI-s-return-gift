@@ -164,7 +164,12 @@ export const getAllOrders = asyncHandler(async (req, res) => {
       { customerPhone: new RegExp(req.query.search, 'i') },
     ];
   }
-  const sort = buildSortQuery(req.query.sortBy);
+  const sort = buildSortQuery(req.query.sortBy, {
+    'total-asc': { totalAmount: 1 },
+    'total-desc': { totalAmount: -1 },
+    'customer-asc': { customerName: 1 },
+    'customer-desc': { customerName: -1 },
+  });
   const [orders, total] = await Promise.all([
     Order.find(filter).sort(sort).skip(skip).limit(limit),
     Order.countDocuments(filter),

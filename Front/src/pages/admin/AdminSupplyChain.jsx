@@ -919,14 +919,15 @@ export function AdminRawMaterials() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/80 text-left text-xs text-gray-500">
-                    {['Material', 'Supplier', 'Type', 'Qty', 'Unit Price', 'Total', 'Prev', 'New', 'Date'].map((head) => (
+                    {['#', 'Material', 'Supplier', 'Type', 'Qty', 'Unit Price', 'Total', 'Prev', 'New', 'Date'].map((head) => (
                       <th key={head} className="px-4 py-3 font-medium">{head}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {paginatedPurchaseMovements.length ? paginatedPurchaseMovements.map((entry) => (
+                  {paginatedPurchaseMovements.length ? paginatedPurchaseMovements.map((entry, index) => (
                     <tr key={entry._id} className="hover:bg-brand-50/40">
+                      <td className="px-4 py-3 text-gray-500">{(purchaseMovementCurrentPage - 1) * purchaseMovementFilters.pageSize + index + 1}</td>
                       <td className="px-4 py-3 font-medium text-gray-900">{entry.rawMaterial?.name || '-'}</td>
                       <td className="px-4 py-3 text-gray-700">{entry.supplier?.name || '-'}</td>
                       <td className="px-4 py-3">
@@ -941,7 +942,7 @@ export function AdminRawMaterials() {
                     </tr>
                   )) : (
                     <tr>
-                      <td colSpan={9} className="px-4 py-8 text-center text-sm text-gray-400">
+                      <td colSpan={10} className="px-4 py-8 text-center text-sm text-gray-400">
                         No supplier purchase movements available yet.
                       </td>
                     </tr>
@@ -1285,10 +1286,10 @@ export function AdminProductBom() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/80 text-left text-xs text-gray-500">
-                  {['Product', 'Category', 'BOM Summary', 'Stock', 'Actions'].map((head) => (
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50/80 text-left text-xs text-gray-500">
+                  {['#', 'Product', 'Category', 'BOM Summary', 'Stock', 'Actions'].map((head) => (
                     <th key={head} className="px-4 py-3 font-medium">
                       {head}
                     </th>
@@ -1296,8 +1297,9 @@ export function AdminProductBom() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {paginatedProducts.map((product) => (
+                {paginatedProducts.map((product, index) => (
                   <tr key={product._id} className="align-top hover:bg-brand-50/40">
+                    <td className="px-4 py-4 text-gray-500">{(currentPage - 1) * listFilters.pageSize + index + 1}</td>
                     <td className="px-4 py-4">
                       <p className="font-medium text-gray-900">{product.name}</p>
                       <p className="text-xs text-gray-500">{product.sku || 'No SKU'}</p>

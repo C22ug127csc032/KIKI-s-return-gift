@@ -145,7 +145,7 @@ export default function AdminProducts() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState({ page: 1, totalPages: 1 });
-  const [filters, setFilters] = useState({ search: '', category: '', sortBy: '', page: 1, limit: 10 });
+  const [filters, setFilters] = useState({ search: '', category: '', isActive: '', featured: '', lowStock: '', sortBy: 'latest', page: 1, limit: 10 });
   const [editProduct, setEditProduct] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [images, setImages] = useState([]);
@@ -162,7 +162,7 @@ export default function AdminProducts() {
 
   const fetchProducts = () => {
     setLoading(true);
-    const params = Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== ''));
+      const params = Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== ''));
     api.get('/products/admin/all', { params }).then((r) => {
       setProducts(r.data.data);
       setMeta(r.data.meta);
@@ -389,17 +389,45 @@ export default function AdminProducts() {
                 {categories.map((category) => <option key={category._id} value={category._id}>{category.name}</option>)}
               </select>
               <select
+                value={filters.isActive}
+                onChange={(e) => setFilters({ ...filters, isActive: e.target.value, page: 1 })}
+                className="input-field h-11 w-full max-w-[160px] py-2 text-sm"
+              >
+                <option value="">All Status</option>
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+              <select
+                value={filters.featured}
+                onChange={(e) => setFilters({ ...filters, featured: e.target.value, page: 1 })}
+                className="input-field h-11 w-full max-w-[170px] py-2 text-sm"
+              >
+                <option value="">All Featured</option>
+                <option value="true">Featured</option>
+                <option value="false">Not Featured</option>
+              </select>
+              <select
+                value={filters.lowStock}
+                onChange={(e) => setFilters({ ...filters, lowStock: e.target.value, page: 1 })}
+                className="input-field h-11 w-full max-w-[180px] py-2 text-sm"
+              >
+                <option value="">All Stock Levels</option>
+                <option value="true">Low Stock Only</option>
+              </select>
+              <select
                 value={filters.sortBy}
                 onChange={(e) => setFilters({ ...filters, sortBy: e.target.value, page: 1 })}
                 className="input-field h-11 w-full max-w-[180px] py-2 text-sm"
               >
-                <option value="">Latest First</option>
-                <option value="price_asc">Price Low-High</option>
-                <option value="price_desc">Price High-Low</option>
-                <option value="name_asc">Name A-Z</option>
-                <option value="name_desc">Name Z-A</option>
-                <option value="stock_asc">Stock Low-High</option>
-                <option value="stock_desc">Stock High-Low</option>
+                <option value="latest">Latest First</option>
+                <option value="oldest">Oldest First</option>
+                <option value="price-asc">Price Low-High</option>
+                <option value="price-desc">Price High-Low</option>
+                <option value="name-asc">Name A-Z</option>
+                <option value="name-desc">Name Z-A</option>
+                <option value="stock-asc">Stock Low-High</option>
+                <option value="stock-desc">Stock High-Low</option>
+                <option value="featured-desc">Featured First</option>
               </select>
               <select
                 value={filters.limit}
@@ -414,14 +442,15 @@ export default function AdminProducts() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/80 text-left text-xs text-gray-500">
-                    {['Product', 'Category', 'Price', 'Stock', 'Featured', 'Status', 'Actions'].map((head) => (
+                    {['#', 'Product', 'Category', 'Price', 'Stock', 'Featured', 'Status', 'Actions'].map((head) => (
                       <th key={head} className="px-4 py-3 font-medium">{head}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
-                  {products.map((product) => (
+                  {products.map((product, index) => (
                     <tr key={product._id} className="transition-colors hover:bg-brand-50/40">
+                      <td className="px-4 py-3 text-gray-500">{(meta.page - 1) * filters.limit + index + 1}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-3">
                           <div className="h-10 w-10 flex-shrink-0 overflow-hidden rounded-lg bg-gray-100">

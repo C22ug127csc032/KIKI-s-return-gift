@@ -1,18 +1,41 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { FiInstagram, FiMail, FiMapPin, FiPhone, FiArrowRight, FiHeart } from 'react-icons/fi';
 import { FaWhatsapp, FaFacebookF } from 'react-icons/fa';
 import { RiGiftLine } from 'react-icons/ri';
+import api from '../../api/api.js';
 
 export default function Footer() {
   const whatsapp = import.meta.env.VITE_WHATSAPP_NUMBER || '919876543210';
+  const [footerCategories, setFooterCategories] = useState([]);
 
   const quickLinks = [
     { to: '/', label: 'Home' },
-    { to: '/shop', label: 'All Products' },
-    { to: '/shop?occasion=Wedding', label: 'Wedding Gifts' },
-    { to: '/shop?occasion=Birthday', label: 'Birthday Gifts' },
-    { to: '/shop?occasion=Diwali', label: 'Diwali Gifts' },
+    { to: '/shop', label: 'Shop' },
+    { to: '/my-orders', label: 'My Orders' },
+    { to: '/cart', label: 'Cart' },
+    { to: '/profile', label: 'My Profile' },
   ];
+
+  useEffect(() => {
+    let isMounted = true;
+
+    api.get('/categories/all')
+      .then((response) => {
+        if (!isMounted) return;
+        const activeCategories = (response.data.data || [])
+          .filter((category) => category?.isActive !== false)
+          .slice(0, 5);
+        setFooterCategories(activeCategories);
+      })
+      .catch(() => {
+        if (isMounted) setFooterCategories([]);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
     <footer className="bg-gray-950 text-gray-300">
@@ -95,11 +118,17 @@ export default function Footer() {
           <div>
             <h4 className="text-white font-semibold mb-5 text-sm uppercase tracking-widest">Shop by Occasion</h4>
             <ul className="space-y-2.5">
-              {['Pooja', 'Baby Shower', 'Anniversary', 'Housewarming', 'Corporate'].map((occ) => (
-                <li key={occ}>
-                  <Link to={`/shop?occasion=${occ}`} className="text-sm text-gray-400 hover:text-rose-400 inline-flex md:flex items-center gap-1.5 transition-colors group">
+              {(footerCategories.length ? footerCategories : [
+                { _id: 'fallback-1', name: 'Wedding Gifts' },
+                { _id: 'fallback-2', name: 'Birthday Gifts' },
+                { _id: 'fallback-3', name: 'Pooja Gifts' },
+                { _id: 'fallback-4', name: 'Housewarming' },
+                { _id: 'fallback-5', name: 'Corporate Gifts' },
+              ]).map((category) => (
+                <li key={category._id || category.name}>
+                  <Link to={footerCategories.length ? `/shop?category=${category._id}` : '/shop'} className="text-sm text-gray-400 hover:text-rose-400 inline-flex md:flex items-center gap-1.5 transition-colors group">
                     <FiArrowRight size={12} className="opacity-0 group-hover:opacity-100 transition-opacity -ml-1" />
-                    {occ}
+                    {category.name}
                   </Link>
                 </li>
               ))}

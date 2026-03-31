@@ -216,6 +216,21 @@ export default function OrderConfirmationPage() {
                   </button>
                 </form>
               </div>
+
+              <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+                <h3 className="font-semibold text-gray-800 mb-3">WhatsApp Confirmation</h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  If WhatsApp did not open automatically, use the button below to send your order details to the store admin.
+                </p>
+                <a
+                  href={whatsappUrl || '#'}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={`inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3.5 text-sm font-bold text-white transition-all ${whatsappUrl ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-300 pointer-events-none'}`}
+                >
+                  <FaWhatsapp size={18} /> Open WhatsApp Chat
+                </a>
+              </div>
             </div>
 
             <div className="space-y-6">
@@ -265,21 +280,6 @@ export default function OrderConfirmationPage() {
                     <p className="text-gray-600 leading-6">{paymentInfo?.paymentInstructions || 'Please complete your payment and share the screenshot on WhatsApp if needed.'}</p>
                   </div>
                 </div>
-              </div>
-
-              <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-                <h3 className="font-semibold text-gray-800 mb-3">WhatsApp Confirmation</h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  If WhatsApp did not open automatically, use the button below to send your order details to the store admin.
-                </p>
-                <a
-                  href={whatsappUrl || '#'}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`inline-flex w-full items-center justify-center gap-2 rounded-full px-5 py-3.5 text-sm font-bold text-white transition-all ${whatsappUrl ? 'bg-green-500 hover:bg-green-600' : 'bg-gray-300 pointer-events-none'}`}
-                >
-                  <FaWhatsapp size={18} /> Open WhatsApp Chat
-                </a>
               </div>
             </div>
           </div>

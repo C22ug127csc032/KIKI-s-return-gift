@@ -104,10 +104,18 @@ export const getAdminProducts = asyncHandler(async (req, res) => {
   }
   if (req.query.category) filter.category = req.query.category;
   if (req.query.isActive !== undefined) filter.isActive = req.query.isActive === 'true';
+  if (req.query.featured !== undefined) filter.featured = req.query.featured === 'true';
   if (req.query.lowStock === 'true') {
     filter.$expr = { $lte: ['$stock', '$lowStockThreshold'] };
   }
-  const sort = buildSortQuery(req.query.sortBy);
+  const sort = buildSortQuery(req.query.sortBy, {
+    'stock-asc': { stock: 1 },
+    'stock-desc': { stock: -1 },
+    'category-asc': { category: 1 },
+    'category-desc': { category: -1 },
+    'featured-asc': { featured: 1 },
+    'featured-desc': { featured: -1 },
+  });
   const [products, total] = await Promise.all([
     Product.find(filter)
       .populate('category', 'name')

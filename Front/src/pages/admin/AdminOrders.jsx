@@ -11,8 +11,8 @@ const PAYMENT_OPTIONS = ['Pending', 'Paid', 'Refunded'];
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [meta, setMeta] = useState({ page: 1, totalPages: 1 });
-  const [filters, setFilters] = useState({ search: '', orderStatus: '', paymentStatus: '', page: 1 });
+  const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
+  const [filters, setFilters] = useState({ search: '', orderStatus: '', paymentStatus: '', source: '', sortBy: 'latest', page: 1, limit: 10 });
   const [expandedId, setExpandedId] = useState(null);
   const [editOrder, setEditOrder] = useState(null);
   const [editForm, setEditForm] = useState({});
@@ -51,13 +51,16 @@ export default function AdminOrders() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold text-gray-900">Orders</h1>
       </div>
 
-      {/* Filters */}
-      <div className="admin-card mb-6 flex flex-wrap gap-3">
-        <div className="relative flex-1 min-w-48">
+      <div className="admin-card mb-6">
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <div className="text-sm text-gray-500">Total: {meta.total || orders.length}</div>
+        </div>
+        <div className="flex flex-wrap gap-3">
+        <div className="relative min-w-48 flex-1">
           <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
           <input placeholder="Search by order #, name, phone..." value={filters.search}
             onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })}
@@ -73,6 +76,26 @@ export default function AdminOrders() {
           <option value="">All Payments</option>
           {PAYMENT_OPTIONS.map((s) => <option key={s}>{s}</option>)}
         </select>
+        <select value={filters.source} onChange={(e) => setFilters({ ...filters, source: e.target.value, page: 1 })}
+          className="input-field text-sm py-2.5 w-auto">
+          <option value="">All Sources</option>
+          <option value="whatsapp">WhatsApp</option>
+          <option value="offline">Offline</option>
+        </select>
+        <select value={filters.sortBy} onChange={(e) => setFilters({ ...filters, sortBy: e.target.value, page: 1 })}
+          className="input-field text-sm py-2.5 w-auto">
+          <option value="latest">Latest First</option>
+          <option value="oldest">Oldest First</option>
+          <option value="total-desc">Highest Total</option>
+          <option value="total-asc">Lowest Total</option>
+          <option value="customer-asc">Customer A-Z</option>
+          <option value="customer-desc">Customer Z-A</option>
+        </select>
+        <select value={filters.limit} onChange={(e) => setFilters({ ...filters, limit: Number(e.target.value), page: 1 })}
+          className="input-field text-sm py-2.5 w-auto">
+          {[10, 20, 50].map((size) => <option key={size} value={size}>{size} / page</option>)}
+        </select>
+        </div>
       </div>
 
       {loading ? <PageLoader /> : orders.length === 0 ? (

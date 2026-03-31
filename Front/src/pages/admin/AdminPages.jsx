@@ -481,16 +481,17 @@ export function AdminInventory() {
       <div className="admin-card overflow-hidden">
         <h2 className="mb-4 font-semibold text-gray-800">Recent Product Movements</h2>
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
-                {['Product', 'Type', 'Qty', 'Prev', 'New', 'Reason', 'Date'].map((head) => <th key={head} className="px-2 pb-3 font-medium">{head}</th>)}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {movements.map((movement) => (
-                <tr key={movement._id} className="hover:bg-gray-50">
-                  <td className="px-2 py-2.5 text-gray-800">{movement.product?.name || '-'}</td>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
+                  {['#', 'Product', 'Type', 'Qty', 'Prev', 'New', 'Reason', 'Date'].map((head) => <th key={head} className="px-2 pb-3 font-medium">{head}</th>)}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {movements.map((movement, index) => (
+                  <tr key={movement._id} className="hover:bg-gray-50">
+                    <td className="px-2 py-2.5 text-gray-500">{index + 1}</td>
+                    <td className="px-2 py-2.5 text-gray-800">{movement.product?.name || '-'}</td>
                   <td className="px-2 py-2.5"><span className={`badge ${movement.type === 'IN' ? 'badge-green' : movement.type === 'OUT' ? 'badge-red' : 'badge-blue'}`}>{movement.type}</span></td>
                   <td className="px-2 py-2.5 font-semibold">{movement.quantity}</td>
                   <td className="px-2 py-2.5 text-gray-500">{movement.previousStock}</td>
@@ -514,12 +515,13 @@ export function AdminInventory() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
-                  {['Material', 'Supplier', 'Unit', 'Stock', 'Purchase Price'].map((head) => <th key={head} className="px-2 pb-3 font-medium">{head}</th>)}
+                  {['#', 'Material', 'Supplier', 'Unit', 'Stock', 'Purchase Price'].map((head) => <th key={head} className="px-2 pb-3 font-medium">{head}</th>)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {rawMaterials.map((material) => (
+                {rawMaterials.map((material, index) => (
                   <tr key={material._id} className="hover:bg-gray-50">
+                    <td className="px-2 py-2.5 text-gray-500">{index + 1}</td>
                     <td className="px-2 py-2.5 font-medium text-gray-800">{material.name}</td>
                     <td className="px-2 py-2.5 text-gray-500">{material.supplier?.name || '-'}</td>
                     <td className="px-2 py-2.5 text-gray-500">{material.unit}</td>
@@ -541,12 +543,13 @@ export function AdminInventory() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
-                  {['Material', 'Supplier', 'Type', 'Qty', 'Unit Price', 'Total', 'Prev', 'New', 'Product', 'Date'].map((head) => <th key={head} className="px-2 pb-3 font-medium">{head}</th>)}
+                  {['#', 'Material', 'Supplier', 'Type', 'Qty', 'Unit Price', 'Total', 'Prev', 'New', 'Product', 'Date'].map((head) => <th key={head} className="px-2 pb-3 font-medium">{head}</th>)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {rawMaterialMovements.map((movement) => (
+                {rawMaterialMovements.map((movement, index) => (
                   <tr key={movement._id} className="hover:bg-gray-50">
+                    <td className="px-2 py-2.5 text-gray-500">{index + 1}</td>
                     <td className="px-2 py-2.5 font-medium text-gray-800">{movement.rawMaterial?.name || '-'}</td>
                     <td className="px-2 py-2.5 text-gray-500">{movement.supplier?.name || '-'}</td>
                     <td className="px-2 py-2.5"><span className={`badge ${movement.type === 'PURCHASE' ? 'badge-green' : movement.type === 'USAGE' ? 'badge-red' : 'badge-blue'}`}>{movement.type}</span></td>
@@ -610,7 +613,7 @@ export function AdminOfflineSales() {
   const [form, setForm] = useState({ customerName: '', phone: '', address: '', notes: '' });
   const [cartItems, setCartItems] = useState([{ productId: '', quantity: 1 }]);
   const [saving, setSaving] = useState(false);
-  const [listFilters, setListFilters] = useState({ search: '', sortBy: 'date-desc', page: 1, pageSize: 10 });
+  const [listFilters, setListFilters] = useState({ search: '', hasPhone: '', sortBy: 'date-desc', page: 1, pageSize: 10 });
 
   useEffect(() => {
     document.title = 'Offline Sales - Admin';
@@ -671,16 +674,22 @@ export function AdminOfflineSales() {
     link.click();
   };
 
-  const filteredSales = sales.filter((sale) =>
-    !listFilters.search
-    || [sale.invoiceNumber, sale.customerName, sale.phone].some((value) => String(value || '').toLowerCase().includes(listFilters.search.toLowerCase()))
-  );
+  const filteredSales = sales.filter((sale) => {
+    const query = listFilters.search.toLowerCase();
+    const matchesSearch = !query || [sale.invoiceNumber, sale.customerName, sale.phone, sale.address].some((value) => String(value || '').toLowerCase().includes(query));
+    const matchesPhone = !listFilters.hasPhone || (listFilters.hasPhone === 'yes' ? Boolean(sale.phone) : !sale.phone);
+    return matchesSearch && matchesPhone;
+  });
 
   const sortedSales = [...filteredSales].sort((a, b) => {
     if (listFilters.sortBy === 'date-asc') return new Date(a.createdAt) - new Date(b.createdAt);
     if (listFilters.sortBy === 'date-desc') return new Date(b.createdAt) - new Date(a.createdAt);
     if (listFilters.sortBy === 'total-asc') return Number(a.totalAmount) - Number(b.totalAmount);
     if (listFilters.sortBy === 'total-desc') return Number(b.totalAmount) - Number(a.totalAmount);
+    if (listFilters.sortBy === 'customer-asc') return String(a.customerName || '').localeCompare(String(b.customerName || ''));
+    if (listFilters.sortBy === 'customer-desc') return String(b.customerName || '').localeCompare(String(a.customerName || ''));
+    if (listFilters.sortBy === 'invoice-asc') return String(a.invoiceNumber || '').localeCompare(String(b.invoiceNumber || ''));
+    if (listFilters.sortBy === 'invoice-desc') return String(b.invoiceNumber || '').localeCompare(String(a.invoiceNumber || ''));
     return String(a.customerName || '').localeCompare(String(b.customerName || ''));
   });
 
@@ -715,6 +724,14 @@ export function AdminOfflineSales() {
               <option value="total-desc">Highest Total</option>
               <option value="total-asc">Lowest Total</option>
               <option value="customer-asc">Customer A-Z</option>
+              <option value="customer-desc">Customer Z-A</option>
+              <option value="invoice-asc">Invoice A-Z</option>
+              <option value="invoice-desc">Invoice Z-A</option>
+            </select>
+            <select value={listFilters.hasPhone} onChange={(e) => setListFilters({ ...listFilters, hasPhone: e.target.value, page: 1 })} className="input-field h-11 w-full max-w-[170px] py-2 text-sm">
+              <option value="">All Phone Types</option>
+              <option value="yes">With Phone</option>
+              <option value="no">Without Phone</option>
             </select>
             <select value={listFilters.pageSize} onChange={(e) => setListFilters({ ...listFilters, pageSize: Number(e.target.value), page: 1 })} className="input-field h-11 w-full max-w-[130px] py-2 text-sm">
               {[10, 20, 50].map((size) => <option key={size} value={size}>{size} / page</option>)}
@@ -724,12 +741,13 @@ export function AdminOfflineSales() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
-                  {['Invoice', 'Customer', 'Phone', 'Total', 'Date', 'Invoice PDF'].map((head) => <th key={head} className="px-2 pb-3 font-medium">{head}</th>)}
+                  {['#', 'Invoice', 'Customer', 'Phone', 'Total', 'Date', 'Invoice PDF'].map((head) => <th key={head} className="px-2 pb-3 font-medium">{head}</th>)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {paginatedSales.map((sale) => (
+                {paginatedSales.map((sale, index) => (
                   <tr key={sale._id} className="hover:bg-gray-50">
+                    <td className="px-2 py-2.5 text-gray-500">{(salesCurrentPage - 1) * listFilters.pageSize + index + 1}</td>
                     <td className="px-2 py-2.5 font-medium text-brand-600">{sale.invoiceNumber}</td>
                     <td className="px-2 py-2.5">{sale.customerName}</td>
                     <td className="px-2 py-2.5 text-gray-500">{sale.phone || '-'}</td>
