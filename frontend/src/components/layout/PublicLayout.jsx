@@ -25,11 +25,11 @@ const pageRainItems = [
 
 export default function PublicLayout() {
   const location = useLocation();
-  const isHomePage = location.pathname === '/';
+  const showRainAnimation = !['/login', '/register'].includes(location.pathname);
 
   return (
-    <div className="relative flex min-h-screen flex-col overflow-x-hidden">
-      {isHomePage && (
+    <div className="relative flex min-h-screen flex-col">
+      {showRainAnimation ? (
         <div className="pointer-events-none fixed inset-0 z-[8] overflow-hidden">
           {pageRainItems.map(({ icon: Icon, left, delay, duration, drift, size, opacity, color, bg }, index) => (
             <div
@@ -58,7 +58,7 @@ export default function PublicLayout() {
             </div>
           ))}
         </div>
-      )}
+      ) : null}
       <div className="relative z-[20]">
         <Navbar />
       </div>

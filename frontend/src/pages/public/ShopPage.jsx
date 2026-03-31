@@ -196,6 +196,7 @@ export default function ShopPage() {
 
   const hasActive = filters.category || filters.occasion || filters.minPrice || filters.maxPrice || filters.search || filters.featured;
   const activeCount = [filters.category, filters.occasion, filters.minPrice, filters.maxPrice, filters.featured].filter(Boolean).length;
+  const activeCategory = categories.find((category) => category._id === filters.category);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -238,6 +239,29 @@ export default function ShopPage() {
           </aside>
 
           <div className="flex-1 min-w-0">
+            {hasActive ? (
+              <div className="mb-4 flex flex-wrap gap-2">
+                {filters.category ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700">
+                    {activeCategory?.name || 'Category'}
+                    <button onClick={() => setFilter('category', '')}><FiX size={11} /></button>
+                  </span>
+                ) : null}
+                {filters.occasion ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700">
+                    {filters.occasion}
+                    <button onClick={() => setFilter('occasion', '')}><FiX size={11} /></button>
+                  </span>
+                ) : null}
+                {filters.featured ? (
+                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
+                    Featured
+                    <button onClick={() => setFilter('featured', '')}><FiX size={11} /></button>
+                  </span>
+                ) : null}
+              </div>
+            ) : null}
+
             <div ref={resultsTopRef} className="flex flex-col sm:flex-row gap-3 mb-6">
               <div className="relative flex-1">
                 <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
@@ -290,23 +314,6 @@ export default function ShopPage() {
                 </div>
               </div>
             </div>
-
-            {hasActive ? (
-              <div className="flex flex-wrap gap-2 mb-5">
-                {filters.occasion ? (
-                  <span className="inline-flex items-center gap-1.5 bg-rose-50 text-rose-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-rose-200">
-                    {filters.occasion}
-                    <button onClick={() => setFilter('occasion', '')}><FiX size={11} /></button>
-                  </span>
-                ) : null}
-                {filters.featured ? (
-                  <span className="inline-flex items-center gap-1.5 bg-amber-50 text-amber-700 text-xs font-semibold px-3 py-1.5 rounded-full border border-amber-200">
-                    Featured
-                    <button onClick={() => setFilter('featured', '')}><FiX size={11} /></button>
-                  </span>
-                ) : null}
-              </div>
-            ) : null}
 
             {!loading ? (
               <p className="text-xs text-gray-400 font-medium mb-5">
