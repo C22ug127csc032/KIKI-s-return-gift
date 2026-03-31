@@ -100,6 +100,7 @@
 .hero-rain-item {
   animation: heroRainFloat var(--duration, 12s) linear infinite;
   animation-delay: var(--delay, 0s);
+  animation-timing-function: cubic-bezier(0.16, 0.82, 0.24, 1);
   filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.22));
   will-change: transform, opacity;
 }
@@ -107,6 +108,7 @@
 .page-rain-item {
   animation: heroRainFloat var(--duration, 10s) linear infinite;
   animation-delay: var(--delay, 0s);
+  animation-timing-function: cubic-bezier(0.16, 0.82, 0.24, 1);
   filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.24)) drop-shadow(0 16px 28px rgba(255, 64, 129, 0.34));
   will-change: transform, opacity;
 }
