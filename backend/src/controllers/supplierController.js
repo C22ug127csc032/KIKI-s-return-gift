@@ -22,6 +22,24 @@ const validateSupplierPayload = (payload) => {
   return payload;
 };
 
+const ensureUniqueSupplierFields = async (payload, supplierId = null) => {
+  const excludeCurrent = supplierId ? { _id: { $ne: supplierId } } : {};
+
+  if (payload.phone) {
+    const existingPhone = await Supplier.findOne({ ...excludeCurrent, phone: payload.phone }).select('_id name phone');
+    if (existingPhone) {
+      throw new ApiError(409, 'A supplier with this phone number already exists');
+    }
+  }
+
+  if (payload.email) {
+    const existingEmail = await Supplier.findOne({ ...excludeCurrent, email: payload.email }).select('_id name email');
+    if (existingEmail) {
+      throw new ApiError(409, 'A supplier with this email already exists');
+    }
+  }
+};
+
 export const getSuppliers = asyncHandler(async (req, res) => {
   const filter = {};
   if (req.query.search) {
@@ -37,12 +55,16 @@ export const getSuppliers = asyncHandler(async (req, res) => {
 });
 
 export const createSupplier = asyncHandler(async (req, res) => {
-  const supplier = await Supplier.create(validateSupplierPayload({ ...req.body }));
+  const payload = validateSupplierPayload({ ...req.body });
+  await ensureUniqueSupplierFields(payload);
+  const supplier = await Supplier.create(payload);
   sendResponse(res, 201, 'Supplier created', supplier);
 });
 
 export const updateSupplier = asyncHandler(async (req, res) => {
-  const supplier = await Supplier.findByIdAndUpdate(req.params.id, validateSupplierPayload({ ...req.body }), { new: true, runValidators: true });
+  const payload = validateSupplierPayload({ ...req.body });
+  await ensureUniqueSupplierFields(payload, req.params.id);
+  const supplier = await Supplier.findByIdAndUpdate(req.params.id, payload, { new: true, runValidators: true });
   if (!supplier) throw new ApiError(404, 'Supplier not found');
   sendResponse(res, 200, 'Supplier updated', supplier);
 });

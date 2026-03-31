@@ -22,7 +22,7 @@ const supplierSchema = new mongoose.Schema(
         message: 'Enter a valid email address',
       },
     },
-    address: { type: String, trim: true },
+    address: { type: String, required: true, trim: true },
     notes: { type: String, trim: true },
     isActive: { type: Boolean, default: true },
   },

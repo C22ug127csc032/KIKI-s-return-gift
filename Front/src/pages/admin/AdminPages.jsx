@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FiAlertTriangle, FiBox, FiDownload, FiFileText, FiPlus, FiSearch, FiTag, FiTrash2 } from 'react-icons/fi';
+import { FiAlertTriangle, FiBox, FiChevronDown, FiDownload, FiFileText, FiGrid, FiPlus, FiSearch, FiTrash2, FiX } from 'react-icons/fi';
 import api from '../../api/api.js';
 import { EmptyState, Modal, PageLoader, Pagination } from '../../components/ui/index.jsx';
 import { getSellingPrice } from '../../utils/pricing.js';
@@ -22,6 +22,126 @@ const sortItems = (items, sortBy, accessors) => {
     return direction === 'desc' ? bValue.localeCompare(aValue) : aValue.localeCompare(bValue);
   });
 };
+
+function SearchableSelectField({ options, value, onChange, placeholder = 'Search option', disabled = false }) {
+  const fieldRef = useRef(null);
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!value) {
+      setQuery('');
+      return;
+    }
+    const selectedOption = options.find((option) => option.value === value);
+    if (selectedOption) setQuery(selectedOption.label);
+  }, [value, options]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (!fieldRef.current?.contains(event.target)) setOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const filteredOptions = options.filter((option) =>
+    option.label.toLowerCase().includes(query.toLowerCase())
+  );
+
+  const handleChange = (event) => {
+    if (disabled) return;
+    const nextQuery = event.target.value;
+    setQuery(nextQuery);
+    setOpen(true);
+
+    const exactMatch = options.find((option) => option.label === nextQuery);
+    if (exactMatch) {
+      onChange(exactMatch.value);
+      return;
+    }
+
+    if (!nextQuery.trim()) onChange('');
+  };
+
+  const handleSelect = (option) => {
+    setQuery(option.label);
+    onChange(option.value);
+    setOpen(false);
+  };
+
+  const handleClear = () => {
+    setQuery('');
+    onChange('');
+    setOpen(false);
+  };
+
+  return (
+    <div ref={fieldRef} className="relative">
+      <input
+        value={query}
+        onChange={handleChange}
+        placeholder={placeholder}
+        disabled={disabled}
+        onFocus={() => {
+          if (!disabled) setOpen(true);
+        }}
+        className={`input-field pr-20 ${disabled ? 'cursor-not-allowed bg-gray-100 text-gray-400' : ''}`}
+      />
+      <div className="pointer-events-none absolute inset-y-0 right-11 flex items-center text-gray-300">
+        <div className="h-5 border-l border-gray-200" />
+      </div>
+      {query ? (
+        <button
+          type="button"
+          onClick={handleClear}
+          className="absolute inset-y-0 right-10 flex items-center justify-center px-2 text-gray-400 transition hover:text-rose-500"
+          aria-label="Clear selection"
+        >
+          <FiX size={15} />
+        </button>
+      ) : null}
+      <button
+        type="button"
+        onClick={() => {
+          if (!disabled) setOpen((current) => !current);
+        }}
+        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-500 transition hover:text-rose-600 disabled:cursor-not-allowed"
+        disabled={disabled}
+        aria-label="Toggle options"
+      >
+        <FiChevronDown size={16} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && !disabled ? (
+        <div className="absolute left-0 right-0 top-[calc(100%+0.45rem)] z-20 overflow-hidden rounded-2xl border border-rose-100 bg-white shadow-[0_18px_40px_rgba(225,29,72,0.16)]">
+          <div className="border-b border-rose-50 bg-gradient-to-r from-rose-50 to-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-rose-400">
+            Select Option
+          </div>
+          <div className="max-h-56 overflow-y-auto p-2">
+            {filteredOptions.length ? filteredOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleSelect(option)}
+                className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition ${
+                  option.value === value ? 'bg-rose-100 text-rose-700' : 'text-gray-700 hover:bg-rose-50 hover:text-rose-600'
+                }`}
+              >
+                <FiSearch size={14} className="text-rose-300" />
+                <span className="truncate">{option.label}</span>
+              </button>
+            )) : (
+              <div className="px-3 py-3 text-sm text-gray-400">
+                No matching options found.
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
 
 export function AdminCategories() {
   const formRef = useRef(null);
@@ -59,10 +179,14 @@ export function AdminCategories() {
   };
 
   const handleSave = async () => {
+    if (!form.name.trim()) {
+      toast.error('Category name is required');
+      return;
+    }
     setSaving(true);
     try {
       const fd = new FormData();
-      fd.append('name', form.name);
+      fd.append('name', form.name.trim());
       fd.append('description', form.description);
       if (image) fd.append('image', image);
       if (editCat) await api.put(`/categories/${editCat._id}`, fd, { headers: { 'Content-Type': 'multipart/form-data' } });
@@ -124,7 +248,7 @@ export function AdminCategories() {
       <div ref={formRef} className="admin-card mb-6">
         <div className="mb-5 flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-500">
-            <FiTag size={22} />
+            <FiGrid size={22} />
           </div>
           <div>
             <h2 className="text-2xl font-semibold text-gray-900">{editCat ? 'Edit Category' : 'Add Category'}</h2>
@@ -160,7 +284,7 @@ export function AdminCategories() {
                 <img src={editCat.image} alt={editCat.name} className="h-12 w-12 rounded-xl border border-gray-200 object-cover" />
               ) : (
                 <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-brand-50 text-brand-400">
-                  <FiTag size={20} />
+                  <FiGrid size={20} />
                 </div>
               )}
               <div className="text-sm text-gray-500">
@@ -182,7 +306,7 @@ export function AdminCategories() {
       </div>
 
       {loading ? <PageLoader /> : cats.length === 0 ? (
-        <EmptyState icon={<FiTag size={56} />} title="No categories yet" />
+        <EmptyState icon={<FiGrid size={56} />} title="No categories yet" />
       ) : (
         <div className="admin-card overflow-hidden">
           <div className="mb-5 flex items-center justify-between">
@@ -235,7 +359,7 @@ export function AdminCategories() {
                           <img src={cat.image} alt={cat.name} className="h-full w-full object-cover" />
                         ) : (
                           <div className="flex h-full w-full items-center justify-center text-brand-400">
-                            <FiTag size={20} />
+                            <FiGrid size={20} />
                           </div>
                         )}
                       </div>
@@ -282,6 +406,10 @@ export function AdminInventory() {
   const [showAdjust, setShowAdjust] = useState(false);
   const [adjForm, setAdjForm] = useState({ productId: '', type: 'IN', quantity: '', note: '' });
   const [saving, setSaving] = useState(false);
+  const productOptions = products.map((product) => ({
+    value: product._id,
+    label: `${product.name}${product.sku ? ` - ${product.sku}` : ''}`,
+  }));
 
   useEffect(() => {
     document.title = 'Inventory - Admin';
@@ -306,6 +434,14 @@ export function AdminInventory() {
   };
 
   const handleAdjust = async () => {
+    if (!adjForm.productId) {
+      toast.error('Product is required');
+      return;
+    }
+    if (adjForm.quantity === '' || Number(adjForm.quantity) < 0) {
+      toast.error('Enter a valid quantity');
+      return;
+    }
     setSaving(true);
     try {
       await api.post('/inventory/adjust', { ...adjForm, quantity: Number(adjForm.quantity) });
@@ -405,15 +541,18 @@ export function AdminInventory() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
-                  {['Material', 'Type', 'Qty', 'Prev', 'New', 'Product', 'Date'].map((head) => <th key={head} className="px-2 pb-3 font-medium">{head}</th>)}
+                  {['Material', 'Supplier', 'Type', 'Qty', 'Unit Price', 'Total', 'Prev', 'New', 'Product', 'Date'].map((head) => <th key={head} className="px-2 pb-3 font-medium">{head}</th>)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
                 {rawMaterialMovements.map((movement) => (
                   <tr key={movement._id} className="hover:bg-gray-50">
                     <td className="px-2 py-2.5 font-medium text-gray-800">{movement.rawMaterial?.name || '-'}</td>
+                    <td className="px-2 py-2.5 text-gray-500">{movement.supplier?.name || '-'}</td>
                     <td className="px-2 py-2.5"><span className={`badge ${movement.type === 'PURCHASE' ? 'badge-green' : movement.type === 'USAGE' ? 'badge-red' : 'badge-blue'}`}>{movement.type}</span></td>
                     <td className="px-2 py-2.5 font-semibold">{movement.quantity}</td>
+                    <td className="px-2 py-2.5 text-gray-500">{movement.unitPrice !== undefined && movement.unitPrice !== null ? `Rs.${movement.unitPrice}` : '-'}</td>
+                    <td className="px-2 py-2.5 text-gray-500">{movement.totalAmount !== undefined && movement.totalAmount !== null ? `Rs.${movement.totalAmount}` : '-'}</td>
                     <td className="px-2 py-2.5 text-gray-500">{movement.previousStock}</td>
                     <td className="px-2 py-2.5 font-semibold text-gray-800">{movement.newStock}</td>
                     <td className="px-2 py-2.5 text-gray-500">{movement.product?.name || '-'}</td>
@@ -430,10 +569,12 @@ export function AdminInventory() {
         <div className="space-y-4">
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700">Product *</label>
-            <select value={adjForm.productId} onChange={(e) => setAdjForm({ ...adjForm, productId: e.target.value })} className="input-field">
-              <option value="">Select product</option>
-              {products.map((product) => <option key={product._id} value={product._id}>{product.name} (Stock: {product.stock})</option>)}
-            </select>
+            <SearchableSelectField
+              options={productOptions}
+              value={adjForm.productId}
+              onChange={(productId) => setAdjForm({ ...adjForm, productId })}
+              placeholder="Search product"
+            />
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700">Type *</label>
@@ -491,14 +632,26 @@ export function AdminOfflineSales() {
   };
 
   const handleCreate = async () => {
+    if (!form.customerName.trim()) {
+      toast.error('Customer name is required');
+      return;
+    }
     if (form.phone && !isValidPhone(form.phone)) {
       toast.error('Phone number must be exactly 10 digits');
       return;
     }
+    const items = cartItems.filter((item) => item.productId).map((item) => ({ product: item.productId, quantity: Number(item.quantity) }));
+    if (!items.length) {
+      toast.error('Add at least one item');
+      return;
+    }
+    if (items.some((item) => !item.quantity || item.quantity <= 0)) {
+      toast.error('Each item quantity must be greater than 0');
+      return;
+    }
     setSaving(true);
     try {
-      const items = cartItems.filter((item) => item.productId).map((item) => ({ product: item.productId, quantity: Number(item.quantity) }));
-      await api.post('/offline-sales', { ...form, items });
+      await api.post('/offline-sales', { ...form, customerName: form.customerName.trim(), items });
       toast.success('Offline sale recorded');
       setShowModal(false);
       fetchSales();
@@ -596,31 +749,47 @@ export function AdminOfflineSales() {
 
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Record Offline Sale" size="lg">
         <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div><label className="mb-1.5 block text-sm font-medium">Customer Name *</label><input value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} className="input-field" /></div>
-            <div><label className="mb-1.5 block text-sm font-medium">Phone</label><input value={form.phone} onChange={(e) => setForm({ ...form, phone: normalizePhone(e.target.value) })} className="input-field" /></div>
-            <div className="col-span-2"><label className="mb-1.5 block text-sm font-medium">Address</label><input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="input-field" /></div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Customer Name *</label>
+              <input value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} className="input-field" />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-sm font-medium">Phone</label>
+              <input value={form.phone} onChange={(e) => setForm({ ...form, phone: normalizePhone(e.target.value) })} className="input-field" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1.5 block text-sm font-medium">Address</label>
+              <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="input-field" />
+            </div>
           </div>
 
           <div>
-            <div className="mb-2 flex items-center justify-between">
+            <div className="mb-2 flex items-center justify-between gap-3">
               <label className="text-sm font-medium">Items *</label>
               <button onClick={addItem} className="text-xs text-brand-500 hover:underline">+ Add item</button>
             </div>
             {cartItems.map((item, index) => (
-              <div key={index} className="mb-2 flex gap-2">
-                <select value={item.productId} onChange={(e) => updateItem(index, 'productId', e.target.value)} className="input-field flex-1 text-sm">
+              <div key={index} className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_96px_auto] sm:items-center">
+                <select value={item.productId} onChange={(e) => updateItem(index, 'productId', e.target.value)} className="input-field w-full text-sm">
                   <option value="">Select product</option>
                   {products.map((product) => <option key={product._id} value={product._id}>{product.name} (Rs.{product.discountedPrice ?? getSellingPrice(product)})</option>)}
                 </select>
-                <input type="number" value={item.quantity} onChange={(e) => updateItem(index, 'quantity', e.target.value)} min="1" className="input-field w-20 text-sm" />
-                {cartItems.length > 1 ? <button onClick={() => removeItem(index)} className="px-2 text-red-400 hover:text-red-600"><FiTrash2 size={15} /></button> : null}
+                <input type="number" value={item.quantity} onChange={(e) => updateItem(index, 'quantity', e.target.value)} min="1" className="input-field w-full text-sm" />
+                {cartItems.length > 1 ? (
+                  <button onClick={() => removeItem(index)} className="inline-flex h-11 w-11 items-center justify-center justify-self-start rounded-xl border border-red-100 text-red-400 transition hover:bg-red-50 hover:text-red-600 sm:justify-self-auto">
+                    <FiTrash2 size={15} />
+                  </button>
+                ) : null}
               </div>
             ))}
           </div>
 
-          <div><label className="mb-1.5 block text-sm font-medium">Notes</label><input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="input-field" /></div>
-          <div className="flex gap-3">
+          <div>
+            <label className="mb-1.5 block text-sm font-medium">Notes</label>
+            <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="input-field" />
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
             <button onClick={() => setShowModal(false)} className="btn-outline flex-1">Cancel</button>
             <button onClick={handleCreate} disabled={saving} className="btn-primary flex-1">{saving ? 'Saving...' : 'Record Sale'}</button>
           </div>

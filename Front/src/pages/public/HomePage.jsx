@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'framer-motion';
 import {
   FiArrowRight, FiStar, FiTruck, FiShield, FiHeart, FiGift,
   FiSun, FiCheckCircle, FiHome, FiBriefcase, FiChevronLeft, FiChevronRight
@@ -117,6 +117,36 @@ export default function HomePage() {
   const heroTimer = useRef(null);
   const heroSectionRef = useRef(null);
   const whatsapp = import.meta.env.VITE_WHATSAPP_NUMBER || '919876543210';
+  const { scrollYProgress } = useScroll({
+    target: heroSectionRef,
+    offset: ['start start', 'end start'],
+  });
+  const heroBgY = useSpring(useTransform(scrollYProgress, [0, 1], ['0%', '12%']), {
+    stiffness: 110,
+    damping: 26,
+    mass: 0.35,
+  });
+  const heroBgScale = useSpring(useTransform(scrollYProgress, [0, 1], [1, 1.08]), {
+    stiffness: 120,
+    damping: 28,
+    mass: 0.4,
+  });
+  const heroRainY = useSpring(useTransform(scrollYProgress, [0, 1], ['0%', '18%']), {
+    stiffness: 105,
+    damping: 24,
+    mass: 0.35,
+  });
+  const heroContentY = useSpring(useTransform(scrollYProgress, [0, 1], ['0%', '-10%']), {
+    stiffness: 120,
+    damping: 28,
+    mass: 0.4,
+  });
+  const heroContentOpacity = useTransform(scrollYProgress, [0, 0.7, 1], [1, 0.9, 0.72]);
+  const heroBadgeY = useSpring(useTransform(scrollYProgress, [0, 1], ['0%', '-8%']), {
+    stiffness: 110,
+    damping: 26,
+    mass: 0.35,
+  });
 
   const gotoSlide = useCallback((idx) => {
     setHeroIndex((idx + heroSlides.length) % heroSlides.length);
@@ -165,7 +195,10 @@ export default function HomePage() {
         onMouseEnter={() => setHeroPaused(true)}
         onMouseLeave={() => setHeroPaused(false)}
       >
-        <div className={`pointer-events-none absolute inset-0 z-[2] overflow-hidden transition-opacity duration-500 ${heroRainVisible ? 'opacity-100' : 'opacity-0'}`}>
+        <motion.div
+          className={`pointer-events-none absolute inset-0 z-[2] overflow-hidden transition-opacity duration-500 ${heroRainVisible ? 'opacity-100' : 'opacity-0'}`}
+          style={{ y: heroRainY }}
+        >
           {heroRainItems.map(({ icon: Icon, left, delay, duration, drift, size, opacity, color, bg }, index) => (
             <div
               key={`${left}-${index}`}
@@ -193,14 +226,19 @@ export default function HomePage() {
               </div>
             </div>
           ))}
-        </div>
+        </motion.div>
 
         {/* Slide backgrounds */}
         {heroSlides.map((s, i) => (
-          <div
+          <motion.div
             key={s.id}
             className="absolute inset-0 transition-opacity duration-1000"
-            style={{ opacity: i === heroIndex ? 1 : 0, zIndex: i === heroIndex ? 1 : 0 }}
+            style={{
+              opacity: i === heroIndex ? 1 : 0,
+              zIndex: i === heroIndex ? 1 : 0,
+              y: heroBgY,
+              scale: heroBgScale,
+            }}
           >
             <img
               src={s.image}
@@ -211,7 +249,7 @@ export default function HomePage() {
             {/* Gradient overlay */}
             <div className={`absolute inset-0 bg-gradient-to-r ${s.accent}`} />
             <div className="absolute inset-0 bg-black/20" />
-          </div>
+          </motion.div>
         ))}
 
         {/* Progress bar */}
@@ -230,7 +268,10 @@ export default function HomePage() {
         </div>
 
         {/* Content */}
-        <div className="absolute inset-0 z-10 flex items-center pt-10 sm:pt-0">
+        <motion.div
+          className="absolute inset-0 z-10 flex items-center pt-10 sm:pt-0"
+          style={{ y: heroContentY, opacity: heroContentOpacity }}
+        >
           <div className="page-container w-full">
             <div className="mx-auto max-w-2xl text-center sm:mx-0 sm:text-left">
               <AnimatePresence mode="wait">
@@ -296,7 +337,7 @@ export default function HomePage() {
               </AnimatePresence>
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Floating badges — desktop */}
         <AnimatePresence mode="wait">
@@ -307,6 +348,7 @@ export default function HomePage() {
             exit={{ opacity: 0, x: 24 }}
             transition={{ duration: 0.5, delay: 0.2 }}
             className="absolute right-10 top-1/2 z-10 hidden -translate-y-1/2 flex-col gap-4 lg:flex"
+            style={{ y: heroBadgeY }}
           >
             <div className="rounded-2xl border border-white/30 bg-white/90 px-5 py-3.5 shadow-xl backdrop-blur-md">
               <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-rose-500">{slide.badge1.label}</p>

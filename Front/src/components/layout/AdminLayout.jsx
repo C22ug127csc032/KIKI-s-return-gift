@@ -2,16 +2,16 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FiBarChart2, FiGift, FiGrid, FiLayers, FiList, FiLogOut, FiMenu, FiSettings, FiShoppingBag, FiTag, FiTrendingUp, FiTruck, FiBox, FiTool
+  FiBarChart2, FiGift, FiGrid, FiLayers, FiList, FiLogOut, FiMenu, FiPackage, FiSettings, FiTrendingUp, FiUsers, FiBox, FiTool
 } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext.jsx';
 
 const navItems = [
   { to: '/admin/dashboard', icon: FiGrid, label: 'Dashboard' },
   { to: '/admin/orders', icon: FiList, label: 'Orders' },
-  { to: '/admin/products', icon: FiShoppingBag, label: 'Products' },
-  { to: '/admin/categories', icon: FiTag, label: 'Categories' },
-  { to: '/admin/suppliers', icon: FiTruck, label: 'Suppliers' },
+  { to: '/admin/categories', icon: FiGrid, label: 'Categories' },
+  { to: '/admin/products', icon: FiPackage, label: 'Products' },
+  { to: '/admin/suppliers', icon: FiUsers, label: 'Suppliers' },
   { to: '/admin/raw-materials', icon: FiBox, label: 'Raw Materials' },
   { to: '/admin/product-bom', icon: FiLayers, label: 'Product BOM' },
   { to: '/admin/production', icon: FiTool, label: 'Production' },

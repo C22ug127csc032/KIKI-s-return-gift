@@ -31,6 +31,23 @@ const removeLocalCategoryImage = (imageUrl) => {
   if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 };
 
+const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const ensureUniqueCategoryName = async (name, categoryId = null) => {
+  const normalizedName = name?.trim();
+  if (!normalizedName) throw new ApiError(400, 'Category name is required');
+
+  const filter = { name: new RegExp(`^${escapeRegex(normalizedName)}$`, 'i') };
+  if (categoryId) filter._id = { $ne: categoryId };
+
+  const existingCategory = await Category.findOne(filter).select('_id name');
+  if (existingCategory) {
+    throw new ApiError(409, 'A category with this name already exists');
+  }
+
+  return normalizedName;
+};
+
 export const getCategories = asyncHandler(async (req, res) => {
   const { page, limit, skip } = getPagination(req.query);
   const filter = {};
@@ -54,7 +71,8 @@ export const getCategoryById = asyncHandler(async (req, res) => {
 });
 
 export const createCategory = asyncHandler(async (req, res) => {
-  const { name, description } = req.body;
+  const name = await ensureUniqueCategoryName(req.body.name);
+  const { description } = req.body;
   const { imageUrl, imagePublicId } = buildCategoryImageUrl(req, req.file);
   const category = await Category.create({ name, description, image: imageUrl, imagePublicId });
   sendResponse(res, 201, 'Category created', category);
@@ -71,7 +89,7 @@ export const updateCategory = asyncHandler(async (req, res) => {
     category.image = imageUrl;
     category.imagePublicId = imagePublicId;
   }
-  if (name) category.name = name;
+  if (name !== undefined) category.name = await ensureUniqueCategoryName(name, req.params.id);
   if (description !== undefined) category.description = description;
   if (isActive !== undefined) category.isActive = isActive;
   await category.save();

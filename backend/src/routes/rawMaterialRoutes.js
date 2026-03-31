@@ -4,6 +4,7 @@ import {
   adjustRawMaterialStock,
   createRawMaterial,
   deleteRawMaterial,
+  getRawMaterialPurchaseSummary,
   getRawMaterialMovements,
   getRawMaterials,
   purchaseRawMaterial,
@@ -14,6 +15,7 @@ const router = express.Router();
 
 router.get('/', protect, adminOnly, getRawMaterials);
 router.get('/movements', protect, adminOnly, getRawMaterialMovements);
+router.get('/purchase-summary', protect, adminOnly, getRawMaterialPurchaseSummary);
 router.post('/', protect, adminOnly, createRawMaterial);
 router.post('/purchase', protect, adminOnly, purchaseRawMaterial);
 router.post('/adjust', protect, adminOnly, adjustRawMaterialStock);

@@ -6,6 +6,25 @@ import asyncHandler from '../utils/asyncHandler.js';
 import { sendResponse } from '../utils/apiResponse.js';
 
 const rawMaterialPopulate = [{ path: 'supplier', select: 'name contactPerson phone' }];
+const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const ensureUniqueRawMaterialName = async (name, rawMaterialId = null) => {
+  const normalizedName = name?.trim();
+  if (!normalizedName) throw new ApiError(400, 'Raw material name is required');
+
+  const filter = {
+    name: new RegExp(`^${escapeRegex(normalizedName)}$`, 'i'),
+  };
+
+  if (rawMaterialId) filter._id = { $ne: rawMaterialId };
+
+  const existingMaterial = await RawMaterial.findOne(filter).select('_id name');
+  if (existingMaterial) {
+    throw new ApiError(409, 'A raw material with this name already exists');
+  }
+
+  return normalizedName;
+};
 
 export const getRawMaterials = asyncHandler(async (req, res) => {
   const filter = {};
@@ -21,20 +40,19 @@ export const createRawMaterial = asyncHandler(async (req, res) => {
   const itemsInput = Array.isArray(req.body.items) ? req.body.items : [req.body];
 
   if (!itemsInput.length) throw new ApiError(400, 'At least one raw material item is required');
+  if (!supplierId) throw new ApiError(400, 'Supplier is required');
 
-  if (supplierId) {
-    const supplier = await Supplier.findById(supplierId);
-    if (!supplier) throw new ApiError(404, 'Supplier not found');
-  }
+  const supplier = await Supplier.findById(supplierId);
+  if (!supplier) throw new ApiError(404, 'Supplier not found');
 
   const createdMaterials = [];
 
   for (const item of itemsInput) {
-    if (!item.name) throw new ApiError(400, 'Raw material name is required');
+    const normalizedName = await ensureUniqueRawMaterialName(item.name);
 
     const payload = {
       supplier: supplierId,
-      name: item.name,
+      name: normalizedName,
       unit: item.unit || 'pcs',
       stock: Number(item.stock) || 0,
       purchasePrice: Number(item.purchasePrice) || 0,
@@ -75,9 +93,17 @@ export const updateRawMaterial = asyncHandler(async (req, res) => {
     if (!supplier) throw new ApiError(404, 'Supplier not found');
   }
 
-  ['supplier', 'name', 'unit', 'purchasePrice', 'lowStockThreshold', 'isActive'].forEach((field) => {
+  ['supplier', 'unit', 'purchasePrice', 'lowStockThreshold', 'isActive'].forEach((field) => {
     if (req.body[field] !== undefined) rawMaterial[field] = field === 'supplier' ? (req.body[field] || undefined) : req.body[field];
   });
+
+  if (req.body.name !== undefined) {
+    rawMaterial.name = await ensureUniqueRawMaterialName(req.body.name, req.params.id);
+  }
+
+  if (req.body.supplier === '') {
+    throw new ApiError(400, 'Supplier is required');
+  }
 
   await rawMaterial.save();
   await rawMaterial.populate(rawMaterialPopulate);
@@ -103,12 +129,10 @@ export const purchaseRawMaterial = asyncHandler(async (req, res) => {
   );
 
   if (!itemsInput.length) throw new ApiError(400, 'At least one raw material item is required');
+  if (!supplierId) throw new ApiError(400, 'Supplier is required');
 
-  let supplier;
-  if (supplierId) {
-    supplier = await Supplier.findById(supplierId);
-    if (!supplier) throw new ApiError(404, 'Supplier not found');
-  }
+  const supplier = await Supplier.findById(supplierId);
+  if (!supplier) throw new ApiError(404, 'Supplier not found');
 
   const updatedMaterials = [];
 
@@ -196,4 +220,69 @@ export const getRawMaterialMovements = asyncHandler(async (req, res) => {
     .sort({ createdAt: -1 })
     .limit(Number(req.query.limit) || 50);
   sendResponse(res, 200, 'Raw material movements fetched', movements);
+});
+
+export const getRawMaterialPurchaseSummary = asyncHandler(async (req, res) => {
+  const matchStage = { type: 'PURCHASE' };
+  if (req.query.rawMaterial) matchStage.rawMaterial = req.query.rawMaterial;
+  if (req.query.supplier) matchStage.supplier = req.query.supplier;
+
+  const summary = await RawMaterialMovement.aggregate([
+    { $match: matchStage },
+    { $sort: { createdAt: -1 } },
+    {
+      $group: {
+        _id: {
+          rawMaterial: '$rawMaterial',
+          supplier: '$supplier',
+        },
+        totalPurchasedQty: { $sum: '$quantity' },
+        totalSpend: { $sum: { $ifNull: ['$totalAmount', 0] } },
+        latestUnitPrice: { $first: '$unitPrice' },
+        lastPurchasedAt: { $first: '$createdAt' },
+        purchaseCount: { $sum: 1 },
+      },
+    },
+    {
+      $lookup: {
+        from: 'rawmaterials',
+        localField: '_id.rawMaterial',
+        foreignField: '_id',
+        as: 'rawMaterial',
+      },
+    },
+    {
+      $lookup: {
+        from: 'suppliers',
+        localField: '_id.supplier',
+        foreignField: '_id',
+        as: 'supplier',
+      },
+    },
+    { $unwind: '$rawMaterial' },
+    {
+      $addFields: {
+        supplier: { $arrayElemAt: ['$supplier', 0] },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        rawMaterialId: '$rawMaterial._id',
+        rawMaterialName: '$rawMaterial.name',
+        unit: '$rawMaterial.unit',
+        currentTotalStock: '$rawMaterial.stock',
+        supplierId: '$supplier._id',
+        supplierName: '$supplier.name',
+        totalPurchasedQty: 1,
+        totalSpend: 1,
+        latestUnitPrice: 1,
+        purchaseCount: 1,
+        lastPurchasedAt: 1,
+      },
+    },
+    { $sort: { rawMaterialName: 1, supplierName: 1, lastPurchasedAt: -1 } },
+  ]);
+
+  sendResponse(res, 200, 'Raw material purchase summary fetched', summary);
 });

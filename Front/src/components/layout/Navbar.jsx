@@ -82,17 +82,17 @@ export default function Navbar() {
     <>
       <header className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? 'bg-rose-600 shadow-[0_2px_20px_rgba(190,24,93,0.28)]' : 'bg-rose-600/95 backdrop-blur-sm border-b border-rose-500'}`}>
         <div className="page-container">
-          <div className="flex min-h-[68px] items-center justify-between gap-2 py-2 sm:h-16 sm:min-h-0 sm:gap-4 sm:py-0">
-            <div className="flex min-w-0 flex-1 items-center gap-2 md:flex-none">
+          <div className="flex min-h-[68px] items-center justify-between gap-1.5 py-2 sm:h-16 sm:min-h-0 sm:gap-4 sm:py-0">
+            <div className="flex min-w-0 flex-1 items-center gap-1.5 md:flex-none">
               <button className="rounded-full p-2.5 text-white hover:bg-white/15 md:hidden flex-shrink-0" onClick={() => setMenuOpen(!menuOpen)}>
                 {menuOpen ? <FiX size={20} /> : <FiMenu size={20} />}
               </button>
-              <Link to="/" className="flex min-w-0 flex-shrink items-center gap-2 sm:gap-2.5">
+              <Link to="/" className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5">
                 <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-sm sm:h-9 sm:w-9">
                   <RiGiftLine size={17} className="text-rose-700 sm:w-5 sm:h-5" />
                 </div>
-                <div className="min-w-0 leading-none sm:max-w-none">
-                  <p className="truncate font-display text-base font-bold tracking-[0.01em] text-white sm:text-xl">KIKI'S</p>
+                <div className="leading-none">
+                  <p className="font-display text-[15px] font-bold tracking-[0.01em] text-white sm:text-xl">KIKI'S</p>
                   <p className="hidden truncate pt-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-rose-100 sm:block sm:text-[10px] sm:tracking-[0.24em]">Return Gifts</p>
                 </div>
               </Link>
@@ -109,15 +109,15 @@ export default function Navbar() {
               ))}
             </nav>
 
-            <div className="flex flex-shrink-0 items-center gap-0.5 sm:gap-1.5">
+            <div className="flex flex-shrink-0 items-center gap-0 sm:gap-1.5">
               <button onClick={() => setSearchOpen(true)}
-                className="rounded-full p-2 text-white transition-all hover:bg-white/15 sm:p-2.5">
-                <FiSearch size={17} />
+                className="rounded-full p-1.5 text-white transition-all hover:bg-white/15 sm:p-2.5">
+                <FiSearch size={16} />
               </button>
 
               {user ? (
-                <Link to="/wishlist" className="relative p-2 sm:p-2.5 text-white hover:bg-white/15 rounded-full transition-all">
-                  {wishlistItems.length > 0 ? <RiHeart3Fill size={18} /> : <RiHeart3Line size={18} />}
+                <Link to="/wishlist" className="relative rounded-full p-1.5 text-white transition-all hover:bg-white/15 sm:p-2.5">
+                  {wishlistItems.length > 0 ? <RiHeart3Fill size={17} /> : <RiHeart3Line size={17} />}
                   <AnimatePresence>
                     {wishlistItems.length > 0 && (
                       <motion.span key="wishlist-badge" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
@@ -129,8 +129,8 @@ export default function Navbar() {
                 </Link>
               ) : null}
 
-              <Link to="/cart" className="relative rounded-full p-2 text-white transition-all hover:bg-white/15 sm:p-2.5">
-                <FiShoppingCart size={17} />
+              <Link to="/cart" className="relative rounded-full p-1.5 text-white transition-all hover:bg-white/15 sm:p-2.5">
+                <FiShoppingCart size={16} />
                 <AnimatePresence>
                   {cartCount > 0 && (
                     <motion.span key="badge" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
@@ -144,12 +144,12 @@ export default function Navbar() {
               {user ? (
                 <div ref={userMenuRef} className="relative">
                   <button onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className="flex items-center gap-1 sm:gap-2 pl-1 sm:pl-2 pr-1.5 sm:pr-3 py-1.5 rounded-full hover:bg-white/15 transition-all border border-transparent hover:border-white/20 max-w-[46px] sm:max-w-none">
-                    <div className="w-7 h-7 bg-white/20 rounded-full flex items-center justify-center border border-white/15 flex-shrink-0">
+                    className="flex items-center gap-1 sm:gap-2 pl-1 sm:pl-2 pr-1 sm:pr-3 py-1 rounded-full hover:bg-white/15 transition-all border border-transparent hover:border-white/20 max-w-[40px] sm:max-w-none">
+                    <div className="flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-white/20 flex-shrink-0">
                       <span className="text-white font-bold text-xs">{user.name[0].toUpperCase()}</span>
                     </div>
                     <span className="hidden sm:block text-sm font-medium text-white max-w-[80px] truncate">{user.name.split(' ')[0]}</span>
-                    <FiChevronDown size={13} className={`text-rose-100 transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
+                    <FiChevronDown size={13} className={`hidden text-rose-100 transition-transform sm:block ${userMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
                   <AnimatePresence>
                     {userMenuOpen && (

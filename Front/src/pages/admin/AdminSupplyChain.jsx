@@ -9,7 +9,7 @@ import {
   FiShoppingCart,
   FiTool,
   FiTrash2,
-  FiTruck,
+  FiUsers,
   FiX,
 } from 'react-icons/fi';
 import api from '../../api/api.js';
@@ -252,6 +252,10 @@ export function AdminSuppliers() {
   };
 
   const handleSave = async () => {
+    if (!form.address.trim()) {
+      toast.error('Address is required');
+      return;
+    }
     if (form.phone && !isValidPhone(form.phone)) {
       toast.error('Phone number must be exactly 10 digits');
       return;
@@ -324,7 +328,7 @@ export function AdminSuppliers() {
       <div ref={formRef} className="admin-card mb-6">
         <div className="mb-5 flex items-center gap-3">
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-500">
-            <FiTruck size={22} />
+            <FiUsers size={22} />
           </div>
           <div>
             <h2 className="text-2xl font-semibold text-gray-900">{editSupplier ? 'Edit Supplier' : 'Add Supplier'}</h2>
@@ -337,7 +341,7 @@ export function AdminSuppliers() {
           <input value={form.phone} onChange={(e) => setForm({ ...form, phone: normalizePhone(e.target.value) })} placeholder="Mobile Number *" className="input-field" />
           <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email" className="input-field" />
           <input value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} placeholder="Contact Person" className="input-field" />
-          <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Address" className="input-field xl:col-span-2" />
+          <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Address *" className="input-field xl:col-span-2" />
           <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notes" className="input-field xl:col-span-2" />
           <div className="xl:col-span-4 flex flex-wrap items-center justify-end gap-4 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
             <button onClick={handleSave} disabled={saving} className="btn-primary min-w-[160px]">
@@ -353,7 +357,7 @@ export function AdminSuppliers() {
       </div>
 
       {suppliers.length === 0 ? (
-        <EmptyState icon={<FiTruck size={56} />} title="No suppliers yet" />
+        <EmptyState icon={<FiUsers size={56} />} title="No suppliers yet" />
       ) : (
         <div className="admin-card overflow-hidden">
           <div className="mb-5 flex items-center justify-between">
@@ -435,6 +439,7 @@ export function AdminSuppliers() {
 export function AdminRawMaterials() {
   const formRef = useRef(null);
   const [rawMaterials, setRawMaterials] = useState([]);
+  const [purchaseMovements, setPurchaseMovements] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showPurchase, setShowPurchase] = useState(false);
@@ -448,6 +453,7 @@ export function AdminRawMaterials() {
   });
   const [saving, setSaving] = useState(false);
   const [listFilters, setListFilters] = useState({ search: '', status: '', sortBy: 'name-asc', page: 1, pageSize: 10 });
+  const [purchaseMovementFilters, setPurchaseMovementFilters] = useState({ search: '', sortBy: 'date-desc', page: 1, pageSize: 10 });
   const rawMaterialOptions = rawMaterials.map((material) => ({
     value: material._id,
     label: `${material.name}${material.unit ? ` (${material.unit})` : ''}`,
@@ -455,9 +461,14 @@ export function AdminRawMaterials() {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [materialsRes, suppliersRes] = await Promise.all([api.get('/raw-materials'), api.get('/suppliers')]);
+    const [materialsRes, suppliersRes, purchaseSummaryRes] = await Promise.all([
+      api.get('/raw-materials'),
+      api.get('/suppliers'),
+      api.get('/raw-materials/movements', { params: { type: 'PURCHASE', limit: 200 } }),
+    ]);
     setRawMaterials(materialsRes.data.data);
     setSuppliers(suppliersRes.data.data);
+    setPurchaseMovements(purchaseSummaryRes.data.data);
     setLoading(false);
   };
 
@@ -490,6 +501,30 @@ export function AdminRawMaterials() {
   };
 
   const handleSave = async () => {
+    if (!form.supplier) {
+      toast.error('Supplier is required');
+      return;
+    }
+    if (editMaterial) {
+      if (!form.name.trim()) {
+        toast.error('Raw material name is required');
+        return;
+      }
+      if (form.purchasePrice === '' || Number(form.purchasePrice) < 0) {
+        toast.error('Enter a valid purchase price');
+        return;
+      }
+    } else {
+      const validItems = createItems.filter((item) => item.name.trim());
+      if (!validItems.length) {
+        toast.error('Add at least one raw material');
+        return;
+      }
+      if (validItems.some((item) => item.purchasePrice === '' || Number(item.purchasePrice) < 0)) {
+        toast.error('Each raw material needs a valid purchase price');
+        return;
+      }
+    }
     setSaving(true);
     try {
       if (editMaterial) await api.put(`/raw-materials/${editMaterial._id}`, form);
@@ -508,12 +543,29 @@ export function AdminRawMaterials() {
   };
 
   const handlePurchase = async () => {
+    if (!purchaseForm.supplierId) {
+      toast.error('Supplier is required');
+      return;
+    }
+    const validItems = purchaseForm.items.filter((item) => item.rawMaterialId && item.quantity && item.purchasePrice !== '');
+    if (!validItems.length) {
+      toast.error('Add at least one purchase item');
+      return;
+    }
+    if (validItems.some((item) => Number(item.quantity) <= 0)) {
+      toast.error('Purchase quantity must be greater than 0');
+      return;
+    }
+    if (validItems.some((item) => Number(item.purchasePrice) < 0)) {
+      toast.error('Purchase price cannot be negative');
+      return;
+    }
     setSaving(true);
     try {
       await api.post('/raw-materials/purchase', {
         supplierId: purchaseForm.supplierId,
         note: purchaseForm.note,
-        items: purchaseForm.items.filter((item) => item.rawMaterialId && item.quantity && item.purchasePrice !== ''),
+        items: validItems,
       });
       toast.success('Raw materials purchased');
       setShowPurchase(false);
@@ -603,6 +655,30 @@ export function AdminRawMaterials() {
   const materialCurrentPage = Math.min(listFilters.page, materialTotalPages);
   const paginatedMaterials = sortedMaterials.slice((materialCurrentPage - 1) * listFilters.pageSize, materialCurrentPage * listFilters.pageSize);
 
+  const filteredPurchaseMovements = purchaseMovements.filter((movement) => {
+    const query = purchaseMovementFilters.search.toLowerCase();
+    return !query || [
+      movement.rawMaterial?.name,
+      movement.supplier?.name,
+      movement.note,
+    ].some((value) => String(value || '').toLowerCase().includes(query));
+  });
+
+  const sortedPurchaseMovements = sortItems(filteredPurchaseMovements, purchaseMovementFilters.sortBy, {
+    material: (movement) => movement.rawMaterial?.name,
+    supplier: (movement) => movement.supplier?.name,
+    qty: (movement) => Number(movement.quantity || 0),
+    total: (movement) => Number(movement.totalAmount || 0),
+    date: (movement) => new Date(movement.createdAt).getTime(),
+  });
+
+  const purchaseMovementTotalPages = Math.max(1, Math.ceil(sortedPurchaseMovements.length / purchaseMovementFilters.pageSize));
+  const purchaseMovementCurrentPage = Math.min(purchaseMovementFilters.page, purchaseMovementTotalPages);
+  const paginatedPurchaseMovements = sortedPurchaseMovements.slice(
+    (purchaseMovementCurrentPage - 1) * purchaseMovementFilters.pageSize,
+    purchaseMovementCurrentPage * purchaseMovementFilters.pageSize,
+  );
+
   if (loading) return <PageLoader />;
 
   return (
@@ -630,7 +706,7 @@ export function AdminRawMaterials() {
 
         <div className="space-y-5">
           <div className="max-w-md">
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">Supplier</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">Supplier *</label>
             <SearchableSupplierField
               suppliers={suppliers}
               value={form.supplier}
@@ -725,82 +801,163 @@ export function AdminRawMaterials() {
       {rawMaterials.length === 0 ? (
         <EmptyState icon={<FiBox size={56} />} title="No raw materials yet" />
       ) : (
-        <div className="admin-card overflow-hidden">
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-2xl font-semibold text-gray-900">Raw Material List</h2>
-            <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
-              Total: {rawMaterials.length}
+        <div className="space-y-6">
+          <div className="admin-card overflow-hidden">
+            <div className="mb-5 flex items-center justify-between">
+              <h2 className="text-2xl font-semibold text-gray-900">Raw Material List</h2>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
+                Total: {rawMaterials.length}
+              </div>
             </div>
-          </div>
-          <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50/80 px-4 py-3">
-            <div className="relative w-full max-w-sm">
-              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-              <input value={listFilters.search} onChange={(e) => setListFilters({ ...listFilters, search: e.target.value, page: 1 })} placeholder="Search raw materials..." className="input-field h-11 py-2 pl-10 text-sm" />
+            <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50/80 px-4 py-3">
+              <div className="relative w-full max-w-sm">
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                <input value={listFilters.search} onChange={(e) => setListFilters({ ...listFilters, search: e.target.value, page: 1 })} placeholder="Search raw materials..." className="input-field h-11 py-2 pl-10 text-sm" />
+              </div>
+              <select value={listFilters.status} onChange={(e) => setListFilters({ ...listFilters, status: e.target.value, page: 1 })} className="input-field h-11 w-full max-w-[180px] py-2 text-sm">
+                <option value="">All Status</option>
+                <option value="true">Active</option>
+                <option value="false">Inactive</option>
+              </select>
+              <select value={listFilters.sortBy} onChange={(e) => setListFilters({ ...listFilters, sortBy: e.target.value, page: 1 })} className="input-field h-11 w-full max-w-[180px] py-2 text-sm">
+                <option value="name-asc">Name A-Z</option>
+                <option value="name-desc">Name Z-A</option>
+                <option value="supplier-asc">Supplier A-Z</option>
+                <option value="supplier-desc">Supplier Z-A</option>
+                <option value="stock-asc">Stock Low-High</option>
+                <option value="stock-desc">Stock High-Low</option>
+              </select>
+              <select value={listFilters.pageSize} onChange={(e) => setListFilters({ ...listFilters, pageSize: Number(e.target.value), page: 1 })} className="input-field h-11 w-full max-w-[130px] py-2 text-sm">
+                {[10, 20, 50].map((size) => <option key={size} value={size}>{size} / page</option>)}
+              </select>
             </div>
-            <select value={listFilters.status} onChange={(e) => setListFilters({ ...listFilters, status: e.target.value, page: 1 })} className="input-field h-11 w-full max-w-[180px] py-2 text-sm">
-              <option value="">All Status</option>
-              <option value="true">Active</option>
-              <option value="false">Inactive</option>
-            </select>
-            <select value={listFilters.sortBy} onChange={(e) => setListFilters({ ...listFilters, sortBy: e.target.value, page: 1 })} className="input-field h-11 w-full max-w-[180px] py-2 text-sm">
-              <option value="name-asc">Name A-Z</option>
-              <option value="name-desc">Name Z-A</option>
-              <option value="supplier-asc">Supplier A-Z</option>
-              <option value="supplier-desc">Supplier Z-A</option>
-              <option value="stock-asc">Stock Low-High</option>
-              <option value="stock-desc">Stock High-Low</option>
-            </select>
-            <select value={listFilters.pageSize} onChange={(e) => setListFilters({ ...listFilters, pageSize: Number(e.target.value), page: 1 })} className="input-field h-11 w-full max-w-[130px] py-2 text-sm">
-              {[10, 20, 50].map((size) => <option key={size} value={size}>{size} / page</option>)}
-            </select>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 bg-gray-50/80 text-left text-xs text-gray-500">
-                  {['#', 'Material', 'Supplier', 'Unit', 'Stock', 'Purchase Price', 'Status', 'Action'].map((head) => (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50/80 text-left text-xs text-gray-500">
+                  {['#', 'Material', 'Unit', 'Stock', 'Status', 'Action'].map((head) => (
                     <th key={head} className="px-4 py-3 font-medium">{head}</th>
                   ))}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {paginatedMaterials.map((material, index) => (
-                  <tr key={material._id} className="hover:bg-brand-50/40">
-                    <td className="px-4 py-3 text-gray-500">{(materialCurrentPage - 1) * listFilters.pageSize + index + 1}</td>
-                    <td className="px-4 py-3 font-medium text-gray-900">{material.name}</td>
-                    <td className="px-4 py-3 text-gray-700">{material.supplier?.name || '-'}</td>
-                    <td className="px-4 py-3 text-gray-700">{material.unit}</td>
-                    <td className="px-4 py-3 font-semibold text-gray-900">{material.stock}</td>
-                    <td className="px-4 py-3 text-gray-700">Rs.{material.purchasePrice}</td>
-                    <td className="px-4 py-3">
-                      <span className={material.isActive ? 'badge badge-green' : 'badge badge-red'}>{material.isActive ? 'Active' : 'Inactive'}</span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        <button onClick={() => openEdit(material)} className="text-sm font-medium text-brand-500 hover:underline">
-                          Edit
-                        </button>
-                        <button onClick={() => handleStatusToggle(material)} className="text-sm font-medium text-amber-600 hover:underline">
-                          {material.isActive ? 'Deactivate' : 'Activate'}
-                        </button>
-                        <button onClick={() => handleDelete(material._id)} className="text-sm font-medium text-red-500 hover:underline">
-                          Delete
-                        </button>
-                      </div>
-                    </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {paginatedMaterials.map((material, index) => (
+                    <tr key={material._id} className="hover:bg-brand-50/40">
+                      <td className="px-4 py-3 text-gray-500">{(materialCurrentPage - 1) * listFilters.pageSize + index + 1}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900">{material.name}</td>
+                      <td className="px-4 py-3 text-gray-700">{material.unit}</td>
+                      <td className="px-4 py-3 font-semibold text-gray-900">{material.stock}</td>
+                      <td className="px-4 py-3">
+                        <span className={material.isActive ? 'badge badge-green' : 'badge badge-red'}>{material.isActive ? 'Active' : 'Inactive'}</span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => openEdit(material)} className="text-sm font-medium text-brand-500 hover:underline">
+                            Edit
+                          </button>
+                          <button onClick={() => handleStatusToggle(material)} className="text-sm font-medium text-amber-600 hover:underline">
+                            {material.isActive ? 'Deactivate' : 'Activate'}
+                          </button>
+                          <button onClick={() => handleDelete(material._id)} className="text-sm font-medium text-red-500 hover:underline">
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <Pagination currentPage={materialCurrentPage} totalPages={materialTotalPages} onPageChange={(page) => setListFilters({ ...listFilters, page })} />
           </div>
-          <Pagination currentPage={materialCurrentPage} totalPages={materialTotalPages} onPageChange={(page) => setListFilters({ ...listFilters, page })} />
+
+          <div className="admin-card overflow-hidden">
+            <div className="mb-5 flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-semibold text-gray-900">Supplier Purchase Movements</h2>
+                <p className="mt-1 text-sm text-gray-500">View supplier-wise raw material purchase entries in the same movement style used in inventory.</p>
+              </div>
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
+                Total: {purchaseMovements.length}
+              </div>
+            </div>
+            <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50/80 px-4 py-3">
+              <div className="relative w-full max-w-sm">
+                <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                <input
+                  value={purchaseMovementFilters.search}
+                  onChange={(e) => setPurchaseMovementFilters({ ...purchaseMovementFilters, search: e.target.value, page: 1 })}
+                  placeholder="Search purchase movements..."
+                  className="input-field h-11 py-2 pl-10 text-sm"
+                />
+              </div>
+              <select
+                value={purchaseMovementFilters.sortBy}
+                onChange={(e) => setPurchaseMovementFilters({ ...purchaseMovementFilters, sortBy: e.target.value, page: 1 })}
+                className="input-field h-11 w-full max-w-[180px] py-2 text-sm"
+              >
+                <option value="date-desc">Latest First</option>
+                <option value="date-asc">Oldest First</option>
+                <option value="material-asc">Material A-Z</option>
+                <option value="material-desc">Material Z-A</option>
+                <option value="supplier-asc">Supplier A-Z</option>
+                <option value="supplier-desc">Supplier Z-A</option>
+                <option value="qty-desc">Qty High-Low</option>
+                <option value="qty-asc">Qty Low-High</option>
+                <option value="total-desc">Total High-Low</option>
+                <option value="total-asc">Total Low-High</option>
+              </select>
+              <select
+                value={purchaseMovementFilters.pageSize}
+                onChange={(e) => setPurchaseMovementFilters({ ...purchaseMovementFilters, pageSize: Number(e.target.value), page: 1 })}
+                className="input-field h-11 w-full max-w-[130px] py-2 text-sm"
+              >
+                {[10, 20, 50].map((size) => <option key={size} value={size}>{size} / page</option>)}
+              </select>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-100 bg-gray-50/80 text-left text-xs text-gray-500">
+                    {['Material', 'Supplier', 'Type', 'Qty', 'Unit Price', 'Total', 'Prev', 'New', 'Date'].map((head) => (
+                      <th key={head} className="px-4 py-3 font-medium">{head}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-50">
+                  {paginatedPurchaseMovements.length ? paginatedPurchaseMovements.map((entry) => (
+                    <tr key={entry._id} className="hover:bg-brand-50/40">
+                      <td className="px-4 py-3 font-medium text-gray-900">{entry.rawMaterial?.name || '-'}</td>
+                      <td className="px-4 py-3 text-gray-700">{entry.supplier?.name || '-'}</td>
+                      <td className="px-4 py-3">
+                        <span className="badge badge-green">PURCHASE</span>
+                      </td>
+                      <td className="px-4 py-3 font-semibold text-gray-900">{entry.quantity}</td>
+                      <td className="px-4 py-3 text-gray-700">{entry.unitPrice !== undefined && entry.unitPrice !== null ? `Rs.${entry.unitPrice}` : '-'}</td>
+                      <td className="px-4 py-3 text-gray-700">{entry.totalAmount !== undefined && entry.totalAmount !== null ? `Rs.${entry.totalAmount}` : '-'}</td>
+                      <td className="px-4 py-3 text-gray-700">{entry.previousStock}</td>
+                      <td className="px-4 py-3 font-semibold text-gray-900">{entry.newStock}</td>
+                      <td className="px-4 py-3 text-gray-500">{entry.createdAt ? new Date(entry.createdAt).toLocaleDateString('en-IN') : '-'}</td>
+                    </tr>
+                  )) : (
+                    <tr>
+                      <td colSpan={9} className="px-4 py-8 text-center text-sm text-gray-400">
+                        No supplier purchase movements available yet.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+            <Pagination currentPage={purchaseMovementCurrentPage} totalPages={purchaseMovementTotalPages} onPageChange={(page) => setPurchaseMovementFilters({ ...purchaseMovementFilters, page })} />
+          </div>
         </div>
       )}
 
       <Modal isOpen={showPurchase} onClose={() => setShowPurchase(false)} title="Buy Raw Materials" size="lg">
         <div className="space-y-4">
           <div className="max-w-sm">
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">Supplier</label>
+            <label className="mb-1.5 block text-sm font-medium text-gray-700">Supplier *</label>
             <SearchableSupplierField
               suppliers={suppliers}
               value={purchaseForm.supplierId}
@@ -1012,7 +1169,7 @@ export function AdminProductBom() {
                 ) : null}
                 {bomItems.map((item, index) => (
                   <div key={index}>
-                    <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[minmax(0,1fr)_180px_auto]">
+                    <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[minmax(0,1fr)_220px_auto]">
                       <SearchableOptionField
                         options={rawMaterialOptions}
                         value={item.rawMaterial}
@@ -1026,7 +1183,7 @@ export function AdminProductBom() {
                         step="0.01"
                         value={item.quantity}
                         onChange={(e) => updateBomItem(index, 'quantity', e.target.value)}
-                        placeholder="Qty per unit"
+                        placeholder="Qty needed for 1 product"
                         disabled={!hasRawMaterials}
                         className={`input-field ${!hasRawMaterials ? 'cursor-not-allowed bg-gray-100 text-gray-400' : ''}`}
                       />
@@ -1289,7 +1446,7 @@ export function AdminProduction() {
       </div>
 
       {batches.length === 0 ? (
-        <EmptyState icon={<FiLayers size={56} />} title="No production batches yet" action={<button onClick={() => setShowModal(true)} className="btn-primary">Record Production</button>} />
+        <EmptyState icon={<FiTool size={56} />} title="No production batches yet" action={<button onClick={() => setShowModal(true)} className="btn-primary">Record Production</button>} />
       ) : (
         <div className="space-y-4">
           <div className="admin-card">

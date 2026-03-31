@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FiGift, FiSearch, FiShoppingBag, FiStar } from 'react-icons/fi';
+import { FiChevronDown, FiGift, FiSearch, FiShoppingBag, FiStar, FiX } from 'react-icons/fi';
 import api from '../../api/api.js';
 import { EmptyState, PageLoader, Pagination } from '../../components/ui/index.jsx';
 import { getDiscountPercentage, getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
@@ -19,6 +19,126 @@ const emptyForm = {
   isActive: true,
 };
 
+function SearchableSelectField({ options, value, onChange, placeholder = 'Search option', disabled = false }) {
+  const fieldRef = useRef(null);
+  const [query, setQuery] = useState('');
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!value) {
+      setQuery('');
+      return;
+    }
+    const selectedOption = options.find((option) => option.value === value);
+    if (selectedOption) setQuery(selectedOption.label);
+  }, [value, options]);
+
+  useEffect(() => {
+    const handleOutsideClick = (event) => {
+      if (!fieldRef.current?.contains(event.target)) setOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const filteredOptions = options.filter((option) =>
+    option.label.toLowerCase().includes(query.toLowerCase())
+  );
+
+  const handleChange = (event) => {
+    if (disabled) return;
+    const nextQuery = event.target.value;
+    setQuery(nextQuery);
+    setOpen(true);
+
+    const exactMatch = options.find((option) => option.label === nextQuery);
+    if (exactMatch) {
+      onChange(exactMatch.value);
+      return;
+    }
+
+    if (!nextQuery.trim()) onChange('');
+  };
+
+  const handleSelect = (option) => {
+    setQuery(option.label);
+    onChange(option.value);
+    setOpen(false);
+  };
+
+  const handleClear = () => {
+    setQuery('');
+    onChange('');
+    setOpen(false);
+  };
+
+  return (
+    <div ref={fieldRef} className="relative">
+      <input
+        value={query}
+        onChange={handleChange}
+        placeholder={placeholder}
+        disabled={disabled}
+        onFocus={() => {
+          if (!disabled) setOpen(true);
+        }}
+        className={`input-field pr-20 ${disabled ? 'cursor-not-allowed bg-gray-100 text-gray-400' : ''}`}
+      />
+      <div className="pointer-events-none absolute inset-y-0 right-11 flex items-center text-gray-300">
+        <div className="h-5 border-l border-gray-200" />
+      </div>
+      {query ? (
+        <button
+          type="button"
+          onClick={handleClear}
+          className="absolute inset-y-0 right-10 flex items-center justify-center px-2 text-gray-400 transition hover:text-rose-500"
+          aria-label="Clear selection"
+        >
+          <FiX size={15} />
+        </button>
+      ) : null}
+      <button
+        type="button"
+        onClick={() => {
+          if (!disabled) setOpen((current) => !current);
+        }}
+        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-500 transition hover:text-rose-600 disabled:cursor-not-allowed"
+        disabled={disabled}
+        aria-label="Toggle options"
+      >
+        <FiChevronDown size={16} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && !disabled ? (
+        <div className="absolute left-0 right-0 top-[calc(100%+0.45rem)] z-20 overflow-hidden rounded-2xl border border-rose-100 bg-white shadow-[0_18px_40px_rgba(225,29,72,0.16)]">
+          <div className="border-b border-rose-50 bg-gradient-to-r from-rose-50 to-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-rose-400">
+            Select Option
+          </div>
+          <div className="max-h-56 overflow-y-auto p-2">
+            {filteredOptions.length ? filteredOptions.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => handleSelect(option)}
+                className={`flex w-full items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm transition ${
+                  option.value === value ? 'bg-rose-100 text-rose-700' : 'text-gray-700 hover:bg-rose-50 hover:text-rose-600'
+                }`}
+              >
+                <FiSearch size={14} className="text-rose-300" />
+                <span className="truncate">{option.label}</span>
+              </button>
+            )) : (
+              <div className="px-3 py-3 text-sm text-gray-400">
+                No matching options found.
+              </div>
+            )}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 export default function AdminProducts() {
   const formRef = useRef(null);
   const [products, setProducts] = useState([]);
@@ -30,6 +150,10 @@ export default function AdminProducts() {
   const [form, setForm] = useState(emptyForm);
   const [images, setImages] = useState([]);
   const [saving, setSaving] = useState(false);
+  const categoryOptions = categories.map((category) => ({
+    value: category._id,
+    label: category.name,
+  }));
 
   useEffect(() => {
     document.title = 'Products - Admin';
@@ -79,6 +203,27 @@ export default function AdminProducts() {
   const handleSave = async () => {
     const mrp = Number(form.mrp || 0);
     const sellingPrice = Number(form.price || 0);
+    const stock = Number(form.stock);
+
+    if (!form.name.trim()) {
+      toast.error('Product name is required');
+      return;
+    }
+
+    if (!form.description.trim()) {
+      toast.error('Description is required');
+      return;
+    }
+
+    if (!form.category) {
+      toast.error('Category is required');
+      return;
+    }
+
+    if (Number.isNaN(stock) || stock < 0) {
+      toast.error('Enter a valid stock quantity');
+      return;
+    }
 
     if (!mrp || mrp < 0 || !sellingPrice || sellingPrice < 0) {
       toast.error('Enter valid MRP and selling price');
@@ -93,7 +238,7 @@ export default function AdminProducts() {
     setSaving(true);
     try {
       const fd = new FormData();
-      Object.entries(form).forEach(([key, value]) => fd.append(key, value));
+      Object.entries({ ...form, name: form.name.trim(), description: form.description.trim() }).forEach(([key, value]) => fd.append(key, value));
       images.forEach((img) => fd.append('images', img));
 
       if (editProduct) {
@@ -166,10 +311,12 @@ export default function AdminProducts() {
           <input type="number" value={form.price} onChange={setField('price')} min="0" placeholder="Selling Price *" className="input-field" />
           <input type="number" value={form.stock} onChange={setField('stock')} min="0" placeholder="Stock *" className="input-field" />
           <input type="number" value={form.lowStockThreshold} onChange={setField('lowStockThreshold')} min="0" placeholder="Stock Alert Level" className="input-field" />
-          <select value={form.category} onChange={setField('category')} className="input-field">
-            <option value="">Select Category *</option>
-            {categories.map((category) => <option key={category._id} value={category._id}>{category.name}</option>)}
-          </select>
+          <SearchableSelectField
+            options={categoryOptions}
+            value={form.category}
+            onChange={(categoryId) => setForm({ ...form, category: categoryId })}
+            placeholder="Search category *"
+          />
           <input value={form.occasion} onChange={setField('occasion')} placeholder="Occasion" className="input-field" />
           <input value={form.sku} onChange={setField('sku')} placeholder="SKU" className="input-field self-start" />
           <textarea value={form.description} onChange={setField('description')} rows={3} placeholder="Description *" className="input-field resize-none xl:col-span-3" />

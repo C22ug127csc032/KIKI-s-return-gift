@@ -33,6 +33,23 @@ const removeLocalProductImage = (imageUrl) => {
   if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 };
 
+const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const ensureUniqueProductName = async (name, productId = null) => {
+  if (!name?.trim()) return;
+
+  const filter = {
+    name: new RegExp(`^${escapeRegex(name.trim())}$`, 'i'),
+  };
+
+  if (productId) filter._id = { $ne: productId };
+
+  const existingProduct = await Product.findOne(filter).select('_id name');
+  if (existingProduct) {
+    throw new ApiError(409, 'A product with this name already exists');
+  }
+};
+
 const buildProductFilter = (query) => {
   const filter = { isActive: true, stock: { $gt: 0 } };
   if (query.category) filter.category = query.category;
@@ -134,6 +151,7 @@ export const createProduct = asyncHandler(async (req, res) => {
   const normalizedMrp = mrp === undefined || mrp === '' ? null : Number(mrp);
   const sellingPrice = Number(price);
 
+  await ensureUniqueProductName(name);
   if (Number.isNaN(sellingPrice) || sellingPrice < 0) throw new ApiError(400, 'Selling price must be a valid number');
   if (normalizedMrp !== null && (Number.isNaN(normalizedMrp) || normalizedMrp < 0)) throw new ApiError(400, 'MRP must be a valid number');
   if (normalizedMrp !== null && sellingPrice > normalizedMrp) throw new ApiError(400, 'Selling price cannot be greater than MRP');
@@ -164,6 +182,7 @@ export const createProduct = asyncHandler(async (req, res) => {
 export const updateProduct = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id);
   if (!product) throw new ApiError(404, 'Product not found');
+  if (req.body.name !== undefined) await ensureUniqueProductName(req.body.name, req.params.id);
   const fields = ['name', 'description', 'stock', 'category', 'occasion', 'sku', 'featured', 'lowStockThreshold', 'isActive'];
   fields.forEach((f) => { if (req.body[f] !== undefined) product[f] = req.body[f]; });
   if (req.body.mrp !== undefined) product.mrp = req.body.mrp === '' ? null : Number(req.body.mrp);
