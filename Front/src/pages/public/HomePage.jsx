@@ -96,6 +96,16 @@ const whyUs = [
 ];
 
 const ctaIcons = [FaRing, RiGiftLine, FiSun, RiCake2Line, GiPartyPopper];
+const heroRainItems = [
+  { icon: RiGiftLine, left: '7%', delay: '-1.2s', duration: '6.2s', drift: '36px', size: 38, opacity: 0.8, color: '#f97316', bg: 'rgba(255,255,255,0.18)' },
+  { icon: FiGift, left: '18%', delay: '-3.8s', duration: '5.4s', drift: '-28px', size: 30, opacity: 0.72, color: '#fb7185', bg: 'rgba(255,255,255,0.14)' },
+  { icon: FaHeart, left: '29%', delay: '-2.1s', duration: '6.6s', drift: '24px', size: 26, opacity: 0.76, color: '#f43f5e', bg: 'rgba(255,255,255,0.15)' },
+  { icon: RiCake2Line, left: '41%', delay: '-4.9s', duration: '5.9s', drift: '-34px', size: 34, opacity: 0.78, color: '#a855f7', bg: 'rgba(255,255,255,0.14)' },
+  { icon: PiHandsPrayingLight, left: '55%', delay: '-1.7s', duration: '6.4s', drift: '20px', size: 32, opacity: 0.7, color: '#f59e0b', bg: 'rgba(255,255,255,0.13)' },
+  { icon: GiPartyPopper, left: '68%', delay: '-5.5s', duration: '5.2s', drift: '-18px', size: 36, opacity: 0.8, color: '#22c55e', bg: 'rgba(255,255,255,0.16)' },
+  { icon: FiSun, left: '81%', delay: '-2.8s', duration: '6.1s', drift: '28px', size: 28, opacity: 0.68, color: '#facc15', bg: 'rgba(255,255,255,0.14)' },
+  { icon: RiSparklingLine, left: '91%', delay: '-4.1s', duration: '5.1s', drift: '-20px', size: 24, opacity: 0.72, color: '#38bdf8', bg: 'rgba(255,255,255,0.12)' },
+];
 
 export default function HomePage() {
   const [featured, setFeatured] = useState([]);
@@ -103,7 +113,9 @@ export default function HomePage() {
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [heroIndex, setHeroIndex] = useState(0);
   const [heroPaused, setHeroPaused] = useState(false);
+  const [heroRainVisible, setHeroRainVisible] = useState(true);
   const heroTimer = useRef(null);
+  const heroSectionRef = useRef(null);
   const whatsapp = import.meta.env.VITE_WHATSAPP_NUMBER || '919876543210';
 
   const gotoSlide = useCallback((idx) => {
@@ -114,7 +126,7 @@ export default function HomePage() {
     if (heroPaused) return;
     heroTimer.current = setInterval(() => {
       setHeroIndex(i => (i + 1) % heroSlides.length);
-    }, 5500);
+    }, 4000);
     return () => clearInterval(heroTimer.current);
   }, [heroPaused, heroIndex]);
 
@@ -128,6 +140,19 @@ export default function HomePage() {
       .finally(() => setLoadingProducts(false));
   }, []);
 
+  useEffect(() => {
+    const heroSection = heroSectionRef.current;
+    if (!heroSection) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setHeroRainVisible(entry.isIntersecting),
+      { threshold: 0.28 }
+    );
+
+    observer.observe(heroSection);
+    return () => observer.disconnect();
+  }, []);
+
   const slide = heroSlides[heroIndex];
 
   return (
@@ -135,10 +160,41 @@ export default function HomePage() {
 
       {/* ── HERO SLIDER ── */}
       <section
+        ref={heroSectionRef}
         className="relative h-[92vh] min-h-[560px] max-h-[820px] overflow-hidden"
         onMouseEnter={() => setHeroPaused(true)}
         onMouseLeave={() => setHeroPaused(false)}
       >
+        <div className={`pointer-events-none absolute inset-0 z-[2] overflow-hidden transition-opacity duration-500 ${heroRainVisible ? 'opacity-100' : 'opacity-0'}`}>
+          {heroRainItems.map(({ icon: Icon, left, delay, duration, drift, size, opacity, color, bg }, index) => (
+            <div
+              key={`${left}-${index}`}
+              className={`hero-rain-item absolute -top-16 ${index > 4 ? 'hidden sm:block' : ''}`}
+              style={{
+                left,
+                '--delay': delay,
+                '--duration': duration,
+                '--drift': drift,
+                '--fall-distance': '100vh',
+                animationPlayState: heroRainVisible ? 'running' : 'paused',
+              }}
+            >
+              <div
+                className="flex items-center justify-center rounded-full border border-white/20 backdrop-blur-[3px]"
+                style={{
+                  width: `${size + 18}px`,
+                  height: `${size + 18}px`,
+                  opacity,
+                  color,
+                  background: bg,
+                }}
+              >
+                <Icon size={size} />
+              </div>
+            </div>
+          ))}
+        </div>
+
         {/* Slide backgrounds */}
         {heroSlides.map((s, i) => (
           <div
@@ -166,7 +222,7 @@ export default function HomePage() {
                 className="h-full bg-white transition-none"
                 style={{
                   width: i === heroIndex ? '100%' : i < heroIndex ? '100%' : '0%',
-                  transition: i === heroIndex ? `width ${heroPaused ? '0s' : '5.5s'} linear` : 'none',
+                  transition: i === heroIndex ? `width ${heroPaused ? '0s' : '4s'} linear` : 'none',
                 }}
               />
             </div>

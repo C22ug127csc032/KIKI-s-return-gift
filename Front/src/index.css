@@ -82,17 +82,17 @@
 
 @keyframes heroRainFloat {
   0% {
-    transform: translate3d(0, -18%, 0) scale(0.88) rotate(0deg);
+    transform: translate3d(0, -24%, 0) scale(0.84) rotate(0deg);
     opacity: 0;
   }
-  8% {
-    opacity: 0.98;
+  10% {
+    opacity: 0.96;
   }
-  78% {
-    opacity: 0.94;
+  82% {
+    opacity: 0.9;
   }
   100% {
-    transform: translate3d(var(--drift, 0px), 100vh, 0) scale(1.08) rotate(18deg);
+    transform: translate3d(var(--drift, 0px), var(--fall-distance, 100vh), 0) scale(1.06) rotate(20deg);
     opacity: 0;
   }
 }
@@ -100,7 +100,7 @@
 .hero-rain-item {
   animation: heroRainFloat var(--duration, 12s) linear infinite;
   animation-delay: var(--delay, 0s);
-  filter: drop-shadow(0 12px 28px rgba(244, 114, 182, 0.28));
+  filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.22));
   will-change: transform, opacity;
 }
 
