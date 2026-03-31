@@ -104,6 +104,13 @@
   will-change: transform, opacity;
 }
 
+.page-rain-item {
+  animation: heroRainFloat var(--duration, 10s) linear infinite;
+  animation-delay: var(--delay, 0s);
+  filter: drop-shadow(0 0 10px rgba(255, 255, 255, 0.22)) drop-shadow(0 12px 22px rgba(255, 64, 129, 0.26));
+  will-change: transform, opacity;
+}
+
 .product-img-wrap { overflow: hidden; }
 .product-img-wrap img {
   transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -111,7 +118,8 @@
 .product-img-wrap:hover img { transform: scale(1.06); }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-rain-item {
+  .hero-rain-item,
+  .page-rain-item {
     animation: none;
     opacity: 0.2;
   }

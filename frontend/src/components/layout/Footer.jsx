@@ -46,9 +46,9 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-gray-950 text-gray-300">
+    <footer className="relative bg-gray-950 text-gray-300">
       <div className="bg-rose-600 py-8">
-        <div className="page-container flex flex-col items-center justify-between gap-4 text-center md:flex-row md:text-left">
+        <div className="page-container relative z-[6] flex flex-col items-center justify-between gap-4 text-center md:flex-row md:text-left">
           <div>
             <h3 className="font-display text-2xl font-bold text-white">Need a Custom Gift Pack?</h3>
             <p className="mt-1 text-sm text-rose-200">Bulk orders, event gifting, personalized combos - we do it all!</p>
@@ -64,7 +64,7 @@ export default function Footer() {
         </div>
       </div>
 
-      <div className="page-container py-14">
+      <div className="page-container relative z-[6] py-14">
         <div className="grid grid-cols-1 gap-10 text-center md:grid-cols-2 md:text-left lg:grid-cols-4">
           <div className="lg:col-span-1">
             <div className="mb-4 flex items-center justify-center gap-2.5 md:justify-start">
@@ -161,7 +161,7 @@ export default function Footer() {
       </div>
 
       <div className="border-t border-white/5">
-        <div className="page-container flex flex-col items-center justify-between gap-2 py-4 text-center text-xs text-gray-600 sm:flex-row sm:text-left">
+        <div className="page-container relative z-[6] flex flex-col items-center justify-between gap-2 py-4 text-center text-xs text-gray-600 sm:flex-row sm:text-left">
           <p>&copy; All Rights Reserved. Powered by <span className="text-rose-500">EMATIX Embedded and Software Solutions Inc.</span></p>
           <p className="inline-flex items-center gap-1">Made with <FiHeart size={12} className="text-rose-500" /> for every celebration in India</p>
         </div>

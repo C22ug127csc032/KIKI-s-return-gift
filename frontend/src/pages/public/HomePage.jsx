@@ -96,16 +96,6 @@ const whyUs = [
 ];
 
 const ctaIcons = [FaRing, RiGiftLine, FiSun, RiCake2Line, GiPartyPopper];
-const heroRainItems = [
-  { icon: RiGiftLine, left: '7%', delay: '-1.2s', duration: '6.2s', drift: '36px', size: 38, opacity: 0.8, color: '#f97316', bg: 'rgba(255,255,255,0.18)' },
-  { icon: FiGift, left: '18%', delay: '-3.8s', duration: '5.4s', drift: '-28px', size: 30, opacity: 0.72, color: '#fb7185', bg: 'rgba(255,255,255,0.14)' },
-  { icon: FaHeart, left: '29%', delay: '-2.1s', duration: '6.6s', drift: '24px', size: 26, opacity: 0.76, color: '#f43f5e', bg: 'rgba(255,255,255,0.15)' },
-  { icon: RiCake2Line, left: '41%', delay: '-4.9s', duration: '5.9s', drift: '-34px', size: 34, opacity: 0.78, color: '#a855f7', bg: 'rgba(255,255,255,0.14)' },
-  { icon: PiHandsPrayingLight, left: '55%', delay: '-1.7s', duration: '6.4s', drift: '20px', size: 32, opacity: 0.7, color: '#f59e0b', bg: 'rgba(255,255,255,0.13)' },
-  { icon: GiPartyPopper, left: '68%', delay: '-5.5s', duration: '5.2s', drift: '-18px', size: 36, opacity: 0.8, color: '#22c55e', bg: 'rgba(255,255,255,0.16)' },
-  { icon: FiSun, left: '81%', delay: '-2.8s', duration: '6.1s', drift: '28px', size: 28, opacity: 0.68, color: '#facc15', bg: 'rgba(255,255,255,0.14)' },
-  { icon: RiSparklingLine, left: '91%', delay: '-4.1s', duration: '5.1s', drift: '-20px', size: 24, opacity: 0.72, color: '#38bdf8', bg: 'rgba(255,255,255,0.12)' },
-];
 
 export default function HomePage() {
   const [featured, setFeatured] = useState([]);
@@ -113,7 +103,6 @@ export default function HomePage() {
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [heroIndex, setHeroIndex] = useState(0);
   const [heroPaused, setHeroPaused] = useState(false);
-  const [heroRainVisible, setHeroRainVisible] = useState(true);
   const heroTimer = useRef(null);
   const heroSectionRef = useRef(null);
   const whatsapp = import.meta.env.VITE_WHATSAPP_NUMBER || '919876543210';
@@ -130,11 +119,6 @@ export default function HomePage() {
     stiffness: 120,
     damping: 28,
     mass: 0.4,
-  });
-  const heroRainY = useSpring(useTransform(scrollYProgress, [0, 1], ['0%', '18%']), {
-    stiffness: 105,
-    damping: 24,
-    mass: 0.35,
   });
   const heroContentY = useSpring(useTransform(scrollYProgress, [0, 1], ['0%', '-10%']), {
     stiffness: 120,
@@ -170,23 +154,10 @@ export default function HomePage() {
       .finally(() => setLoadingProducts(false));
   }, []);
 
-  useEffect(() => {
-    const heroSection = heroSectionRef.current;
-    if (!heroSection) return;
-
-    const observer = new IntersectionObserver(
-      ([entry]) => setHeroRainVisible(entry.isIntersecting),
-      { threshold: 0.28 }
-    );
-
-    observer.observe(heroSection);
-    return () => observer.disconnect();
-  }, []);
-
   const slide = heroSlides[heroIndex];
 
   return (
-    <div className="overflow-x-hidden">
+    <div className="relative overflow-x-hidden">
 
       {/* ── HERO SLIDER ── */}
       <section
@@ -195,39 +166,6 @@ export default function HomePage() {
         onMouseEnter={() => setHeroPaused(true)}
         onMouseLeave={() => setHeroPaused(false)}
       >
-        <motion.div
-          className={`pointer-events-none absolute inset-0 z-[2] overflow-hidden transition-opacity duration-500 ${heroRainVisible ? 'opacity-100' : 'opacity-0'}`}
-          style={{ y: heroRainY }}
-        >
-          {heroRainItems.map(({ icon: Icon, left, delay, duration, drift, size, opacity, color, bg }, index) => (
-            <div
-              key={`${left}-${index}`}
-              className={`hero-rain-item absolute -top-16 ${index > 4 ? 'hidden sm:block' : ''}`}
-              style={{
-                left,
-                '--delay': delay,
-                '--duration': duration,
-                '--drift': drift,
-                '--fall-distance': '100vh',
-                animationPlayState: heroRainVisible ? 'running' : 'paused',
-              }}
-            >
-              <div
-                className="flex items-center justify-center rounded-full border border-white/20 backdrop-blur-[3px]"
-                style={{
-                  width: `${size + 18}px`,
-                  height: `${size + 18}px`,
-                  opacity,
-                  color,
-                  background: bg,
-                }}
-              >
-                <Icon size={size} />
-              </div>
-            </div>
-          ))}
-        </motion.div>
-
         {/* Slide backgrounds */}
         {heroSlides.map((s, i) => (
           <motion.div
@@ -390,8 +328,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      <div className="my-4 overflow-hidden bg-rose-600 py-2.5 sm:my-5">
-        <div className="flex animate-marquee whitespace-nowrap">
+      <div className="relative my-4 overflow-hidden bg-rose-600 py-2.5 sm:my-5">
+        <div className="relative z-[6] flex animate-marquee whitespace-nowrap">
           {[...trustBadges, ...trustBadges].map((b, i) => (
             <div key={i} className="mx-8 flex flex-shrink-0 items-center gap-2 text-sm font-medium text-white">
               <b.icon size={14} className="text-rose-200" />
@@ -402,8 +340,8 @@ export default function HomePage() {
         </div>
       </div>
 
-      <section className="bg-white pb-8 pt-6 sm:pt-8">
-        <div className="page-container">
+      <section className="relative bg-white pb-8 pt-6 sm:pt-8">
+        <div className="page-container relative z-[6]">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-10 text-center">
             <h2 className="section-title">Shop by Occasion</h2>
             <p className="mt-2 text-sm text-gray-400">Find the perfect gift for every celebration</p>
@@ -421,8 +359,8 @@ export default function HomePage() {
       </section>
 
       {categories.length > 0 && (
-        <section className="bg-gray-50 pb-10 pt-8">
-          <div className="page-container">
+        <section className="relative bg-gray-50 pb-10 pt-8">
+          <div className="page-container relative z-[6]">
             <div className="mb-10 flex flex-col items-center gap-3 text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
               <div>
                 <h2 className="section-title">Browse Categories</h2>
@@ -457,8 +395,8 @@ export default function HomePage() {
         </section>
       )}
 
-      <section className="bg-white py-10">
-        <div className="page-container">
+      <section className="relative bg-white py-10">
+        <div className="page-container relative z-[6]">
           <div className="mb-10 flex flex-col items-center gap-3 text-center sm:flex-row sm:items-end sm:justify-between sm:text-left">
             <div>
               <h2 className="section-title">Featured Gifts</h2>
@@ -483,8 +421,8 @@ export default function HomePage() {
         </div>
       </section>
 
-      <section className="bg-rose-50 py-10">
-        <div className="page-container">
+      <section className="relative bg-rose-50 py-10">
+        <div className="page-container relative z-[6]">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} className="mb-12 text-center">
             <h2 className="section-title">Why Choose KIKI'S?</h2>
             <p className="mt-2 text-sm text-gray-400">We go the extra mile to make your celebrations memorable</p>
@@ -518,7 +456,7 @@ export default function HomePage() {
             </span>
           ))}
         </div>
-        <div className="page-container relative z-10 text-center">
+        <div className="page-container relative z-[6] text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/20 px-4 py-2 text-xs font-semibold text-white">
               <RiStarSmileLine size={14} /> Personalized Gift Assistance
