@@ -6,10 +6,10 @@ import {
   FiPackage, FiSettings, FiChevronDown, FiSearch
 } from 'react-icons/fi';
 import { RiHeart3Line, RiHeart3Fill } from 'react-icons/ri';
-import { RiGiftLine } from 'react-icons/ri';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useCart } from '../../context/CartContext.jsx';
 import { useWishlist } from '../../context/WishlistContext.jsx';
+import navbarLogo from '../../assets/navbar-logo.jpeg';
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
@@ -80,7 +80,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className={`sticky top-0 z-50 transition-all duration-300 ${scrolled ? 'bg-rose-600 shadow-[0_2px_20px_rgba(190,24,93,0.28)]' : 'bg-rose-600/95 backdrop-blur-sm border-b border-rose-500'}`}>
+      <header className={`sticky top-0 z-[120] overflow-hidden transition-all duration-300 md:fixed md:inset-x-0 md:top-0 md:z-[120] ${scrolled ? 'bg-rose-600 shadow-[0_2px_20px_rgba(190,24,93,0.28)]' : 'bg-rose-600 border-b border-rose-500'}`}>
         <div className="page-container">
           <div className="flex min-h-[68px] items-center justify-between gap-1.5 py-2 sm:h-16 sm:min-h-0 sm:gap-4 sm:py-0">
             <div className="flex min-w-0 flex-1 items-center gap-1.5 md:flex-none">
@@ -88,8 +88,8 @@ export default function Navbar() {
                 {menuOpen ? <FiX size={20} /> : <FiMenu size={20} />}
               </button>
               <Link to="/" className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5">
-                <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-white shadow-sm sm:h-9 sm:w-9">
-                  <RiGiftLine size={17} className="text-rose-700 sm:w-5 sm:h-5" />
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-white shadow-sm sm:h-11 sm:w-11">
+                  <img src={navbarLogo} alt="KIKI'S logo" className="h-full w-full object-cover" />
                 </div>
                 <div className="leading-none">
                   <p className="font-display text-[15px] font-bold tracking-[0.01em] text-white sm:text-xl">KIKI'S</p>
@@ -196,7 +196,7 @@ export default function Navbar() {
         </div>
 
       </header>
-
+      <div className="hidden h-[68px] md:block" aria-hidden="true" />
       <AnimatePresence>
         {menuOpen && (
           <div className="md:hidden fixed inset-0 z-[60]">
@@ -216,8 +216,8 @@ export default function Navbar() {
             >
               <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-9 h-9 bg-white rounded-full flex items-center justify-center shadow-sm">
-                    <RiGiftLine size={20} className="text-rose-700" />
+                  <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-white shadow-sm">
+                    <img src={navbarLogo} alt="KIKI'S logo" className="h-full w-full object-cover" />
                   </div>
                   <div className="leading-none">
                     <p className="font-display font-bold text-white text-base tracking-tight">KIKI'S</p>

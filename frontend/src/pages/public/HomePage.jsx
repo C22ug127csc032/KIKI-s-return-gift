@@ -191,7 +191,7 @@ export default function HomePage() {
         ))}
 
         {/* Progress bar */}
-        <div className="absolute bottom-0 left-0 right-0 z-20 flex h-[3px]">
+        <div className="absolute bottom-0 left-0 right-0 z-10 flex h-[3px]">
           {heroSlides.map((s, i) => (
             <div key={s.id} className="flex-1 bg-white/20">
               <div
@@ -252,14 +252,15 @@ export default function HomePage() {
                     >
                       {slide.cta} <FiArrowRight size={15} />
                     </Link>
-                    <a
-                      href={`https://wa.me/${whatsapp}?text=Hello! I'd like to know more about your return gifts.`}
+                    <Link
+                      to={`https://wa.me/${whatsapp}?text=Hello! I'd like to know more about your return gifts.`}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex min-w-[210px] items-center justify-center gap-2 rounded-full bg-green-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-green-600 active:scale-95 sm:min-w-0"
                     >
                       <FaWhatsapp size={17} /> WhatsApp Us
-                    </a>
+                    </Link>
+
                   </div>
 
                   {/* Stats */}
@@ -302,21 +303,21 @@ export default function HomePage() {
         {/* Arrow navigation */}
         <button
           onClick={() => gotoSlide(heroIndex - 1)}
-          className="absolute left-4 top-1/2 z-20 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-white/15 text-white backdrop-blur-sm transition-all hover:bg-white/30 md:left-6"
+          className="absolute left-4 top-1/2 z-10 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-white/15 text-white backdrop-blur-sm transition-all hover:bg-white/30 md:left-6"
           aria-label="Previous slide"
         >
           <FiChevronLeft size={22} />
         </button>
         <button
           onClick={() => gotoSlide(heroIndex + 1)}
-          className="absolute right-4 top-1/2 z-20 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-white/15 text-white backdrop-blur-sm transition-all hover:bg-white/30 md:right-6"
+          className="absolute right-4 top-1/2 z-10 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-white/15 text-white backdrop-blur-sm transition-all hover:bg-white/30 md:right-6"
           aria-label="Next slide"
         >
           <FiChevronRight size={22} />
         </button>
 
         {/* Dot indicators */}
-        <div className="absolute bottom-6 left-1/2 z-20 flex -translate-x-1/2 gap-2">
+        <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 gap-2">
           {heroSlides.map((s, i) => (
             <button
               key={s.id}
@@ -467,14 +468,14 @@ export default function HomePage() {
             <p className="mx-auto mb-8 max-w-lg text-base text-rose-200">
               Chat with us for personalized gift recommendations, bulk orders, and custom event gifting!
             </p>
-            <a
-              href={`https://wa.me/${whatsapp}?text=Hello! I need help choosing return gifts.`}
+            <Link
+              to={`https://wa.me/${whatsapp}?text=Hello! I need help choosing return gifts.`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-3 rounded-full bg-white px-10 py-4 text-base font-bold text-rose-700 shadow-2xl transition-all hover:bg-rose-50 hover:shadow-white/30"
             >
               <FaWhatsapp size={22} className="text-green-500" /> Chat on WhatsApp
-            </a>
+            </Link>
           </motion.div>
         </div>
       </section>
