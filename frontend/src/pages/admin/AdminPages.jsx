@@ -397,15 +397,19 @@ export function AdminCategories() {
 }
 
 export function AdminInventory() {
+  const movementSectionRef = useRef(null);
+  const rawMovementSectionRef = useRef(null);
   const [lowStock, setLowStock] = useState([]);
   const [movements, setMovements] = useState([]);
   const [products, setProducts] = useState([]);
-  const [rawMaterials, setRawMaterials] = useState([]);
   const [rawMaterialMovements, setRawMaterialMovements] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAdjust, setShowAdjust] = useState(false);
   const [adjForm, setAdjForm] = useState({ productId: '', type: 'IN', quantity: '', note: '' });
   const [saving, setSaving] = useState(false);
+  const [inventoryView, setInventoryView] = useState('product-movements');
+  const [movementFilters, setMovementFilters] = useState({ search: '', type: '', sortBy: 'date-desc', page: 1, pageSize: 10 });
+  const [rawMovementFilters, setRawMovementFilters] = useState({ search: '', type: '', sortBy: 'date-desc', page: 1, pageSize: 10 });
   const productOptions = products.map((product) => ({
     value: product._id,
     label: `${product.name}${product.sku ? ` - ${product.sku}` : ''}`,
@@ -418,17 +422,15 @@ export function AdminInventory() {
 
   const fetchAll = async () => {
     setLoading(true);
-    const [ls, mv, pr, rm, rmv] = await Promise.all([
+    const [ls, mv, pr, rmv] = await Promise.all([
       api.get('/inventory/low-stock'),
-      api.get('/inventory/movements?limit=20'),
+      api.get('/inventory/movements?limit=200'),
       api.get('/products/admin/all?limit=100'),
-      api.get('/raw-materials'),
       api.get('/raw-materials/movements?limit=20'),
     ]);
     setLowStock(ls.data.data);
     setMovements(mv.data.data);
     setProducts(pr.data.data);
-    setRawMaterials(rm.data.data);
     setRawMaterialMovements(rmv.data.data);
     setLoading(false);
   };
@@ -457,6 +459,62 @@ export function AdminInventory() {
 
   if (loading) return <PageLoader />;
 
+  const filteredMovements = movements.filter((movement) => {
+    const query = movementFilters.search.trim().toLowerCase();
+    const matchesSearch = !query || [
+      movement.product?.name,
+      movement.customerName,
+      movement.customerAddress,
+      movement.referenceNumber,
+      movement.referenceModel,
+      movement.reason,
+      movement.note,
+    ].some((value) => String(value || '').toLowerCase().includes(query));
+
+    const matchesType = !movementFilters.type || movement.type === movementFilters.type;
+    return matchesSearch && matchesType;
+  });
+
+  const sortedMovements = sortItems(filteredMovements, movementFilters.sortBy, {
+    date: (movement) => new Date(movement.createdAt).getTime(),
+    product: (movement) => movement.product?.name || '',
+    customer: (movement) => movement.customerName || '',
+    qty: (movement) => Number(movement.quantity || 0),
+    stock: (movement) => Number(movement.newStock || 0),
+    type: (movement) => movement.type || '',
+  });
+
+  const movementTotalPages = Math.max(1, Math.ceil(sortedMovements.length / movementFilters.pageSize));
+  const movementCurrentPage = Math.min(movementFilters.page, movementTotalPages);
+  const paginatedMovements = sortedMovements.slice((movementCurrentPage - 1) * movementFilters.pageSize, movementCurrentPage * movementFilters.pageSize);
+  const filteredRawMovements = rawMaterialMovements.filter((movement) => {
+    const query = rawMovementFilters.search.trim().toLowerCase();
+    const matchesSearch = !query || [
+      movement.rawMaterial?.name,
+      movement.supplier?.name,
+      movement.product?.name,
+      movement.type,
+      movement.unitPrice,
+      movement.totalAmount,
+    ].some((value) => String(value || '').toLowerCase().includes(query));
+    const matchesType = !rawMovementFilters.type || movement.type === rawMovementFilters.type;
+    return matchesSearch && matchesType;
+  });
+
+  const sortedRawMovements = sortItems(filteredRawMovements, rawMovementFilters.sortBy, {
+    date: (movement) => new Date(movement.createdAt).getTime(),
+    material: (movement) => movement.rawMaterial?.name || '',
+    supplier: (movement) => movement.supplier?.name || '',
+    type: (movement) => movement.type || '',
+    qty: (movement) => Number(movement.quantity || 0),
+    stock: (movement) => Number(movement.newStock || 0),
+    total: (movement) => Number(movement.totalAmount || 0),
+  });
+
+  const rawMovementTotalPages = Math.max(1, Math.ceil(sortedRawMovements.length / rawMovementFilters.pageSize));
+  const rawMovementCurrentPage = Math.min(rawMovementFilters.page, rawMovementTotalPages);
+  const paginatedRawMovements = sortedRawMovements.slice((rawMovementCurrentPage - 1) * rawMovementFilters.pageSize, rawMovementCurrentPage * rawMovementFilters.pageSize);
+
   return (
     <div>
       <div className="mb-6 flex items-center justify-between">
@@ -478,66 +536,156 @@ export function AdminInventory() {
         </div>
       ) : null}
 
-      <div className="admin-card overflow-hidden">
-        <h2 className="mb-4 font-semibold text-gray-800">Recent Product Movements</h2>
+      <div className="admin-card">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setInventoryView('product-movements')}
+            className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${inventoryView === 'product-movements' ? 'bg-rose-600 text-white shadow-sm' : 'border border-gray-200 bg-white text-gray-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600'}`}
+          >
+            Recent Product Movements
+          </button>
+          <button
+            type="button"
+            onClick={() => setInventoryView('raw-movements')}
+            className={`rounded-xl px-4 py-2.5 text-sm font-semibold transition-all ${inventoryView === 'raw-movements' ? 'bg-rose-600 text-white shadow-sm' : 'border border-gray-200 bg-white text-gray-600 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600'}`}
+          >
+            Raw Material Movements
+          </button>
+        </div>
+      </div>
+
+      {inventoryView === 'product-movements' ? (
+      <div ref={movementSectionRef} className="admin-card overflow-hidden">
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h2 className="font-semibold text-gray-800">Recent Product Movements</h2>
+          <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
+            Total: {filteredMovements.length}
+          </div>
+        </div>
+        <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50/80 px-4 py-3">
+          <div className="relative w-full max-w-sm">
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+            <input
+              value={movementFilters.search}
+              onChange={(e) => setMovementFilters({ ...movementFilters, search: e.target.value, page: 1 })}
+              placeholder="Search movements..."
+              className="input-field h-11 py-2 pl-10 text-sm"
+            />
+          </div>
+          <select value={movementFilters.type} onChange={(e) => setMovementFilters({ ...movementFilters, type: e.target.value, page: 1 })} className="input-field h-11 w-full max-w-[160px] py-2 text-sm">
+            <option value="">All Types</option>
+            <option value="IN">IN</option>
+            <option value="OUT">OUT</option>
+            <option value="ADJUST">ADJUST</option>
+          </select>
+          <select value={movementFilters.sortBy} onChange={(e) => setMovementFilters({ ...movementFilters, sortBy: e.target.value, page: 1 })} className="input-field h-11 w-full max-w-[190px] py-2 text-sm">
+            <option value="date-desc">Latest First</option>
+            <option value="date-asc">Oldest First</option>
+            <option value="product-asc">Product A-Z</option>
+            <option value="product-desc">Product Z-A</option>
+            <option value="customer-asc">Customer A-Z</option>
+            <option value="customer-desc">Customer Z-A</option>
+            <option value="qty-desc">Highest Quantity</option>
+            <option value="qty-asc">Lowest Quantity</option>
+            <option value="stock-desc">Highest New Stock</option>
+            <option value="stock-asc">Lowest New Stock</option>
+            <option value="type-asc">Type A-Z</option>
+            <option value="type-desc">Type Z-A</option>
+          </select>
+          <select value={movementFilters.pageSize} onChange={(e) => setMovementFilters({ ...movementFilters, pageSize: Number(e.target.value), page: 1 })} className="input-field h-11 w-full max-w-[130px] py-2 text-sm">
+            {[10, 20, 50].map((size) => <option key={size} value={size}>{size} / page</option>)}
+          </select>
+        </div>
         <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
-                  {['#', 'Product', 'Type', 'Qty', 'Prev', 'New', 'Reason', 'Date'].map((head) => <th key={head} className="px-2 pb-3 font-medium">{head}</th>)}
+                  {['#', 'Product', 'Type', 'Qty', 'Prev', 'New', 'Customer', 'Address', 'Reference', 'Date & Time'].map((head) => <th key={head} className="px-2 pb-3 font-medium">{head}</th>)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {movements.map((movement, index) => (
+                {paginatedMovements.map((movement, index) => (
                   <tr key={movement._id} className="hover:bg-gray-50">
-                    <td className="px-2 py-2.5 text-gray-500">{index + 1}</td>
+                    <td className="px-2 py-2.5 text-gray-500">{(movementCurrentPage - 1) * movementFilters.pageSize + index + 1}</td>
                     <td className="px-2 py-2.5 text-gray-800">{movement.product?.name || '-'}</td>
                   <td className="px-2 py-2.5"><span className={`badge ${movement.type === 'IN' ? 'badge-green' : movement.type === 'OUT' ? 'badge-red' : 'badge-blue'}`}>{movement.type}</span></td>
                   <td className="px-2 py-2.5 font-semibold">{movement.quantity}</td>
                   <td className="px-2 py-2.5 text-gray-500">{movement.previousStock}</td>
                   <td className="px-2 py-2.5 font-semibold text-gray-800">{movement.newStock}</td>
-                  <td className="max-w-xs truncate px-2 py-2.5 text-gray-500">{movement.reason || '-'}</td>
-                  <td className="px-2 py-2.5 text-xs text-gray-400">{new Date(movement.createdAt).toLocaleDateString('en-IN')}</td>
+                  <td className="px-2 py-2.5 text-gray-700">{movement.customerName || (movement.referenceModel === 'Manual' ? 'Manual Adjustment' : '-')}</td>
+                  <td className="max-w-[220px] px-2 py-2.5 text-gray-500">
+                    <span className="block truncate" title={movement.customerAddress || movement.note || movement.reason || ''}>
+                      {movement.customerAddress || movement.note || movement.reason || '-'}
+                    </span>
+                  </td>
+                  <td className="px-2 py-2.5 text-gray-500">{movement.referenceNumber || movement.referenceModel || '-'}</td>
+                  <td className="px-2 py-2.5 text-xs text-gray-400 whitespace-nowrap">{new Date(movement.createdAt).toLocaleString('en-IN')}</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+        <Pagination
+          currentPage={movementCurrentPage}
+          totalPages={movementTotalPages}
+          onPageChange={(page) => {
+            setMovementFilters({ ...movementFilters, page });
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => scrollInventorySectionIntoView(movementSectionRef));
+            });
+          }}
+        />
       </div>
+      ) : null}
 
       <div className="mt-6 space-y-6">
-        <div className="admin-card overflow-hidden">
-          <div className="mb-4 flex items-center gap-2">
-            <FiBox size={18} className="text-brand-500" />
-            <h2 className="font-semibold text-gray-800">Raw Materials Stock</h2>
+        {inventoryView === 'raw-movements' ? (
+        <div ref={rawMovementSectionRef} className="admin-card overflow-hidden">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <FiBox size={18} className="text-brand-500" />
+              <h2 className="font-semibold text-gray-800">Raw Material Movements</h2>
+            </div>
+            <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
+              Total: {filteredRawMovements.length}
+            </div>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
-                  {['#', 'Material', 'Supplier', 'Unit', 'Stock', 'Purchase Price'].map((head) => <th key={head} className="px-2 pb-3 font-medium">{head}</th>)}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {rawMaterials.map((material, index) => (
-                  <tr key={material._id} className="hover:bg-gray-50">
-                    <td className="px-2 py-2.5 text-gray-500">{index + 1}</td>
-                    <td className="px-2 py-2.5 font-medium text-gray-800">{material.name}</td>
-                    <td className="px-2 py-2.5 text-gray-500">{material.supplier?.name || '-'}</td>
-                    <td className="px-2 py-2.5 text-gray-500">{material.unit}</td>
-                    <td className="px-2 py-2.5 font-semibold text-gray-800">{material.stock}</td>
-                    <td className="px-2 py-2.5 text-gray-500">Rs.{material.purchasePrice}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div className="admin-card overflow-hidden">
-          <div className="mb-4 flex items-center gap-2">
-            <FiBox size={18} className="text-brand-500" />
-            <h2 className="font-semibold text-gray-800">Raw Material Movements</h2>
+          <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50/80 px-4 py-3">
+            <div className="relative w-full max-w-sm">
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+              <input
+                value={rawMovementFilters.search}
+                onChange={(e) => setRawMovementFilters({ ...rawMovementFilters, search: e.target.value, page: 1 })}
+                placeholder="Search raw movements..."
+                className="input-field h-11 py-2 pl-10 text-sm"
+              />
+            </div>
+            <select value={rawMovementFilters.type} onChange={(e) => setRawMovementFilters({ ...rawMovementFilters, type: e.target.value, page: 1 })} className="input-field h-11 w-full max-w-[170px] py-2 text-sm">
+              <option value="">All Types</option>
+              <option value="PURCHASE">PURCHASE</option>
+              <option value="USAGE">USAGE</option>
+              <option value="ADJUST">ADJUST</option>
+            </select>
+            <select value={rawMovementFilters.sortBy} onChange={(e) => setRawMovementFilters({ ...rawMovementFilters, sortBy: e.target.value, page: 1 })} className="input-field h-11 w-full max-w-[190px] py-2 text-sm">
+              <option value="date-desc">Latest First</option>
+              <option value="date-asc">Oldest First</option>
+              <option value="material-asc">Material A-Z</option>
+              <option value="material-desc">Material Z-A</option>
+              <option value="supplier-asc">Supplier A-Z</option>
+              <option value="supplier-desc">Supplier Z-A</option>
+              <option value="qty-desc">Highest Quantity</option>
+              <option value="qty-asc">Lowest Quantity</option>
+              <option value="stock-desc">Highest New Stock</option>
+              <option value="stock-asc">Lowest New Stock</option>
+              <option value="total-desc">Highest Total</option>
+              <option value="total-asc">Lowest Total</option>
+              <option value="type-asc">Type A-Z</option>
+              <option value="type-desc">Type Z-A</option>
+            </select>
+            <select value={rawMovementFilters.pageSize} onChange={(e) => setRawMovementFilters({ ...rawMovementFilters, pageSize: Number(e.target.value), page: 1 })} className="input-field h-11 w-full max-w-[130px] py-2 text-sm">
+              {[10, 20, 50].map((size) => <option key={size} value={size}>{size} / page</option>)}
+            </select>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -547,9 +695,9 @@ export function AdminInventory() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
-                {rawMaterialMovements.map((movement, index) => (
+                {paginatedRawMovements.map((movement, index) => (
                   <tr key={movement._id} className="hover:bg-gray-50">
-                    <td className="px-2 py-2.5 text-gray-500">{index + 1}</td>
+                    <td className="px-2 py-2.5 text-gray-500">{(rawMovementCurrentPage - 1) * rawMovementFilters.pageSize + index + 1}</td>
                     <td className="px-2 py-2.5 font-medium text-gray-800">{movement.rawMaterial?.name || '-'}</td>
                     <td className="px-2 py-2.5 text-gray-500">{movement.supplier?.name || '-'}</td>
                     <td className="px-2 py-2.5"><span className={`badge ${movement.type === 'PURCHASE' ? 'badge-green' : movement.type === 'USAGE' ? 'badge-red' : 'badge-blue'}`}>{movement.type}</span></td>
@@ -565,7 +713,16 @@ export function AdminInventory() {
               </tbody>
             </table>
           </div>
+          <Pagination
+            currentPage={rawMovementCurrentPage}
+            totalPages={rawMovementTotalPages}
+            onPageChange={(page) => {
+              setRawMovementFilters({ ...rawMovementFilters, page });
+              requestAnimationFrame(() => scrollInventorySectionIntoView(rawMovementSectionRef));
+            }}
+          />
         </div>
+        ) : null}
       </div>
 
       <Modal isOpen={showAdjust} onClose={() => setShowAdjust(false)} title="Adjust Stock">
@@ -852,6 +1009,13 @@ export function AdminSettings() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const scrollInventorySectionIntoView = (sectionRef) => {
+    if (!sectionRef?.current) return;
+    const topOffset = 96;
+    const nextTop = sectionRef.current.getBoundingClientRect().top + window.scrollY - topOffset;
+    window.scrollTo({ top: Math.max(nextTop, 0), behavior: 'smooth' });
   };
 
   if (loading) return <PageLoader />;

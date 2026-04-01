@@ -50,32 +50,27 @@ export function Badge({ status, type }) {
 
 export function Pagination({ currentPage, totalPages, onPageChange }) {
   if (totalPages <= 1) return null;
-  const pages = [];
-  if (totalPages <= 7) {
-    for (let i = 1; i <= totalPages; i++) pages.push(i);
-  } else {
-    pages.push(1);
-    if (currentPage > 3) pages.push('...');
-    for (let i = Math.max(2, currentPage - 1); i <= Math.min(totalPages - 1, currentPage + 1); i++) pages.push(i);
-    if (currentPage < totalPages - 2) pages.push('...');
-    pages.push(totalPages);
-  }
+
   return (
-    <div className="flex items-center justify-center gap-1.5 mt-10">
-      <button disabled={currentPage === 1} onClick={() => onPageChange(currentPage - 1)}
-        className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
-        <FiChevronLeft size={16} />
+    <div className="mt-10 flex items-center justify-center gap-5 text-sm">
+      <button
+        type="button"
+        disabled={currentPage === 1}
+        onClick={() => onPageChange(currentPage - 1)}
+        className="font-medium text-rose-600 transition-colors hover:text-rose-700 disabled:cursor-not-allowed disabled:text-gray-400 disabled:opacity-50"
+      >
+        Prev
       </button>
-      {pages.map((p, i) => p === '...'
-        ? <span key={`e${i}`} className="w-9 h-9 flex items-center justify-center text-gray-400 text-sm">…</span>
-        : <button key={p} onClick={() => onPageChange(p)}
-            className={`w-9 h-9 rounded-full text-sm font-semibold transition-all ${p === currentPage ? 'bg-rose-600 text-white shadow-sm' : 'border border-gray-200 text-gray-600 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600'}`}>
-            {p}
-          </button>
-      )}
-      <button disabled={currentPage === totalPages} onClick={() => onPageChange(currentPage + 1)}
-        className="w-9 h-9 rounded-full border border-gray-200 flex items-center justify-center text-gray-500 hover:bg-rose-50 hover:border-rose-200 hover:text-rose-600 disabled:opacity-30 disabled:cursor-not-allowed transition-all">
-        <FiChevronRight size={16} />
+      <div className="font-medium text-gray-900">
+        Page {currentPage} of {totalPages}
+      </div>
+      <button
+        type="button"
+        disabled={currentPage === totalPages}
+        onClick={() => onPageChange(currentPage + 1)}
+        className="font-medium text-rose-600 transition-colors hover:text-rose-700 disabled:cursor-not-allowed disabled:text-gray-400 disabled:opacity-50"
+      >
+        Next
       </button>
     </div>
   );

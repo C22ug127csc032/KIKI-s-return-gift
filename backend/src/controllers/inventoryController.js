@@ -1,5 +1,7 @@
 import Product from '../models/Product.js';
 import InventoryMovement from '../models/InventoryMovement.js';
+import Order from '../models/Order.js';
+import OfflineSale from '../models/OfflineSale.js';
 import ApiError from '../utils/apiError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { sendResponse, sendPaginatedResponse } from '../utils/apiResponse.js';
@@ -19,7 +21,60 @@ export const getInventoryMovements = asyncHandler(async (req, res) => {
       .limit(limit),
     InventoryMovement.countDocuments(filter),
   ]);
-  sendPaginatedResponse(res, 'Movements fetched', movements, page, limit, total);
+
+  const orderIds = [...new Set(
+    movements
+      .filter((movement) => movement.referenceModel === 'Order' && movement.referenceId)
+      .map((movement) => String(movement.referenceId))
+  )];
+
+  const offlineSaleIds = [...new Set(
+    movements
+      .filter((movement) => movement.referenceModel === 'OfflineSale' && movement.referenceId)
+      .map((movement) => String(movement.referenceId))
+  )];
+
+  const [orders, offlineSales] = await Promise.all([
+    orderIds.length
+      ? Order.find({ _id: { $in: orderIds } }).select('customerName customerAddress orderNumber createdAt')
+      : [],
+    offlineSaleIds.length
+      ? OfflineSale.find({ _id: { $in: offlineSaleIds } }).select('customerName address invoiceNumber createdAt')
+      : [],
+  ]);
+
+  const orderMap = new Map(orders.map((order) => [String(order._id), order]));
+  const offlineSaleMap = new Map(offlineSales.map((sale) => [String(sale._id), sale]));
+
+  const enrichedMovements = movements.map((movement) => {
+    const plainMovement = movement.toObject();
+    let customerName = null;
+    let customerAddress = null;
+    let referenceNumber = null;
+
+    if (plainMovement.referenceModel === 'Order' && plainMovement.referenceId) {
+      const order = orderMap.get(String(plainMovement.referenceId));
+      customerName = order?.customerName || null;
+      customerAddress = order?.customerAddress || null;
+      referenceNumber = order?.orderNumber || null;
+    }
+
+    if (plainMovement.referenceModel === 'OfflineSale' && plainMovement.referenceId) {
+      const sale = offlineSaleMap.get(String(plainMovement.referenceId));
+      customerName = sale?.customerName || null;
+      customerAddress = sale?.address || null;
+      referenceNumber = sale?.invoiceNumber || null;
+    }
+
+    return {
+      ...plainMovement,
+      customerName,
+      customerAddress,
+      referenceNumber,
+    };
+  });
+
+  sendPaginatedResponse(res, 'Movements fetched', enrichedMovements, page, limit, total);
 });
 
 export const adjustStock = asyncHandler(async (req, res) => {
