@@ -2,6 +2,8 @@ import express from 'express';
 import {
   register,
   login,
+  forgotPassword,
+  resetPassword,
   getMe,
   updateProfile,
   changePassword,
@@ -17,6 +19,8 @@ const authLimiter = rateLimit({ windowMs: 15 * 60 * 1000, max: 20, message: 'Too
 
 router.post('/register', authLimiter, register);
 router.post('/login', authLimiter, login);
+router.post('/forgot-password', authLimiter, forgotPassword);
+router.post('/reset-password', authLimiter, resetPassword);
 router.get('/me', protect, getMe);
 router.put('/profile', protect, updateProfile);
 router.put('/change-password', protect, changePassword);

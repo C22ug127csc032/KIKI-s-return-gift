@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { FiMail, FiLock, FiEye, FiEyeOff, FiGift } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -56,6 +56,11 @@ export default function AdminLoginPage() {
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
                 {showPass ? <FiEyeOff size={16} /> : <FiEye size={16} />}
               </button>
+            </div>
+            <div className="mt-2 text-right">
+              <Link to="/admin/forgot-password" className="text-xs font-semibold text-purple-600 hover:text-purple-700">
+                Forgot Password?
+              </Link>
             </div>
           </div>
           <button type="submit" disabled={loading}

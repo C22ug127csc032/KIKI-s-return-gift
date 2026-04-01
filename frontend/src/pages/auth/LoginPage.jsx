@@ -58,6 +58,11 @@ export default function LoginPage() {
                 {showPass ? <FiEyeOff size={15} /> : <FiEye size={15} />}
               </button>
             </div>
+            <div className="mt-2 text-right">
+              <Link to="/forgot-password" className="text-xs font-semibold text-rose-600 hover:text-rose-700">
+                Forgot Password?
+              </Link>
+            </div>
           </div>
           <button type="submit" disabled={loading}
             className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 disabled:opacity-60">

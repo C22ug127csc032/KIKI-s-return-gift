@@ -19,6 +19,8 @@ import NotFoundPage from './pages/public/NotFoundPage.jsx';
 // Auth pages
 import LoginPage from './pages/auth/LoginPage.jsx';
 import RegisterPage from './pages/auth/RegisterPage.jsx';
+import ForgotPasswordPage from './pages/auth/ForgotPasswordPage.jsx';
+import ResetPasswordPage from './pages/auth/ResetPasswordPage.jsx';
 
 // User pages
 import ProfilePage from './pages/user/ProfilePage.jsx';
@@ -57,8 +59,14 @@ export default function App() {
               <Route path="/wishlist" element={<ProtectedRoute><MyWishlistPage /></ProtectedRoute>} />
             </Route>
 
+            {/* Standalone password recovery */}
+            <Route path="/forgot-password" element={<GuestRoute><ForgotPasswordPage /></GuestRoute>} />
+            <Route path="/reset-password/:token" element={<GuestRoute><ResetPasswordPage /></GuestRoute>} />
+
             {/* Admin login - standalone */}
             <Route path="/admin/login" element={<AdminLoginPage />} />
+            <Route path="/admin/forgot-password" element={<ForgotPasswordPage role="admin" />} />
+            <Route path="/admin/reset-password/:token" element={<ResetPasswordPage role="admin" />} />
 
             {/* Admin routes with sidebar layout */}
             <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>

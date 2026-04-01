@@ -80,7 +80,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className={`sticky top-0 z-[120] overflow-hidden transition-all duration-300 md:fixed md:inset-x-0 md:top-0 md:z-[120] ${scrolled ? 'bg-rose-600 shadow-[0_2px_20px_rgba(190,24,93,0.28)]' : 'bg-rose-600 border-b border-rose-500'}`}>
+      <header className={`fixed inset-x-0 top-0 z-[120] transition-all duration-300 ${scrolled ? 'bg-rose-600 shadow-[0_2px_20px_rgba(190,24,93,0.28)]' : 'bg-rose-600 border-b border-rose-500'}`}>
         <div className="page-container">
           <div className="flex min-h-[68px] items-center justify-between gap-1.5 py-2 sm:h-16 sm:min-h-0 sm:gap-4 sm:py-0">
             <div className="flex min-w-0 flex-1 items-center gap-1.5 md:flex-none">
@@ -196,7 +196,7 @@ export default function Navbar() {
         </div>
 
       </header>
-      <div className="hidden h-[68px] md:block" aria-hidden="true" />
+      <div className="h-[68px] sm:h-16" aria-hidden="true" />
       <AnimatePresence>
         {menuOpen && (
           <div className="md:hidden fixed inset-0 z-[60]">

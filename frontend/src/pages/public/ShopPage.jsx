@@ -239,78 +239,80 @@ export default function ShopPage() {
           </aside>
 
           <div className="flex-1 min-w-0">
-            {hasActive ? (
-              <div className="mb-4 flex flex-wrap gap-2">
-                {filters.category ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700">
-                    {activeCategory?.name || 'Category'}
-                    <button onClick={() => setFilter('category', '')}><FiX size={11} /></button>
-                  </span>
-                ) : null}
-                {filters.occasion ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700">
-                    {filters.occasion}
-                    <button onClick={() => setFilter('occasion', '')}><FiX size={11} /></button>
-                  </span>
-                ) : null}
-                {filters.featured ? (
-                  <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
-                    Featured
-                    <button onClick={() => setFilter('featured', '')}><FiX size={11} /></button>
-                  </span>
-                ) : null}
-              </div>
-            ) : null}
+            <div ref={resultsTopRef}>
+              {hasActive ? (
+                <div className="mb-4 flex flex-wrap gap-2">
+                  {filters.category ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700">
+                      {activeCategory?.name || 'Category'}
+                      <button onClick={() => setFilter('category', '')}><FiX size={11} /></button>
+                    </span>
+                  ) : null}
+                  {filters.occasion ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700">
+                      {filters.occasion}
+                      <button onClick={() => setFilter('occasion', '')}><FiX size={11} /></button>
+                    </span>
+                  ) : null}
+                  {filters.featured ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
+                      Featured
+                      <button onClick={() => setFilter('featured', '')}><FiX size={11} /></button>
+                    </span>
+                  ) : null}
+                </div>
+              ) : null}
 
-            <div ref={resultsTopRef} className="flex flex-col sm:flex-row gap-3 mb-6">
-              <div className="relative flex-1">
-                <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                <input
-                  placeholder="Search gifts, occasions..."
-                  value={filters.search}
-                  onChange={(e) => setFilter('search', e.target.value)}
-                  className="input-field py-2.5 pl-10 pr-11"
-                />
-                {filters.search ? (
-                  <button
-                    type="button"
-                    onClick={() => setFilter('search', '')}
-                    className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors hover:bg-rose-50 hover:text-rose-600 sm:hidden"
-                    aria-label="Clear search"
-                  >
-                    <FiX size={14} />
-                  </button>
-                ) : null}
-              </div>
-              <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
-                <select
-                  value={filters.sortBy}
-                  onChange={(e) => setFilter('sortBy', e.target.value)}
-                  className="input-field py-2.5 w-full sm:w-auto text-xs pr-8 cursor-pointer"
-                >
-                  <option value="latest">Latest</option>
-                  <option value="price-asc">Price: Low to High</option>
-                  <option value="price-desc">Price: High to Low</option>
-                  <option value="name-asc">Name A-Z</option>
-                </select>
-                <div className="lg:hidden flex items-center gap-2">
-                  <button
-                    onClick={() => setFilterOpen(true)}
-                    className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-600 font-semibold text-xs px-4 py-2.5 rounded-xl hover:border-rose-300 hover:text-rose-600 transition-all"
-                  >
-                    <FiFilter size={15} /> Filters
-                    {activeCount > 0 ? <span className="bg-rose-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{activeCount}</span> : null}
-                  </button>
-                  {activeCount > 0 ? (
+              <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                <div className="relative flex-1">
+                  <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                  <input
+                    placeholder="Search gifts, occasions..."
+                    value={filters.search}
+                    onChange={(e) => setFilter('search', e.target.value)}
+                    className="input-field py-2.5 pl-10 pr-11"
+                  />
+                  {filters.search ? (
                     <button
                       type="button"
-                      onClick={clearFilters}
-                      className="flex h-[42px] w-[42px] items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition-all hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600"
-                      aria-label="Clear filters"
+                      onClick={() => setFilter('search', '')}
+                      className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors hover:bg-rose-50 hover:text-rose-600 sm:hidden"
+                      aria-label="Clear search"
                     >
-                      <FiX size={18} />
+                      <FiX size={14} />
                     </button>
                   ) : null}
+                </div>
+                <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
+                  <select
+                    value={filters.sortBy}
+                    onChange={(e) => setFilter('sortBy', e.target.value)}
+                    className="input-field py-2.5 w-full sm:w-auto text-xs pr-8 cursor-pointer"
+                  >
+                    <option value="latest">Latest</option>
+                    <option value="price-asc">Price: Low to High</option>
+                    <option value="price-desc">Price: High to Low</option>
+                    <option value="name-asc">Name A-Z</option>
+                  </select>
+                  <div className="lg:hidden flex items-center gap-2">
+                    <button
+                      onClick={() => setFilterOpen(true)}
+                      className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-600 font-semibold text-xs px-4 py-2.5 rounded-xl hover:border-rose-300 hover:text-rose-600 transition-all"
+                    >
+                      <FiFilter size={15} /> Filters
+                      {activeCount > 0 ? <span className="bg-rose-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{activeCount}</span> : null}
+                    </button>
+                    {activeCount > 0 ? (
+                      <button
+                        type="button"
+                        onClick={clearFilters}
+                        className="flex h-[42px] w-[42px] items-center justify-center rounded-xl border border-gray-200 bg-white text-gray-500 transition-all hover:border-rose-300 hover:bg-rose-50 hover:text-rose-600"
+                        aria-label="Clear filters"
+                      >
+                        <FiX size={18} />
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               </div>
             </div>
