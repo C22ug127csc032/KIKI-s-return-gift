@@ -977,6 +977,7 @@ export function AdminOfflineSales() {
 export function AdminSettings() {
   const [form, setForm] = useState({});
   const [qrFile, setQrFile] = useState(null);
+  const [heroFile, setHeroFile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
@@ -1002,7 +1003,11 @@ export function AdminSettings() {
         if (value !== null && value !== undefined && typeof value !== 'object') fd.append(key, value);
       });
       if (qrFile) fd.append('qrImage', qrFile);
-      await api.put('/settings', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      if (heroFile) fd.append('heroImage', heroFile);
+      const response = await api.put('/settings', fd, { headers: { 'Content-Type': 'multipart/form-data' } });
+      setForm(response.data.data || {});
+      setQrFile(null);
+      setHeroFile(null);
       toast.success('Settings saved!');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save settings');
@@ -1065,6 +1070,42 @@ export function AdminSettings() {
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700">Payment Instructions</label>
             <textarea value={form.paymentInstructions || ''} onChange={(e) => setForm({ ...form, paymentInstructions: e.target.value })} rows={3} className="input-field resize-none" />
+          </div>
+        </div>
+
+        <div className="admin-card space-y-4">
+          <h2 className="font-semibold text-gray-800">Homepage Hero Section</h2>
+          <p className="text-sm text-gray-500">Update the main hero banner content without changing the homepage layout.</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <Field label="Hero Tag" name="heroTag" placeholder="Wedding & Haldi" />
+            <Field label="Button Text" name="heroButtonText" placeholder="Shop Gifts" />
+            <Field label="Button Link" name="heroButtonLink" placeholder="/shop?occasion=Wedding" />
+            <div className="sm:col-span-2 grid grid-cols-1 gap-4 md:grid-cols-3">
+              <Field label="Title Line 1" name="heroTitleLineOne" placeholder="Perfect Gifts" />
+              <Field label="Title Line 2" name="heroTitleLineTwo" placeholder="for Every" />
+              <Field label="Title Line 3" name="heroTitleLineThree" placeholder="Celebration" />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Hero Subtitle</label>
+              <textarea
+                value={form.heroSubtitle || ''}
+                onChange={(e) => setForm({ ...form, heroSubtitle: e.target.value })}
+                rows={3}
+                className="input-field resize-none"
+                placeholder="Curated return gifts for weddings, birthdays, pooja, and every special occasion."
+              />
+            </div>
+            <div className="sm:col-span-2">
+              <label className="mb-1.5 block text-sm font-medium text-gray-700">Hero Image</label>
+              {form.heroImage ? <img src={form.heroImage} alt="Hero preview" className="mb-3 h-40 w-full max-w-md rounded-2xl border border-gray-200 object-cover" /> : null}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setHeroFile(e.target.files?.[0] || null)}
+                className="input-field text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-1 file:text-xs file:text-brand-600"
+              />
+              <p className="mt-2 text-xs text-gray-400">Recommended: wide landscape image for the homepage hero banner.</p>
+            </div>
           </div>
         </div>
 

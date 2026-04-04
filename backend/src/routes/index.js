@@ -5,7 +5,7 @@ import { getDashboardStats } from '../controllers/dashboardController.js';
 import { getSettings, updateSettings } from '../controllers/settingsController.js';
 import { generateOfflineSaleInvoice } from '../services/invoiceService.js';
 import { protect, adminOnly } from '../middlewares/auth.js';
-import { uploadQR } from '../config/cloudinary.js';
+import { uploadSettingsMedia } from '../config/cloudinary.js';
 
 export const inventoryRouter = express.Router();
 inventoryRouter.get('/movements', protect, adminOnly, getInventoryMovements);
@@ -23,4 +23,13 @@ dashboardRouter.get('/stats', protect, adminOnly, getDashboardStats);
 
 export const settingsRouter = express.Router();
 settingsRouter.get('/', getSettings);
-settingsRouter.put('/', protect, adminOnly, uploadQR.single('qrImage'), updateSettings);
+settingsRouter.put(
+  '/',
+  protect,
+  adminOnly,
+  uploadSettingsMedia.fields([
+    { name: 'qrImage', maxCount: 1 },
+    { name: 'heroImage', maxCount: 1 },
+  ]),
+  updateSettings
+);

@@ -35,6 +35,19 @@ const appSettingSchema = new mongoose.Schema(
       default:
         'Please complete your payment via UPI or bank transfer. After payment, share the screenshot on WhatsApp.',
     },
+    heroTag: { type: String, default: 'Wedding & Haldi' },
+    heroTitleLineOne: { type: String, default: 'Perfect Gifts' },
+    heroTitleLineTwo: { type: String, default: 'for Every' },
+    heroTitleLineThree: { type: String, default: 'Celebration' },
+    heroSubtitle: {
+      type: String,
+      default:
+        'Curated return gifts for weddings, birthdays, pooja, and every special occasion. Premium quality, affordable prices.',
+    },
+    heroButtonText: { type: String, default: 'Shop Gifts' },
+    heroButtonLink: { type: String, default: '/shop?occasion=Wedding' },
+    heroImage: { type: String },
+    heroImagePublicId: { type: String },
     logoUrl: { type: String },
     currency: { type: String, default: '₹' },
   },

@@ -5,6 +5,15 @@ import { cloudinary } from '../config/cloudinary.js';
 import ApiError from '../utils/apiError.js';
 import { isValidEmail, isValidPhone, normalizeEmail, normalizePhone } from '../utils/validation.js';
 
+const uploadImageBuffer = (buffer, folder, transformation = undefined) =>
+  new Promise((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { folder, resource_type: 'image', transformation },
+      (error, result) => (error ? reject(error) : resolve(result))
+    );
+    stream.end(buffer);
+  });
+
 export const getSettings = asyncHandler(async (req, res) => {
   let settings = await AppSetting.findOne();
   if (!settings) settings = await AppSetting.create({});
@@ -30,12 +39,25 @@ export const updateSettings = asyncHandler(async (req, res) => {
     'storeName', 'storeTagline', 'storeAddress', 'supportEmail', 'supportPhone',
     'whatsappNumber', 'bankAccountName', 'bankAccountNumber', 'bankIFSC', 'bankBranch',
     'upiId', 'gstPercentage', 'gstNumber', 'paymentInstructions', 'currency',
+    'heroTag', 'heroTitleLineOne', 'heroTitleLineTwo', 'heroTitleLineThree',
+    'heroSubtitle', 'heroButtonText', 'heroButtonLink',
   ];
   fields.forEach((f) => { if (req.body[f] !== undefined) settings[f] = req.body[f]; });
-  if (req.file) {
+  const qrFile = req.files?.qrImage?.[0];
+  if (qrFile) {
     if (settings.upiQrPublicId) await cloudinary.uploader.destroy(settings.upiQrPublicId);
-    settings.upiQrImage = req.file.path;
-    settings.upiQrPublicId = req.file.filename;
+    const uploadedQr = await uploadImageBuffer(qrFile.buffer, 'kikis-store/qr');
+    settings.upiQrImage = uploadedQr.secure_url;
+    settings.upiQrPublicId = uploadedQr.public_id;
+  }
+  const heroFile = req.files?.heroImage?.[0];
+  if (heroFile) {
+    if (settings.heroImagePublicId) await cloudinary.uploader.destroy(settings.heroImagePublicId);
+    const uploadedHero = await uploadImageBuffer(heroFile.buffer, 'kikis-store/hero', [
+      { width: 1920, height: 1200, crop: 'limit', quality: 'auto' },
+    ]);
+    settings.heroImage = uploadedHero.secure_url;
+    settings.heroImagePublicId = uploadedHero.public_id;
   }
   await settings.save();
   sendResponse(res, 200, 'Settings updated', settings);

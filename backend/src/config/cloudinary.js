@@ -82,4 +82,5 @@ export const uploadProduct = multer({ storage: localProductStorage, fileFilter: 
 export const uploadPayment = multer({ storage: paymentStorage });
 export const uploadCategory = multer({ storage: localCategoryStorage, fileFilter: imageFileFilter });
 export const uploadQR = multer({ storage: qrStorage });
+export const uploadSettingsMedia = multer({ storage: multer.memoryStorage(), fileFilter: imageFileFilter });
 export { cloudinary };

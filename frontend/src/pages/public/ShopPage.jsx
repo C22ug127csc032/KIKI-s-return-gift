@@ -136,7 +136,7 @@ function FilterPanel({ filters, categories, hasActive, setFilter, clearFilters, 
 
 export default function ShopPage() {
   const location = useLocation();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [, setSearchParams] = useSearchParams();
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
@@ -156,6 +156,11 @@ export default function ShopPage() {
   const lastFetchedFiltersRef = useRef(null);
   // Debounce timer ref
   const searchDebounceRef = useRef(null);
+  const previousFilterTargetsRef = useRef({
+    category: getFiltersFromSearch(location.search).category,
+    occasion: getFiltersFromSearch(location.search).occasion,
+    featured: getFiltersFromSearch(location.search).featured,
+  });
 
   const scrollToResultsTop = () => {
     if (!resultsTopRef.current) return;
@@ -182,21 +187,41 @@ export default function ShopPage() {
     setSearchInput(getFiltersFromSearch(location.search).search);
   }, [location.search]);
 
-  // Scroll behaviour on navigation
+  // Keep category/occasion jumps aligned with the top of the results area.
   useEffect(() => {
-    const hasFilterLandingTarget = searchParams.get('category') || searchParams.get('occasion');
-    if (hasFilterLandingTarget) {
-      requestAnimationFrame(() => {
-        scrollToResultsTop();
-        setTimeout(scrollToResultsTop, 60);
-      });
+    const previousParams = previousFilterTargetsRef.current;
+    const currentParams = {
+      category: filters.category,
+      occasion: filters.occasion,
+      featured: filters.featured,
+    };
+    const filterTargetChanged =
+      previousParams.category !== currentParams.category ||
+      previousParams.occasion !== currentParams.occasion ||
+      previousParams.featured !== currentParams.featured;
+
+    if (!filterTargetChanged) {
       return;
     }
+
+    const hasFilterLandingTarget = currentParams.category || currentParams.occasion || currentParams.featured;
+
+    requestAnimationFrame(() => {
+      if (hasFilterLandingTarget) {
+        scrollToResultsTop();
+        setTimeout(scrollToResultsTop, 60);
+      } else {
+        window.scrollTo({ top: 0 });
+        setTimeout(() => window.scrollTo({ top: 0 }), 60);
+      }
+    });
+
+    previousFilterTargetsRef.current = currentParams;
+  }, [filters.category, filters.occasion, filters.featured]);
+
+  useEffect(() => {
     window.scrollTo(0, 0);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
-  // NOTE: intentionally only on pathname, NOT on location.search,
-  // so that filter changes don't scroll to the top.
 
   // Fetch products whenever filters change — but skip if filters haven't actually changed
   useEffect(() => {
@@ -287,20 +312,23 @@ export default function ShopPage() {
   const activeCount = [filters.category, filters.occasion, filters.minPrice, filters.maxPrice, filters.featured].filter(Boolean).length;
   const activeCategory = categories.find((c) => c._id === filters.category);
   const shouldShowInitialSkeleton = loading && products.length === 0;
+  const shouldShowTopHeader = !filters.category && !filters.occasion && !filters.featured;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-100">
-        <div className="page-container py-8">
-          <div className="flex items-center justify-center sm:justify-start gap-2 text-xs text-gray-400 mb-2 font-medium">
-            <Link to="/" className="transition-colors hover:text-rose-600">Home</Link>
-            <span>/</span>
-            <span className="text-gray-600">Shop</span>
+      {shouldShowTopHeader ? (
+        <div className="bg-white border-b border-gray-100">
+          <div className="page-container py-8">
+            <div className="flex items-center justify-center sm:justify-start gap-2 text-xs text-gray-400 mb-2 font-medium">
+              <Link to="/" className="transition-colors hover:text-rose-600">Home</Link>
+              <span>/</span>
+              <span className="text-gray-600">Shop</span>
+            </div>
+            <h1 className="section-title text-center sm:text-left">Our Gift Collection</h1>
+            <p className="text-gray-400 text-sm mt-1 text-center sm:text-left">Discover the perfect return gift for every occasion</p>
           </div>
-          <h1 className="section-title text-center sm:text-left">Our Gift Collection</h1>
-          <p className="text-gray-400 text-sm mt-1 text-center sm:text-left">Discover the perfect return gift for every occasion</p>
         </div>
-      </div>
+      ) : null}
 
       <div className="page-container py-8">
         <div className="flex flex-col lg:flex-row gap-7">
@@ -334,61 +362,56 @@ export default function ShopPage() {
           {/* Main Content */}
           <div className="flex-1 min-w-0">
             <div ref={resultsTopRef}>
-              {/* Active filter chips */}
-              {hasActive ? (
-                <div className="mb-4 flex flex-wrap gap-2">
+              {/* Search + Sort bar */}
+              <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start">
+                <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                   {filters.category ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700">
+                    <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700">
                       {activeCategory?.name || 'Category'}
                       <button onClick={() => setFilter('category', '')}><FiX size={11} /></button>
                     </span>
                   ) : null}
                   {filters.occasion ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700">
+                    <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-700">
                       {filters.occasion}
                       <button onClick={() => setFilter('occasion', '')}><FiX size={11} /></button>
                     </span>
                   ) : null}
                   {filters.featured ? (
-                    <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
+                    <span className="inline-flex w-fit items-center gap-1.5 rounded-full border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
                       Featured
                       <button onClick={() => setFilter('featured', '')}><FiX size={11} /></button>
                     </span>
                   ) : null}
-                </div>
-              ) : null}
-
-              {/* Search + Sort bar */}
-              <div className="flex flex-col sm:flex-row gap-3 mb-6">
-                <div className="relative flex-1">
-                  <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                  <input
-                    placeholder="Search gifts, occasions..."
-                    // Use searchInput (local state) so input feels instant
-                    value={searchInput}
-                    onChange={(e) => handleSearchInputChange(e.target.value)}
-                    className="input-field py-2.5 pl-10 pr-14"
-                  />
-                  {searchInput ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSearchInput('');
-                        if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
-                        setFilter('search', '');
-                      }}
-                      className="absolute right-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
-                      aria-label="Clear search"
-                    >
-                      <FiX size={15} />
-                    </button>
-                  ) : null}
+                  <div className="relative min-w-0 flex-1 sm:min-w-[320px]">
+                    <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+                    <input
+                      placeholder="Search gifts, occasions..."
+                      value={searchInput}
+                      onChange={(e) => handleSearchInputChange(e.target.value)}
+                      className="input-field py-2.5 pl-10 pr-14"
+                    />
+                    {searchInput ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchInput('');
+                          if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+                          setFilter('search', '');
+                        }}
+                        className="absolute right-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
+                        aria-label="Clear search"
+                      >
+                        <FiX size={15} />
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0">
                   <select
                     value={filters.sortBy}
                     onChange={(e) => setFilter('sortBy', e.target.value)}
-                    className="input-field py-2.5 w-full sm:w-auto text-xs pr-8 cursor-pointer"
+                    className="input-field h-10 w-full py-2 text-xs pr-8 cursor-pointer sm:w-[140px]"
                   >
                     <option value="latest">Latest</option>
                     <option value="price-asc">Price: Low to High</option>
