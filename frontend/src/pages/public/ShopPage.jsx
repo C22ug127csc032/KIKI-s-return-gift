@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiSearch, FiFilter, FiX, FiChevronDown, FiChevronUp, FiSliders } from 'react-icons/fi';
@@ -9,9 +9,45 @@ import { SkeletonCard, Pagination, EmptyState } from '../../components/ui/index.
 
 const occasions = ['Wedding', 'Birthday', 'Diwali', 'Pooja', 'Baby Shower', 'Anniversary', 'Housewarming', 'Corporate'];
 
+const getFiltersFromSearch = (search) => {
+  const params = new URLSearchParams(search);
+  return {
+    search: params.get('search') || '',
+    category: params.get('category') || '',
+    occasion: params.get('occasion') || '',
+    minPrice: params.get('minPrice') || '',
+    maxPrice: params.get('maxPrice') || '',
+    sortBy: params.get('sortBy') || 'latest',
+    page: parseInt(params.get('page'), 10) || 1,
+    featured: params.get('featured') || '',
+  };
+};
+
+const buildSearchParamsFromFilters = (filters) => {
+  const params = {};
+  if (filters.search.trim()) params.search = filters.search.trim();
+  if (filters.category) params.category = filters.category;
+  if (filters.occasion) params.occasion = filters.occasion;
+  if (filters.minPrice) params.minPrice = filters.minPrice;
+  if (filters.maxPrice) params.maxPrice = filters.maxPrice;
+  if (filters.sortBy && filters.sortBy !== 'latest') params.sortBy = filters.sortBy;
+  if (filters.page > 1) params.page = String(filters.page);
+  if (filters.featured) params.featured = filters.featured;
+  return params;
+};
+
+const filtersAreEqual = (a, b) =>
+  a.search === b.search &&
+  a.category === b.category &&
+  a.occasion === b.occasion &&
+  a.minPrice === b.minPrice &&
+  a.maxPrice === b.maxPrice &&
+  a.sortBy === b.sortBy &&
+  a.page === b.page &&
+  a.featured === b.featured;
+
 function FilterSection({ title, children, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen);
-
   return (
     <div className="border-b border-gray-100 pb-5 mb-5 last:border-0 last:mb-0 last:pb-0">
       <button onClick={() => setOpen(!open)} className="flex items-center justify-between w-full mb-3 group">
@@ -55,10 +91,7 @@ function FilterPanel({ filters, categories, hasActive, setFilter, clearFilters, 
       <FilterSection title="Category">
         <div className="space-y-1 max-h-48 overflow-y-auto pr-1">
           <button
-            onClick={() => {
-              setFilter('category', '');
-              onSelect?.();
-            }}
+            onClick={() => { setFilter('category', ''); onSelect?.(); }}
             className={`block w-full text-left text-sm px-3 py-2 rounded-xl transition-colors ${!filters.category ? 'bg-rose-50 text-rose-600 font-semibold' : 'text-gray-500 hover:bg-gray-50'}`}
           >
             All Categories
@@ -66,10 +99,7 @@ function FilterPanel({ filters, categories, hasActive, setFilter, clearFilters, 
           {categories.map((category) => (
             <button
               key={category._id}
-              onClick={() => {
-                setFilter('category', category._id);
-                onSelect?.();
-              }}
+              onClick={() => { setFilter('category', category._id); onSelect?.(); }}
               className={`block w-full text-left text-sm px-3 py-2 rounded-xl transition-colors ${filters.category === category._id ? 'bg-rose-50 text-rose-600 font-semibold' : 'text-gray-500 hover:bg-gray-50'}`}
             >
               {category.name}
@@ -83,10 +113,7 @@ function FilterPanel({ filters, categories, hasActive, setFilter, clearFilters, 
           {occasions.map((occasion) => (
             <button
               key={occasion}
-              onClick={() => {
-                setFilter('occasion', filters.occasion === occasion ? '' : occasion);
-                onSelect?.();
-              }}
+              onClick={() => { setFilter('occasion', filters.occasion === occasion ? '' : occasion); onSelect?.(); }}
               className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-all ${filters.occasion === occasion ? 'bg-rose-600 text-white border-rose-600' : 'border-gray-200 text-gray-500 hover:border-rose-300 hover:text-rose-600'}`}
             >
               {occasion}
@@ -110,42 +137,54 @@ function FilterPanel({ filters, categories, hasActive, setFilter, clearFilters, 
 export default function ShopPage() {
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
   const [filterOpen, setFilterOpen] = useState(false);
-  const preserveScrollRef = useRef(false);
-  const hasInitializedRef = useRef(false);
+
+  // Separate local state for the search input so we can debounce it
+  // without triggering an API call on every keystroke
+  const [searchInput, setSearchInput] = useState(() => getFiltersFromSearch(location.search).search);
+
+  const [filters, setFilters] = useState(() => getFiltersFromSearch(location.search));
+
+  const latestRequestRef = useRef(0);
   const resultsTopRef = useRef(null);
+  // Track the last filters we actually fetched for, to prevent duplicate fetches
+  const lastFetchedFiltersRef = useRef(null);
+  // Debounce timer ref
+  const searchDebounceRef = useRef(null);
 
   const scrollToResultsTop = () => {
     if (!resultsTopRef.current) return;
-
     const navbarOffset = 88;
     const top = resultsTopRef.current.getBoundingClientRect().top + window.scrollY - navbarOffset;
     window.scrollTo({ top: Math.max(top, 0) });
   };
 
-  const [filters, setFilters] = useState({
-    search: searchParams.get('search') || '',
-    category: searchParams.get('category') || '',
-    occasion: searchParams.get('occasion') || '',
-    minPrice: searchParams.get('minPrice') || '',
-    maxPrice: searchParams.get('maxPrice') || '',
-    sortBy: searchParams.get('sortBy') || 'latest',
-    page: parseInt(searchParams.get('page'), 10) || 1,
-    featured: searchParams.get('featured') || '',
-  });
-
+  // Load categories once
   useEffect(() => {
     api.get('/categories/all').then((r) => setCategories(r.data.data));
     document.title = "Shop - KIKI'S Return Gift Store";
   }, []);
 
+  // Sync URL → filters state (e.g. browser back/forward, navbar link)
+  useEffect(() => {
+    const nextFilters = getFiltersFromSearch(location.search);
+    setFilters((current) => {
+      if (filtersAreEqual(current, nextFilters)) return current;
+      return nextFilters;
+    });
+    // Also keep the search input in sync when URL changes externally
+    // (e.g. clearing via clear-all, or browser back/forward)
+    setSearchInput(getFiltersFromSearch(location.search).search);
+  }, [location.search]);
+
+  // Scroll behaviour on navigation
   useEffect(() => {
     const hasFilterLandingTarget = searchParams.get('category') || searchParams.get('occasion');
-
     if (hasFilterLandingTarget) {
       requestAnimationFrame(() => {
         scrollToResultsTop();
@@ -153,36 +192,74 @@ export default function ShopPage() {
       });
       return;
     }
-
     window.scrollTo(0, 0);
-  }, [location.pathname, location.search]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+  // NOTE: intentionally only on pathname, NOT on location.search,
+  // so that filter changes don't scroll to the top.
 
+  // Fetch products whenever filters change — but skip if filters haven't actually changed
   useEffect(() => {
+    // Skip fetch if these exact filters were already fetched
+    if (lastFetchedFiltersRef.current && filtersAreEqual(lastFetchedFiltersRef.current, filters)) {
+      return;
+    }
+    lastFetchedFiltersRef.current = filters;
+
     setLoading(true);
-    const params = Object.fromEntries(Object.entries(filters).filter(([, value]) => value !== ''));
-    params.limit = 12;
+    const params = { ...buildSearchParamsFromFilters(filters), limit: 12 };
+    const requestId = ++latestRequestRef.current;
 
-    const scrollY = window.scrollY;
-    const shouldPreserveScroll = hasInitializedRef.current && preserveScrollRef.current;
-    hasInitializedRef.current = true;
-    preserveScrollRef.current = false;
+    api
+      .get('/products', { params })
+      .then((r) => {
+        if (requestId !== latestRequestRef.current) return;
+        setProducts(r.data.data);
+        setMeta(r.data.meta);
+      })
+      .finally(() => {
+        if (requestId === latestRequestRef.current) setLoading(false);
+      });
+  }, [filters]);
 
-    setSearchParams(params, { replace: true, preventScrollReset: true });
-    if (shouldPreserveScroll) requestAnimationFrame(() => window.scrollTo(0, scrollY));
+  // Debounced search: update filters (and URL) only after the user stops typing
+  const handleSearchInputChange = useCallback(
+    (value) => {
+      setSearchInput(value); // update input immediately (no lag)
 
-    api.get('/products', { params }).then((r) => {
-      setProducts(r.data.data);
-      setMeta(r.data.meta);
-    }).finally(() => setLoading(false));
-  }, [filters, setSearchParams]);
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
 
-  const setFilter = (key, value, opts = {}) => {
-    setFilters((current) => ({ ...current, [key]: value, page: 1 }));
-    preserveScrollRef.current = opts.preserveScroll ?? true;
-  };
+      searchDebounceRef.current = setTimeout(() => {
+        setFilters((prev) => {
+          const next = { ...prev, search: value, page: 1 };
+          setSearchParams(buildSearchParamsFromFilters(next), { replace: true, preventScrollReset: true });
+          return next;
+        });
+      }, 400); // 400ms debounce — feels instant but stops per-keystroke fetches
+    },
+    [setSearchParams]
+  );
 
-  const clearFilters = () => {
-    setFilters({
+  // Clean up debounce timer on unmount
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    };
+  }, []);
+
+  const setFilter = useCallback(
+    (key, value) => {
+      setFilters((prev) => {
+        const next = { ...prev, [key]: value, page: 1 };
+        setSearchParams(buildSearchParamsFromFilters(next), { replace: true, preventScrollReset: true });
+        return next;
+      });
+    },
+    [setSearchParams]
+  );
+
+  const clearFilters = useCallback(() => {
+    const cleared = {
       search: '',
       category: '',
       occasion: '',
@@ -191,19 +268,34 @@ export default function ShopPage() {
       sortBy: 'latest',
       page: 1,
       featured: '',
-    });
-  };
+    };
+    setSearchInput('');
+    if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+    setFilters(cleared);
+    setSearchParams(buildSearchParamsFromFilters(cleared), { replace: true, preventScrollReset: true });
+  }, [setSearchParams]);
+
+  const updateFilters = useCallback(
+    (nextFilters) => {
+      setFilters(nextFilters);
+      setSearchParams(buildSearchParamsFromFilters(nextFilters), { replace: true, preventScrollReset: true });
+    },
+    [setSearchParams]
+  );
 
   const hasActive = filters.category || filters.occasion || filters.minPrice || filters.maxPrice || filters.search || filters.featured;
   const activeCount = [filters.category, filters.occasion, filters.minPrice, filters.maxPrice, filters.featured].filter(Boolean).length;
-  const activeCategory = categories.find((category) => category._id === filters.category);
+  const activeCategory = categories.find((c) => c._id === filters.category);
+  const shouldShowInitialSkeleton = loading && products.length === 0;
 
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-100">
         <div className="page-container py-8">
           <div className="flex items-center justify-center sm:justify-start gap-2 text-xs text-gray-400 mb-2 font-medium">
-            <Link to="/" className="transition-colors hover:text-rose-600">Home</Link><span>/</span><span className="text-gray-600">Shop</span>
+            <Link to="/" className="transition-colors hover:text-rose-600">Home</Link>
+            <span>/</span>
+            <span className="text-gray-600">Shop</span>
           </div>
           <h1 className="section-title text-center sm:text-left">Our Gift Collection</h1>
           <p className="text-gray-400 text-sm mt-1 text-center sm:text-left">Discover the perfect return gift for every occasion</p>
@@ -212,6 +304,7 @@ export default function ShopPage() {
 
       <div className="page-container py-8">
         <div className="flex flex-col lg:flex-row gap-7">
+          {/* Desktop Sidebar */}
           <aside className="hidden lg:block w-60 flex-shrink-0">
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm sticky top-24 overflow-hidden">
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
@@ -238,8 +331,10 @@ export default function ShopPage() {
             </div>
           </aside>
 
+          {/* Main Content */}
           <div className="flex-1 min-w-0">
             <div ref={resultsTopRef}>
+              {/* Active filter chips */}
               {hasActive ? (
                 <div className="mb-4 flex flex-wrap gap-2">
                   {filters.category ? (
@@ -263,23 +358,29 @@ export default function ShopPage() {
                 </div>
               ) : null}
 
+              {/* Search + Sort bar */}
               <div className="flex flex-col sm:flex-row gap-3 mb-6">
                 <div className="relative flex-1">
                   <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
                   <input
                     placeholder="Search gifts, occasions..."
-                    value={filters.search}
-                    onChange={(e) => setFilter('search', e.target.value)}
-                    className="input-field py-2.5 pl-10 pr-11"
+                    // Use searchInput (local state) so input feels instant
+                    value={searchInput}
+                    onChange={(e) => handleSearchInputChange(e.target.value)}
+                    className="input-field py-2.5 pl-10 pr-14"
                   />
-                  {filters.search ? (
+                  {searchInput ? (
                     <button
                       type="button"
-                      onClick={() => setFilter('search', '')}
-                      className="absolute right-3 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-gray-100 text-gray-500 transition-colors hover:bg-rose-50 hover:text-rose-600 sm:hidden"
+                      onClick={() => {
+                        setSearchInput('');
+                        if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+                        setFilter('search', '');
+                      }}
+                      className="absolute right-3 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-600"
                       aria-label="Clear search"
                     >
-                      <FiX size={14} />
+                      <FiX size={15} />
                     </button>
                   ) : null}
                 </div>
@@ -300,7 +401,9 @@ export default function ShopPage() {
                       className="flex items-center gap-1.5 bg-white border border-gray-200 text-gray-600 font-semibold text-xs px-4 py-2.5 rounded-xl hover:border-rose-300 hover:text-rose-600 transition-all"
                     >
                       <FiFilter size={15} /> Filters
-                      {activeCount > 0 ? <span className="bg-rose-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{activeCount}</span> : null}
+                      {activeCount > 0 ? (
+                        <span className="bg-rose-600 text-white text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">{activeCount}</span>
+                      ) : null}
                     </button>
                     {activeCount > 0 ? (
                       <button
@@ -317,13 +420,16 @@ export default function ShopPage() {
               </div>
             </div>
 
-            {!loading ? (
+            {/* Results count */}
+            {!shouldShowInitialSkeleton ? (
               <p className="text-xs text-gray-400 font-medium mb-5">
-                Showing <span className="text-gray-700 font-bold">{products.length}</span> of <span className="text-gray-700 font-bold">{meta.total}</span> products
+                Showing <span className="text-gray-700 font-bold">{products.length}</span> of{' '}
+                <span className="text-gray-700 font-bold">{meta.total}</span> products
               </p>
             ) : null}
 
-            {loading ? (
+            {/* Product grid */}
+            {shouldShowInitialSkeleton ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
                 {[...Array(12)].map((_, index) => <SkeletonCard key={index} />)}
               </div>
@@ -336,19 +442,22 @@ export default function ShopPage() {
               />
             ) : (
               <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4">
-                {products.map((product, index) => <ProductCard key={product._id} product={product} index={index} />)}
+                {products.map((product, index) => (
+                  <ProductCard key={product._id} product={product} index={index} />
+                ))}
               </div>
             )}
 
             <Pagination
               currentPage={meta.page}
               totalPages={meta.totalPages}
-              onPageChange={(page) => setFilters((current) => ({ ...current, page }))}
+              onPageChange={(page) => updateFilters({ ...filters, page })}
             />
           </div>
         </div>
       </div>
 
+      {/* Mobile Filter Drawer */}
       <AnimatePresence>
         {filterOpen ? (
           <div className="lg:hidden fixed inset-0 z-50">
