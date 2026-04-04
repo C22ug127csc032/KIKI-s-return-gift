@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useLocation, useSearchParams } from 'react-router-dom';
+import { Link, useLocation, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiSearch, FiFilter, FiX, FiChevronDown, FiChevronUp, FiSliders } from 'react-icons/fi';
 import { RiGiftLine } from 'react-icons/ri';
@@ -203,7 +203,7 @@ export default function ShopPage() {
       <div className="bg-white border-b border-gray-100">
         <div className="page-container py-8">
           <div className="flex items-center justify-center sm:justify-start gap-2 text-xs text-gray-400 mb-2 font-medium">
-            <span>Home</span><span>/</span><span className="text-gray-600">Shop</span>
+            <Link to="/" className="transition-colors hover:text-rose-600">Home</Link><span>/</span><span className="text-gray-600">Shop</span>
           </div>
           <h1 className="section-title text-center sm:text-left">Our Gift Collection</h1>
           <p className="text-gray-400 text-sm mt-1 text-center sm:text-left">Discover the perfect return gift for every occasion</p>

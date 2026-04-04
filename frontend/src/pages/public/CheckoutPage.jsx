@@ -156,6 +156,7 @@ export default function CheckoutPage() {
                   </InputWrap>
                   <InputWrap label="Pincode" required>
                     <input
+                      type="number"
                       value={form.pincode}
                       onChange={(e) => updateField('pincode', e.target.value)}
                       className="input-field"
