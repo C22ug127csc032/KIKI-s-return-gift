@@ -98,6 +98,63 @@ export const getHeroSection = asyncHandler(async (_req, res) => {
 export const updateHeroSection = asyncHandler(async (req, res) => {
   const heroSection = await ensureHeroSection();
   let slidesPayload = req.body.slides;
+  let singleSlidePayload = req.body.slide;
+  const slideIndex = Number.parseInt(req.body.slideIndex, 10);
+
+  if (typeof singleSlidePayload === 'string') {
+    try {
+      singleSlidePayload = JSON.parse(singleSlidePayload);
+    } catch {
+      throw new ApiError(400, 'Hero slide payload is invalid');
+    }
+  }
+
+  if (!Number.isNaN(slideIndex)) {
+    if (slideIndex < 0 || slideIndex >= defaultSlides.length) {
+      throw new ApiError(400, 'Hero slide index is invalid');
+    }
+
+    if (!singleSlidePayload || typeof singleSlidePayload !== 'object') {
+      throw new ApiError(400, 'Hero slide payload is required');
+    }
+
+    const currentSlides = normalizeSlides(heroSection.slides);
+    const nextSlides = normalizeSlides(currentSlides).map((slide, index) => ({
+      ...slide,
+      ...(index === slideIndex ? singleSlidePayload : {}),
+      order: index,
+    }));
+
+    const shouldRemoveImage = Boolean(nextSlides[slideIndex].removeImage);
+    const imageFile = req.files?.[`slideImage${slideIndex}`]?.[0];
+
+    if (shouldRemoveImage && currentSlides[slideIndex]?.imagePublicId) {
+      await cloudinary.uploader.destroy(currentSlides[slideIndex].imagePublicId);
+      nextSlides[slideIndex].image = '';
+      nextSlides[slideIndex].imagePublicId = '';
+    }
+
+    if (imageFile) {
+      if (!shouldRemoveImage && currentSlides[slideIndex]?.imagePublicId) {
+        await cloudinary.uploader.destroy(currentSlides[slideIndex].imagePublicId);
+      }
+
+      const uploadedImage = await uploadImageBuffer(imageFile.buffer, 'kikis-store/hero', [
+        { width: 2200, height: 1400, crop: 'limit', quality: 'auto' },
+      ]);
+
+      nextSlides[slideIndex].image = uploadedImage.secure_url;
+      nextSlides[slideIndex].imagePublicId = uploadedImage.public_id;
+    }
+
+    delete nextSlides[slideIndex].removeImage;
+
+    heroSection.slides = nextSlides;
+    await heroSection.save();
+
+    sendResponse(res, 200, 'Hero slide updated', heroSection);
+    return;
+  }
 
   if (typeof slidesPayload === 'string') {
     try {

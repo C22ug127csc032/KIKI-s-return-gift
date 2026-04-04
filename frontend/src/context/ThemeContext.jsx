@@ -27,10 +27,37 @@ const ThemeContext = createContext({
   refreshTheme: async () => {},
 });
 
+const hexToRgb = (value) => {
+  if (typeof value !== 'string') return null;
+  const normalized = value.trim();
+  if (!normalized.startsWith('#')) return null;
+
+  let hex = normalized.slice(1);
+  if (hex.length === 3) {
+    hex = hex.split('').map((char) => `${char}${char}`).join('');
+  }
+  if (hex.length !== 6) return null;
+
+  const red = Number.parseInt(hex.slice(0, 2), 16);
+  const green = Number.parseInt(hex.slice(2, 4), 16);
+  const blue = Number.parseInt(hex.slice(4, 6), 16);
+
+  if ([red, green, blue].some((channel) => Number.isNaN(channel))) return null;
+  return `${red}, ${green}, ${blue}`;
+};
+
 const applyThemeVariables = (colors) => {
   const root = document.documentElement;
   Object.entries(colors).forEach(([key, value]) => {
     root.style.setProperty(`--theme-${key}`, value);
+
+    const rgbValue = hexToRgb(value);
+    if (!rgbValue) return;
+
+    root.style.setProperty(`--theme-${key}-rgb`, rgbValue);
+    [4, 8, 12, 16, 24, 32, 48, 64, 80].forEach((alpha) => {
+      root.style.setProperty(`--theme-${key}-rgba-${alpha}`, `rgba(${rgbValue}, ${alpha / 100})`);
+    });
   });
 };
 

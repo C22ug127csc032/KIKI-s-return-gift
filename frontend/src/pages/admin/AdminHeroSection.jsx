@@ -72,7 +72,7 @@ export default function AdminHeroSection() {
   const [slides, setSlides] = useState(defaultSlides);
   const [imageFiles, setImageFiles] = useState({});
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [savingSlideIndex, setSavingSlideIndex] = useState(null);
 
   useEffect(() => {
     document.title = 'Hero Section - Admin';
@@ -93,44 +93,51 @@ export default function AdminHeroSection() {
     setImageFiles((current) => ({ ...current, [index]: file || null }));
   };
 
-  const handleSave = async (event) => {
-    event.preventDefault();
-    setSaving(true);
+  const buildSlidePayload = (slide) => ({
+    order: slide.order,
+    tag: slide.tag,
+    mobileTag: slide.mobileTag,
+    titleLineOne: slide.titleLineOne,
+    titleLineTwo: slide.titleLineTwo,
+    titleLineThree: slide.titleLineThree,
+    subtitle: slide.subtitle,
+    buttonText: slide.buttonText,
+    buttonLink: slide.buttonLink,
+    badgeOneLabel: slide.badgeOneLabel,
+    badgeOneValue: slide.badgeOneValue,
+    badgeTwoLabel: slide.badgeTwoLabel,
+    badgeTwoValue: slide.badgeTwoValue,
+    image: slide.image,
+    removeImage: Boolean(slide.removeImage),
+  });
+
+  const handleSaveSlide = async (index) => {
+    setSavingSlideIndex(index);
     try {
       const formData = new FormData();
-      formData.append('slides', JSON.stringify(slides.map((slide) => ({
-        order: slide.order,
-        tag: slide.tag,
-        mobileTag: slide.mobileTag,
-        titleLineOne: slide.titleLineOne,
-        titleLineTwo: slide.titleLineTwo,
-        titleLineThree: slide.titleLineThree,
-        subtitle: slide.subtitle,
-        buttonText: slide.buttonText,
-        buttonLink: slide.buttonLink,
-        badgeOneLabel: slide.badgeOneLabel,
-        badgeOneValue: slide.badgeOneValue,
-        badgeTwoLabel: slide.badgeTwoLabel,
-        badgeTwoValue: slide.badgeTwoValue,
-        image: slide.image,
-        removeImage: Boolean(slide.removeImage),
-      }))));
+      formData.append('slideIndex', String(index));
+      formData.append('slide', JSON.stringify(buildSlidePayload(slides[index])));
 
-      Object.entries(imageFiles).forEach(([index, file]) => {
-        if (file) formData.append(`slideImage${index}`, file);
-      });
+      const file = imageFiles[index];
+      if (file) {
+        formData.append(`slideImage${index}`, file);
+      }
 
       const response = await api.put('/hero-section', formData, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
       setSlides(mergeSlides(response.data.data?.slides || []));
-      setImageFiles({});
-      toast.success('Hero section updated');
+      setImageFiles((current) => {
+        const next = { ...current };
+        delete next[index];
+        return next;
+      });
+      toast.success(`Slide ${index + 1} updated`);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to update hero section');
+      toast.error(error.response?.data?.message || `Failed to update slide ${index + 1}`);
     } finally {
-      setSaving(false);
+      setSavingSlideIndex(null);
     }
   };
 
@@ -143,7 +150,7 @@ export default function AdminHeroSection() {
         <p className="mt-1 text-sm text-gray-500">Manage the full homepage hero slides, including complete images and all visible content.</p>
       </div>
 
-      <form onSubmit={handleSave} className="space-y-6">
+      <div className="space-y-6">
         {slides.map((slide, index) => (
           <section key={slide.order} className="admin-card space-y-5">
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
@@ -226,14 +233,21 @@ export default function AdminHeroSection() {
                 </div>
               </div>
             </div>
+
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => handleSaveSlide(index)}
+                disabled={savingSlideIndex !== null}
+                className="btn-primary inline-flex items-center gap-2"
+              >
+                <FiSave size={16} />
+                {savingSlideIndex === index ? `Saving Slide ${index + 1}...` : `Save Slide ${index + 1}`}
+              </button>
+            </div>
           </section>
         ))}
-
-        <button type="submit" disabled={saving} className="btn-primary inline-flex items-center gap-2">
-          <FiSave size={16} />
-          {saving ? 'Saving...' : 'Save Hero Section'}
-        </button>
-      </form>
+      </div>
     </div>
   );
 }
