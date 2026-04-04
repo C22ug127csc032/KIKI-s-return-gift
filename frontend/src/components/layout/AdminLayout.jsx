@@ -20,22 +20,8 @@ const navItems = [
   { to: '/admin/settings', icon: FiSettings, label: 'Settings' },
 ];
 
-export default function AdminLayout() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
-
-  const handleLogout = () => { logout(); navigate('/'); };
-
-  useEffect(() => {
-    const previousOverflow = document.body.style.overflow;
-    if (sidebarOpen) document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [sidebarOpen]);
-
-  const SidebarContent = () => (
+function AdminSidebarContent({ user, handleLogout, closeSidebar }) {
+  return (
     <div className="flex h-full min-h-0 flex-col">
       {/* Logo */}
       <div className="shrink-0 border-b border-brand-200/70 p-6">
@@ -51,7 +37,9 @@ export default function AdminLayout() {
       {/* Nav */}
       <nav className="flex-1 min-h-0 overflow-y-auto p-4 space-y-1">
         {navItems.map(({ to, icon: Icon, label }) => (
-          <NavLink key={to} to={to}
+          <NavLink
+            key={to}
+            to={to}
             className={({ isActive }) =>
               `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-all ${
                 isActive
@@ -59,7 +47,8 @@ export default function AdminLayout() {
                   : 'text-gray-700 hover:bg-white hover:text-brand-600'
               }`
             }
-            onClick={() => setSidebarOpen(false)}>
+            onClick={closeSidebar}
+          >
             <Icon size={18} />
             {label}
           </NavLink>
@@ -77,19 +66,37 @@ export default function AdminLayout() {
             <p className="text-xs text-brand-600">Administrator</p>
           </div>
         </div>
-        <button onClick={handleLogout}
-          className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-gray-600 transition-colors hover:bg-white hover:text-brand-600">
+        <button
+          onClick={handleLogout}
+          className="flex w-full items-center gap-2 rounded-lg px-2 py-2 text-sm text-gray-600 transition-colors hover:bg-white hover:text-brand-600"
+        >
           <FiLogOut size={16} /> Logout
         </button>
       </div>
     </div>
   );
+}
+
+export default function AdminLayout() {
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = () => { logout(); navigate('/'); };
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow;
+    if (sidebarOpen) document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [sidebarOpen]);
 
   return (
     <div className="admin-shell flex h-screen overflow-hidden bg-brand-50/40">
       {/* Desktop Sidebar */}
       <aside className="hidden w-64 flex-shrink-0 border-r border-brand-100 bg-gradient-to-b from-[#fff7f0] via-[#fff3ea] to-[#ffe8db] lg:flex">
-        <SidebarContent />
+        <AdminSidebarContent user={user} handleLogout={handleLogout} closeSidebar={() => setSidebarOpen(false)} />
       </aside>
 
       {/* Mobile Sidebar */}
@@ -101,7 +108,7 @@ export default function AdminLayout() {
             <motion.aside initial={{ x: -280 }} animate={{ x: 0 }} exit={{ x: -280 }}
               transition={{ type: 'spring', damping: 25 }}
               className="fixed left-0 top-0 bottom-0 z-50 w-64 border-r border-brand-100 bg-gradient-to-b from-[#fff7f0] via-[#fff3ea] to-[#ffe8db] lg:hidden">
-              <SidebarContent />
+              <AdminSidebarContent user={user} handleLogout={handleLogout} closeSidebar={() => setSidebarOpen(false)} />
             </motion.aside>
           </>
         )}

@@ -27,9 +27,6 @@ settingsRouter.put(
   '/',
   protect,
   adminOnly,
-  uploadSettingsMedia.fields([
-    { name: 'qrImage', maxCount: 1 },
-    { name: 'heroImage', maxCount: 1 },
-  ]),
+  uploadSettingsMedia.fields([{ name: 'qrImage', maxCount: 1 }]),
   updateSettings
 );

@@ -39,8 +39,6 @@ export const updateSettings = asyncHandler(async (req, res) => {
     'storeName', 'storeTagline', 'storeAddress', 'supportEmail', 'supportPhone',
     'whatsappNumber', 'bankAccountName', 'bankAccountNumber', 'bankIFSC', 'bankBranch',
     'upiId', 'gstPercentage', 'gstNumber', 'paymentInstructions', 'currency',
-    'heroTag', 'heroTitleLineOne', 'heroTitleLineTwo', 'heroTitleLineThree',
-    'heroSubtitle', 'heroButtonText', 'heroButtonLink',
   ];
   fields.forEach((f) => { if (req.body[f] !== undefined) settings[f] = req.body[f]; });
   const qrFile = req.files?.qrImage?.[0];
@@ -49,15 +47,6 @@ export const updateSettings = asyncHandler(async (req, res) => {
     const uploadedQr = await uploadImageBuffer(qrFile.buffer, 'kikis-store/qr');
     settings.upiQrImage = uploadedQr.secure_url;
     settings.upiQrPublicId = uploadedQr.public_id;
-  }
-  const heroFile = req.files?.heroImage?.[0];
-  if (heroFile) {
-    if (settings.heroImagePublicId) await cloudinary.uploader.destroy(settings.heroImagePublicId);
-    const uploadedHero = await uploadImageBuffer(heroFile.buffer, 'kikis-store/hero', [
-      { width: 1920, height: 1200, crop: 'limit', quality: 'auto' },
-    ]);
-    settings.heroImage = uploadedHero.secure_url;
-    settings.heroImagePublicId = uploadedHero.public_id;
   }
   await settings.save();
   sendResponse(res, 200, 'Settings updated', settings);

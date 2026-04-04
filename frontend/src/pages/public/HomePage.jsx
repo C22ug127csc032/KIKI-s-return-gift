@@ -100,7 +100,6 @@ const ctaIcons = [FaRing, RiGiftLine, FiSun, RiCake2Line, GiPartyPopper];
 export default function HomePage() {
   const [featured, setFeatured] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [settings, setSettings] = useState(null);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [heroIndex, setHeroIndex] = useState(0);
   const [heroPaused, setHeroPaused] = useState(false);
@@ -147,35 +146,15 @@ export default function HomePage() {
 
   useEffect(() => {
     document.title = "KIKI'S Return Gift Store - Perfect Gifts for Every Occasion";
-    Promise.all([api.get('/products/featured'), api.get('/categories/all'), api.get('/settings')])
-      .then(([prodRes, catRes, settingsRes]) => {
+    Promise.all([api.get('/products/featured'), api.get('/categories/all')])
+      .then(([prodRes, catRes]) => {
         setFeatured(prodRes.data.data);
         setCategories(catRes.data.data.slice(0, 8));
-        setSettings(settingsRes.data.data || null);
       })
       .finally(() => setLoadingProducts(false));
   }, []);
 
-  const resolvedHeroSlides = heroSlides.map((heroSlide, index) => {
-    if (index !== 0 || !settings) return heroSlide;
-
-    return {
-      ...heroSlide,
-      image: settings.heroImage || heroSlide.image,
-      tag: settings.heroTag || heroSlide.tag,
-      mobileTag: settings.heroTag || heroSlide.mobileTag,
-      heading: [
-        settings.heroTitleLineOne || heroSlide.heading[0],
-        settings.heroTitleLineTwo || heroSlide.heading[1],
-        settings.heroTitleLineThree || heroSlide.heading[2],
-      ],
-      sub: settings.heroSubtitle || heroSlide.sub,
-      cta: settings.heroButtonText || heroSlide.cta,
-      ctaLink: settings.heroButtonLink || heroSlide.ctaLink,
-    };
-  });
-
-  const slide = resolvedHeroSlides[heroIndex];
+  const slide = heroSlides[heroIndex];
 
   return (
     <div className="relative overflow-x-hidden">
@@ -188,7 +167,7 @@ export default function HomePage() {
         onMouseLeave={() => setHeroPaused(false)}
       >
         {/* Slide backgrounds */}
-        {resolvedHeroSlides.map((s, i) => (
+        {heroSlides.map((s, i) => (
           <motion.div
             key={s.id}
             className="absolute inset-0 transition-opacity duration-1000"
@@ -213,7 +192,7 @@ export default function HomePage() {
 
         {/* Progress bar */}
         <div className="absolute bottom-0 left-0 right-0 z-10 flex h-[3px]">
-          {resolvedHeroSlides.map((s, i) => (
+          {heroSlides.map((s, i) => (
             <div key={s.id} className="flex-1 bg-white/20">
               <div
                 className="h-full bg-white transition-none"
