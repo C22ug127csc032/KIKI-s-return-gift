@@ -35,6 +35,7 @@ import AdminProducts from './pages/admin/AdminProducts.jsx';
 import { AdminCategories, AdminInventory, AdminOfflineSales, AdminSettings } from './pages/admin/AdminPages.jsx';
 import { AdminProductBom, AdminProduction, AdminRawMaterials, AdminSuppliers } from './pages/admin/AdminSupplyChain.jsx';
 import AdminHeroSection from './pages/admin/AdminHeroSection.jsx';
+import AdminThemePage from './pages/admin/AdminThemePage.jsx';
 
 export default function App() {
   return (
@@ -82,6 +83,7 @@ export default function App() {
               <Route path="inventory" element={<AdminInventory />} />
               <Route path="offline-sales" element={<AdminOfflineSales />} />
               <Route path="hero-section" element={<AdminHeroSection />} />
+              <Route path="theme" element={<AdminThemePage />} />
               <Route path="settings" element={<AdminSettings />} />
             </Route>
 

@@ -4,6 +4,7 @@ import { createOfflineSale, getOfflineSales, getOfflineSaleById } from '../contr
 import { getDashboardStats } from '../controllers/dashboardController.js';
 import { getSettings, updateSettings } from '../controllers/settingsController.js';
 import { getHeroSection, updateHeroSection } from '../controllers/heroSectionController.js';
+import { getThemeSetting, updateThemeSetting } from '../controllers/themeSettingController.js';
 import { generateOfflineSaleInvoice } from '../services/invoiceService.js';
 import { protect, adminOnly } from '../middlewares/auth.js';
 import { uploadSettingsMedia } from '../config/cloudinary.js';
@@ -45,3 +46,7 @@ heroSectionRouter.put(
   ]),
   updateHeroSection
 );
+
+export const themeSettingRouter = express.Router();
+themeSettingRouter.get('/', getThemeSetting);
+themeSettingRouter.put('/', protect, adminOnly, updateThemeSetting);

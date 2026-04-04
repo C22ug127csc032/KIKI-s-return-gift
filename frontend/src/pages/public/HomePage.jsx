@@ -214,7 +214,12 @@ export default function HomePage() {
               loading={i === 0 ? 'eager' : 'lazy'}
             />
             {/* Gradient overlay */}
-            <div className={`absolute inset-0 bg-gradient-to-r ${s.accent}`} />
+            <div
+              className="absolute inset-0 bg-gradient-to-r"
+              style={{
+                backgroundImage: 'linear-gradient(to right, var(--theme-heroGradientFrom), var(--theme-heroGradientVia), var(--theme-heroGradientTo))',
+              }}
+            />
             <div className="absolute inset-0 bg-black/20" />
           </motion.div>
         ))}

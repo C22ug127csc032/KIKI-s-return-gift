@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  FiBarChart2, FiGift, FiGrid, FiLayers, FiList, FiLogOut, FiMenu, FiPackage, FiSettings, FiTrendingUp, FiUsers, FiBox, FiTool, FiImage
+  FiBarChart2, FiGift, FiGrid, FiLayers, FiList, FiLogOut, FiMenu, FiPackage, FiSettings, FiTrendingUp, FiUsers, FiBox, FiTool, FiImage, FiDroplet
 } from 'react-icons/fi';
 import { useAuth } from '../../context/AuthContext.jsx';
 
@@ -18,6 +18,7 @@ const navItems = [
   { to: '/admin/inventory', icon: FiBarChart2, label: 'Inventory' },
   { to: '/admin/offline-sales', icon: FiTrendingUp, label: 'Offline Sales' },
   { to: '/admin/hero-section', icon: FiImage, label: 'Hero Section' },
+  { to: '/admin/theme', icon: FiDroplet, label: 'Theme' },
   { to: '/admin/settings', icon: FiSettings, label: 'Settings' },
 ];
 
