@@ -13,7 +13,7 @@ import orderRoutes from './src/routes/orderRoutes.js';
 import supplierRoutes from './src/routes/supplierRoutes.js';
 import rawMaterialRoutes from './src/routes/rawMaterialRoutes.js';
 import productionRoutes from './src/routes/productionRoutes.js';
-import { inventoryRouter, offlineSaleRouter, dashboardRouter, settingsRouter } from './src/routes/index.js';
+import { inventoryRouter, offlineSaleRouter, dashboardRouter, settingsRouter, heroSectionRouter } from './src/routes/index.js';
 import errorHandler from './src/middlewares/errorHandler.js';
 
 dotenv.config();
@@ -48,6 +48,7 @@ app.use('/api/inventory', inventoryRouter);
 app.use('/api/offline-sales', offlineSaleRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/settings', settingsRouter);
+app.use('/api/hero-section', heroSectionRouter);
 
 // 404
 app.use((req, res) => res.status(404).json({ success: false, message: 'Route not found' }));

@@ -97,9 +97,37 @@ const whyUs = [
 
 const ctaIcons = [FaRing, RiGiftLine, FiSun, RiCake2Line, GiPartyPopper];
 
+const mergeHeroSlides = (slides = []) =>
+  heroSlides.map((defaultSlide, index) => {
+    const apiSlide = slides.find((slide) => Number(slide.order) === index) || slides[index] || {};
+    return {
+      ...defaultSlide,
+      image: apiSlide.image || defaultSlide.image,
+      tag: apiSlide.tag || defaultSlide.tag,
+      mobileTag: apiSlide.mobileTag || defaultSlide.mobileTag,
+      heading: [
+        apiSlide.titleLineOne || defaultSlide.heading[0],
+        apiSlide.titleLineTwo || defaultSlide.heading[1],
+        apiSlide.titleLineThree || defaultSlide.heading[2],
+      ],
+      sub: apiSlide.subtitle || defaultSlide.sub,
+      cta: apiSlide.buttonText || defaultSlide.cta,
+      ctaLink: apiSlide.buttonLink || defaultSlide.ctaLink,
+      badge1: {
+        label: apiSlide.badgeOneLabel || defaultSlide.badge1.label,
+        value: apiSlide.badgeOneValue || defaultSlide.badge1.value,
+      },
+      badge2: {
+        label: apiSlide.badgeTwoLabel || defaultSlide.badge2.label,
+        value: apiSlide.badgeTwoValue || defaultSlide.badge2.value,
+      },
+    };
+  });
+
 export default function HomePage() {
   const [featured, setFeatured] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [dynamicHeroSlides, setDynamicHeroSlides] = useState(heroSlides);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [heroIndex, setHeroIndex] = useState(0);
   const [heroPaused, setHeroPaused] = useState(false);
@@ -133,28 +161,29 @@ export default function HomePage() {
   });
 
   const gotoSlide = useCallback((idx) => {
-    setHeroIndex((idx + heroSlides.length) % heroSlides.length);
-  }, []);
+    setHeroIndex((idx + dynamicHeroSlides.length) % dynamicHeroSlides.length);
+  }, [dynamicHeroSlides.length]);
 
   useEffect(() => {
     if (heroPaused) return;
     heroTimer.current = setInterval(() => {
-      setHeroIndex(i => (i + 1) % heroSlides.length);
+      setHeroIndex(i => (i + 1) % dynamicHeroSlides.length);
     }, 4000);
     return () => clearInterval(heroTimer.current);
-  }, [heroPaused, heroIndex]);
+  }, [heroPaused, heroIndex, dynamicHeroSlides.length]);
 
   useEffect(() => {
     document.title = "KIKI'S Return Gift Store - Perfect Gifts for Every Occasion";
-    Promise.all([api.get('/products/featured'), api.get('/categories/all')])
-      .then(([prodRes, catRes]) => {
+    Promise.all([api.get('/products/featured'), api.get('/categories/all'), api.get('/hero-section')])
+      .then(([prodRes, catRes, heroRes]) => {
         setFeatured(prodRes.data.data);
         setCategories(catRes.data.data.slice(0, 8));
+        setDynamicHeroSlides(mergeHeroSlides(heroRes.data.data?.slides || []));
       })
       .finally(() => setLoadingProducts(false));
   }, []);
 
-  const slide = heroSlides[heroIndex];
+  const slide = dynamicHeroSlides[heroIndex];
 
   return (
     <div className="relative overflow-x-hidden">
@@ -167,7 +196,7 @@ export default function HomePage() {
         onMouseLeave={() => setHeroPaused(false)}
       >
         {/* Slide backgrounds */}
-        {heroSlides.map((s, i) => (
+        {dynamicHeroSlides.map((s, i) => (
           <motion.div
             key={s.id}
             className="absolute inset-0 transition-opacity duration-1000"
@@ -192,7 +221,7 @@ export default function HomePage() {
 
         {/* Progress bar */}
         <div className="absolute bottom-0 left-0 right-0 z-10 flex h-[3px]">
-          {heroSlides.map((s, i) => (
+          {dynamicHeroSlides.map((s, i) => (
             <div key={s.id} className="flex-1 bg-white/20">
               <div
                 className="h-full bg-white transition-none"
@@ -318,7 +347,7 @@ export default function HomePage() {
 
         {/* Dot indicators */}
         <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 gap-2">
-          {resolvedHeroSlides.map((s, i) => (
+          {dynamicHeroSlides.map((s, i) => (
             <button
               key={s.id}
               onClick={() => gotoSlide(i)}

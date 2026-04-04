@@ -3,6 +3,7 @@ import { getInventoryMovements, adjustStock, getLowStockProducts } from '../cont
 import { createOfflineSale, getOfflineSales, getOfflineSaleById } from '../controllers/offlineSaleController.js';
 import { getDashboardStats } from '../controllers/dashboardController.js';
 import { getSettings, updateSettings } from '../controllers/settingsController.js';
+import { getHeroSection, updateHeroSection } from '../controllers/heroSectionController.js';
 import { generateOfflineSaleInvoice } from '../services/invoiceService.js';
 import { protect, adminOnly } from '../middlewares/auth.js';
 import { uploadSettingsMedia } from '../config/cloudinary.js';
@@ -29,4 +30,18 @@ settingsRouter.put(
   adminOnly,
   uploadSettingsMedia.fields([{ name: 'qrImage', maxCount: 1 }]),
   updateSettings
+);
+
+export const heroSectionRouter = express.Router();
+heroSectionRouter.get('/', getHeroSection);
+heroSectionRouter.put(
+  '/',
+  protect,
+  adminOnly,
+  uploadSettingsMedia.fields([
+    { name: 'slideImage0', maxCount: 1 },
+    { name: 'slideImage1', maxCount: 1 },
+    { name: 'slideImage2', maxCount: 1 },
+  ]),
+  updateHeroSection
 );
