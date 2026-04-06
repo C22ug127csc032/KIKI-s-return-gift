@@ -2,28 +2,28 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import api from '../api/api.js';
 
 const defaultColors = {
-  primary50: '#fff1f2',
-  primary100: '#ffe4e6',
-  primary200: '#fecdd3',
-  primary300: '#fda4af',
-  primary400: '#fb7185',
-  primary500: '#f43f5e',
-  primary600: '#e11d48',
-  primary700: '#be123c',
-  primary800: '#9f1239',
-  primary900: '#881337',
-  accent: '#f59e0b',
-  accentSoft: '#fef3c7',
-  adminSidebarFrom: '#fff7f0',
-  adminSidebarVia: '#fff3ea',
-  adminSidebarTo: '#ffe8db',
-  heroGradientFrom: 'rgba(190, 24, 93, 0.8)',
-  heroGradientVia: 'rgba(225, 29, 72, 0.6)',
-  heroGradientTo: 'rgba(255, 255, 255, 0)',
+  primary50: '#eefafd',
+  primary100: '#d7f2f8',
+  primary200: '#afe3f0',
+  primary300: '#7fd1e2',
+  primary400: '#4eb7cf',
+  primary500: '#2f9cb6',
+  primary600: '#247f98',
+  primary700: '#1f667a',
+  primary800: '#204f5f',
+  primary900: '#1f434f',
+  accent: '#d4a63f',
+  accentSoft: '#f6e7bf',
+  adminSidebarFrom: '#fbe4ec',
+  adminSidebarVia: '#e2f7fb',
+  adminSidebarTo: '#e4e6fb',
+  heroGradientFrom: 'rgba(235, 156, 186, 0.72)',
+  heroGradientVia: 'rgba(36, 127, 152, 0.58)',
+  heroGradientTo: 'rgba(138, 150, 227, 0.18)',
 };
 
 const ThemeContext = createContext({
-  theme: { themeKey: 'kiki-classic', themeName: 'Kiki Classic', colors: defaultColors },
+  theme: { themeKey: 'kiki-signature', themeName: 'Kiki Signature', colors: defaultColors },
   refreshTheme: async () => {},
 });
 
@@ -63,8 +63,8 @@ const applyThemeVariables = (colors) => {
 
 export function ThemeProvider({ children }) {
   const [theme, setTheme] = useState({
-    themeKey: 'kiki-classic',
-    themeName: 'Kiki Classic',
+    themeKey: 'kiki-signature',
+    themeName: 'Kiki Signature',
     colors: defaultColors,
   });
 

@@ -7,6 +7,11 @@ import { useTheme } from '../../context/ThemeContext.jsx';
 
 const themeDescriptions = {
   'kiki-classic': 'Soft rose with festive gold warmth.',
+  'kiki-blush': 'Elegant blush pink theme inspired by the left side of the logo artwork.',
+  'kiki-aqua': 'Fresh aqua blue theme with a polished, modern storefront feel.',
+  'kiki-periwinkle': 'Soft periwinkle theme for a graceful premium look.',
+  'kiki-gold': 'Warm gold-led theme with luxury accents and a festive finish.',
+  'kiki-signature': 'Logo-matched blend of blush pink, aqua blue, periwinkle, and soft gold.',
 };
 
 export default function AdminThemePage() {
@@ -25,7 +30,7 @@ export default function AdminThemePage() {
       .then((response) => {
         const activeTheme = response.data.data?.activeTheme || {};
         setPresets(response.data.data?.presets || []);
-        setSelectedTheme(activeTheme.themeKey || 'kiki-classic');
+        setSelectedTheme(activeTheme.themeKey || 'kiki-signature');
         setCustomPrimaryRgb(activeTheme.customPrimaryRgb || { r: 225, g: 29, b: 72 });
       })
       .finally(() => setLoading(false));
@@ -62,7 +67,17 @@ export default function AdminThemePage() {
 
   if (loading) return <PageLoader />;
 
-  const defaultPresets = presets.filter((preset) => preset.key === 'kiki-classic');
+  const presetOrder = ['kiki-signature', 'kiki-blush', 'kiki-aqua', 'kiki-periwinkle', 'kiki-gold', 'kiki-classic'];
+  const orderedPresets = [...presets].sort((a, b) => {
+    const aIndex = presetOrder.indexOf(a.key);
+    const bIndex = presetOrder.indexOf(b.key);
+    if (aIndex !== -1 || bIndex !== -1) {
+      if (aIndex === -1) return 1;
+      if (bIndex === -1) return -1;
+      return aIndex - bIndex;
+    }
+    return a.name.localeCompare(b.name);
+  });
   const customPrimaryColor = `rgb(${customPrimaryRgb.r}, ${customPrimaryRgb.g}, ${customPrimaryRgb.b})`;
   const customAccentRgb = deriveAccentRgb(customPrimaryRgb);
   const customAccentColor = `rgb(${customAccentRgb.r}, ${customAccentRgb.g}, ${customAccentRgb.b})`;
@@ -114,7 +129,7 @@ export default function AdminThemePage() {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-gray-700">Theme Color</p>
-                <p className="mt-1 text-sm text-gray-500">{rgbToHex(customPrimaryRgb).toUpperCase()} • RGB({customPrimaryRgb.r}, {customPrimaryRgb.g}, {customPrimaryRgb.b})</p>
+                <p className="mt-1 text-sm text-gray-500">{rgbToHex(customPrimaryRgb).toUpperCase()} | RGB({customPrimaryRgb.r}, {customPrimaryRgb.g}, {customPrimaryRgb.b})</p>
               </div>
               <button
                 type="button"
@@ -183,8 +198,9 @@ export default function AdminThemePage() {
       </div>
 
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
-        {defaultPresets.map((preset) => {
+        {orderedPresets.map((preset) => {
           const active = selectedTheme === preset.key;
+          const previewLabel = preset.key === 'kiki-signature' ? 'Logo Theme Preview' : 'Theme Preview';
           return (
             <div
               key={preset.key}
@@ -212,7 +228,7 @@ export default function AdminThemePage() {
 
               <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3" onClick={() => setSelectedTheme(preset.key)}>
                 <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <FiDroplet size={15} className="text-brand-500" /> Default Rose Preview
+                  <FiDroplet size={15} className="text-brand-500" /> {previewLabel}
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <span
@@ -220,10 +236,22 @@ export default function AdminThemePage() {
                     style={{ backgroundColor: preset.colors.primary600 }}
                   />
                   <span
+                    className="h-10 w-10 rounded-full border border-white shadow-sm"
+                    style={{ backgroundColor: preset.colors.adminSidebarFrom }}
+                  />
+                  <span
+                    className="h-10 w-10 rounded-full border border-white shadow-sm"
+                    style={{ backgroundColor: preset.colors.adminSidebarTo }}
+                  />
+                  <span
+                    className="h-10 w-10 rounded-full border border-white shadow-sm"
+                    style={{ backgroundColor: preset.colors.accent }}
+                  />
+                  <span
                     className="rounded-full px-4 py-2 text-sm font-semibold text-white"
                     style={{ backgroundColor: preset.colors.primary600 }}
                   >
-                    Rose Theme
+                    {preset.name}
                   </span>
                 </div>
               </div>
@@ -254,3 +282,4 @@ export default function AdminThemePage() {
     </div>
   );
 }
+
