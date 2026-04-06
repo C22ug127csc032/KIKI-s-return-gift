@@ -80,7 +80,7 @@ export default function Navbar() {
 
   return (
     <>
-      <header className={`fixed inset-x-0 top-0 z-[120] transition-all duration-300 ${scrolled ? 'bg-rose-600 shadow-[0_2px_20px_rgba(190,24,93,0.28)]' : 'bg-rose-600 border-b border-rose-500'}`}>
+      <header className={`site-navbar fixed inset-x-0 top-0 z-[120] transition-all duration-300 ${scrolled ? 'bg-rose-600 shadow-[0_2px_20px_rgba(190,24,93,0.28)]' : 'bg-rose-600 border-b border-rose-500'}`}>
         <div className="page-container">
           <div className="flex min-h-[68px] items-center justify-between gap-1.5 py-2 sm:h-16 sm:min-h-0 sm:gap-4 sm:py-0">
             <div className="flex min-w-0 flex-1 items-center gap-1.5 md:flex-none">
@@ -102,7 +102,7 @@ export default function Navbar() {
               {navLinks.map((l) => (
                 <NavLink key={l.to} to={l.to} end={l.end}
                   className={({ isActive }) =>
-                    `px-4 py-2 rounded-full text-sm font-medium transition-all ${isActive ? 'text-rose-700 bg-white shadow-sm' : 'text-white hover:bg-white/15 hover:text-white'}`
+                    `site-nav-link px-4 py-2 rounded-full text-sm font-medium transition-all ${isActive ? 'site-nav-link-active text-rose-700 bg-white shadow-sm' : 'text-white hover:bg-white/15 hover:text-white'}`
                   }>
                   {l.label}
                 </NavLink>
@@ -186,7 +186,7 @@ export default function Navbar() {
                   </AnimatePresence>
                 </div>
               ) : (
-                <Link to="/login" className="flex whitespace-nowrap rounded-full bg-white px-3.5 py-2 text-[11px] font-semibold text-rose-700 shadow-sm transition-all hover:bg-rose-50 sm:px-5 sm:text-xs">
+                <Link to="/login" className="site-login-pill flex whitespace-nowrap rounded-full bg-white px-3.5 py-2 text-[11px] font-semibold text-rose-700 shadow-sm transition-all hover:bg-rose-50 sm:px-5 sm:text-xs">
                   Login
                 </Link>
               )}
@@ -212,7 +212,7 @@ export default function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: '-100%' }}
               transition={{ type: 'tween', duration: 0.25 }}
-              className="absolute left-0 top-0 bottom-0 w-[82vw] max-w-[320px] bg-rose-600 shadow-2xl border-r border-rose-500"
+              className="site-navbar-drawer absolute left-0 top-0 bottom-0 w-[82vw] max-w-[320px] bg-rose-600 shadow-2xl border-r border-rose-500"
             >
               <div className="flex items-center justify-between px-5 py-4 border-b border-white/10">
                 <div className="flex items-center gap-2.5">
@@ -250,7 +250,7 @@ export default function Navbar() {
                     to={l.to}
                     end={l.end}
                     onClick={() => setMenuOpen(false)}
-                    className={({ isActive }) => `text-sm font-medium py-3 px-4 rounded-2xl ${isActive ? 'text-rose-700 bg-white' : 'text-white hover:bg-white/15'}`}
+                    className={({ isActive }) => `site-mobile-nav-link text-sm font-medium py-3 px-4 rounded-2xl ${isActive ? 'site-mobile-nav-link-active text-rose-700 bg-white' : 'text-white hover:bg-white/15'}`}
                   >
                     {l.label}
                   </NavLink>
@@ -302,7 +302,7 @@ export default function Navbar() {
                   <Link
                     to="/login"
                     onClick={() => setMenuOpen(false)}
-                    className="bg-white text-rose-700 font-semibold rounded-full transition-all text-center text-sm mt-3 px-5 py-3"
+                    className="site-login-pill bg-white text-rose-700 font-semibold rounded-full transition-all text-center text-sm mt-3 px-5 py-3"
                   >
                     Login / Register
                   </Link>

@@ -11,7 +11,7 @@ const themeDescriptions = {
   'kiki-aqua': 'Fresh aqua blue theme with a polished, modern storefront feel.',
   'kiki-periwinkle': 'Soft periwinkle theme for a graceful premium look.',
   'kiki-gold': 'Warm gold-led theme with luxury accents and a festive finish.',
-  'kiki-signature': 'Logo-matched blend of blush pink, aqua blue, periwinkle, and soft gold.',
+  'kiki-signature': 'Real four-color combined logo theme using blush pink, aqua blue, periwinkle, and soft gold across the app.',
 };
 
 export default function AdminThemePage() {
@@ -67,8 +67,9 @@ export default function AdminThemePage() {
 
   if (loading) return <PageLoader />;
 
-  const presetOrder = ['kiki-signature', 'kiki-blush', 'kiki-aqua', 'kiki-periwinkle', 'kiki-gold', 'kiki-classic'];
-  const orderedPresets = [...presets].sort((a, b) => {
+  const visiblePresets = presets.filter((preset) => preset.key !== 'kiki-signature');
+  const presetOrder = ['kiki-blush', 'kiki-aqua', 'kiki-periwinkle', 'kiki-gold', 'kiki-classic'];
+  const orderedPresets = [...visiblePresets].sort((a, b) => {
     const aIndex = presetOrder.indexOf(a.key);
     const bIndex = presetOrder.indexOf(b.key);
     if (aIndex !== -1 || bIndex !== -1) {
@@ -200,7 +201,7 @@ export default function AdminThemePage() {
       <div className="grid grid-cols-1 gap-5 xl:grid-cols-2">
         {orderedPresets.map((preset) => {
           const active = selectedTheme === preset.key;
-          const previewLabel = preset.key === 'kiki-signature' ? 'Logo Theme Preview' : 'Theme Preview';
+          const previewLabel = preset.key === 'kiki-signature' ? '4-Color Brand Preview' : 'Theme Preview';
           return (
             <div
               key={preset.key}
@@ -222,7 +223,9 @@ export default function AdminThemePage() {
                 className="mb-5 h-24 rounded-2xl border border-gray-100"
                 onClick={() => setSelectedTheme(preset.key)}
                 style={{
-                  background: `linear-gradient(135deg, ${preset.colors.adminSidebarFrom} 0%, ${preset.colors.primary100} 45%, ${preset.colors.accentSoft} 100%)`,
+                  background: preset.key === 'kiki-signature'
+                    ? `linear-gradient(135deg, ${preset.colors.adminSidebarFrom} 0%, ${preset.colors.adminSidebarVia} 34%, ${preset.colors.adminSidebarTo} 72%, ${preset.colors.accentSoft} 100%)`
+                    : `linear-gradient(135deg, ${preset.colors.adminSidebarFrom} 0%, ${preset.colors.primary100} 45%, ${preset.colors.accentSoft} 100%)`,
                 }}
               />
 
