@@ -6,18 +6,21 @@ import { EmptyState, PageLoader, Pagination } from '../../components/ui/index.js
 import { getDiscountPercentage, getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
 
 const emptyForm = {
+  sourcePurchase: '',
   name: '',
   description: '',
   mrp: '',
   price: '',
   stock: '',
   category: '',
-  occasion: '',
+  occasions: [],
   sku: '',
   featured: false,
   lowStockThreshold: 5,
   isActive: true,
 };
+
+const occasionOptions = ['Wedding', 'Birthday', 'Diwali', 'Pooja', 'Baby Shower', 'Anniversary', 'Housewarming', 'Corporate', 'Festive', 'Return Gift'];
 
 function SearchableSelectField({ options, value, onChange, placeholder = 'Search option', disabled = false }) {
   const fieldRef = useRef(null);
@@ -142,6 +145,7 @@ function SearchableSelectField({ options, value, onChange, placeholder = 'Search
 export default function AdminProducts() {
   const formRef = useRef(null);
   const [products, setProducts] = useState([]);
+  const [boughtProducts, setBoughtProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState({ page: 1, totalPages: 1 });
@@ -154,10 +158,15 @@ export default function AdminProducts() {
     value: category._id,
     label: category.name,
   }));
+  const boughtProductOptions = boughtProducts.map((purchase) => ({
+    value: purchase._id,
+    label: `${purchase.productName}${purchase.supplier?.name ? ` - ${purchase.supplier.name}` : ''}`,
+  }));
 
   useEffect(() => {
     document.title = 'Products - Admin';
     api.get('/categories/all').then((r) => setCategories(r.data.data));
+    api.get('/product-purchases', { params: { unlinked: true, limit: 500 } }).then((r) => setBoughtProducts(r.data.data));
   }, []);
 
   const fetchProducts = () => {
@@ -187,8 +196,9 @@ export default function AdminProducts() {
       mrp: product.mrp ?? product.price,
       price: product.price,
       stock: product.stock,
+      sourcePurchase: product.sourcePurchase?._id || '',
       category: product.category?._id || '',
-      occasion: product.occasion || '',
+      occasions: product.occasions?.length ? product.occasions : (product.occasion ? [product.occasion] : []),
       sku: product.sku || '',
       featured: product.featured,
       lowStockThreshold: product.lowStockThreshold,
@@ -204,6 +214,11 @@ export default function AdminProducts() {
     const mrp = Number(form.mrp || 0);
     const sellingPrice = Number(form.price || 0);
     const stock = Number(form.stock);
+
+    if (!editProduct && !form.sourcePurchase) {
+      toast.error('Please select a bought product first');
+      return;
+    }
 
     if (!form.name.trim()) {
       toast.error('Product name is required');
@@ -238,7 +253,13 @@ export default function AdminProducts() {
     setSaving(true);
     try {
       const fd = new FormData();
-      Object.entries({ ...form, name: form.name.trim(), description: form.description.trim() }).forEach(([key, value]) => fd.append(key, value));
+      const payload = {
+        ...form,
+        name: form.name.trim(),
+        description: form.description.trim(),
+        occasions: JSON.stringify(form.occasions),
+      };
+      Object.entries(payload).forEach(([key, value]) => fd.append(key, value));
       images.forEach((img) => fd.append('images', img));
 
       if (editProduct) {
@@ -251,6 +272,8 @@ export default function AdminProducts() {
 
       resetForm();
       fetchProducts();
+      const boughtProductsResponse = await api.get('/product-purchases', { params: { unlinked: true, limit: 500 } });
+      setBoughtProducts(boughtProductsResponse.data.data);
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to save product');
     } finally {
@@ -286,6 +309,15 @@ export default function AdminProducts() {
   };
 
   const computedDiscount = getDiscountPercentage(form.mrp, form.price);
+  const selectedBoughtProduct = boughtProducts.find((purchase) => purchase._id === form.sourcePurchase);
+  const toggleOccasion = (occasion) => {
+    setForm((current) => ({
+      ...current,
+      occasions: current.occasions.includes(occasion)
+        ? current.occasions.filter((item) => item !== occasion)
+        : [...current.occasions, occasion],
+    }));
+  };
 
   return (
     <div>
@@ -306,10 +338,41 @@ export default function AdminProducts() {
         </div>
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
-          <input value={form.name} onChange={setField('name')} placeholder="Product Name *" className="input-field xl:col-span-2" />
+          {editProduct ? (
+            <input value={form.name} onChange={setField('name')} placeholder="Product Name *" className="input-field xl:col-span-2" />
+          ) : (
+            <div className="xl:col-span-2">
+              <SearchableSelectField
+                options={boughtProductOptions}
+                value={form.sourcePurchase}
+                onChange={(sourcePurchase) => {
+                  const selected = boughtProducts.find((purchase) => purchase._id === sourcePurchase);
+                  setForm({
+                    ...form,
+                    sourcePurchase,
+                    name: selected?.productName || '',
+                    stock: selected?.quantity ?? '',
+                  });
+                }}
+                placeholder={boughtProductOptions.length ? 'Search bought product *' : 'No bought products available'}
+                disabled={!boughtProductOptions.length}
+              />
+              <p className="mt-1 text-xs text-gray-400">
+                First buy the new product in Product Purchases, then select it here to add it to the user-facing product catalog.
+              </p>
+            </div>
+          )}
           <input type="number" value={form.mrp} onChange={setField('mrp')} min="0" placeholder="MRP Price *" className="input-field" />
           <input type="number" value={form.price} onChange={setField('price')} min="0" placeholder="Selling Price *" className="input-field" />
-          <input type="number" value={form.stock} onChange={setField('stock')} min="0" placeholder="Stock *" className="input-field" />
+          <input
+            type="number"
+            value={form.stock}
+            onChange={setField('stock')}
+            min="0"
+            placeholder="Stock *"
+            disabled={!editProduct}
+            className={`input-field ${!editProduct ? 'cursor-not-allowed bg-gray-100 text-gray-400' : ''}`}
+          />
           <input type="number" value={form.lowStockThreshold} onChange={setField('lowStockThreshold')} min="0" placeholder="Stock Alert Level" className="input-field" />
           <SearchableSelectField
             options={categoryOptions}
@@ -317,7 +380,6 @@ export default function AdminProducts() {
             onChange={(categoryId) => setForm({ ...form, category: categoryId })}
             placeholder="Search category *"
           />
-          <input value={form.occasion} onChange={setField('occasion')} placeholder="Occasion" className="input-field" />
           <input value={form.sku} onChange={setField('sku')} placeholder="SKU" className="input-field self-start" />
           <textarea value={form.description} onChange={setField('description')} rows={3} placeholder="Description *" className="input-field resize-none xl:col-span-3" />
           <div className="xl:col-span-1 self-start">
@@ -331,9 +393,41 @@ export default function AdminProducts() {
             />
             {editProduct?.images?.length ? <p className="mt-1 text-xs text-gray-400">Current: {editProduct.images.length} image(s). Upload new files to replace.</p> : null}
           </div>
+          <div className="xl:col-span-4">
+            <label className="mb-2 block text-sm font-medium text-gray-700">Occasions</label>
+            <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-3">
+              <div className="flex flex-wrap gap-2">
+                {occasionOptions.map((occasion) => {
+                  const selected = form.occasions.includes(occasion);
+                  return (
+                    <button
+                      key={occasion}
+                      type="button"
+                      onClick={() => toggleOccasion(occasion)}
+                      className={`rounded-full border px-4 py-2 text-sm font-medium transition-all ${
+                        selected
+                          ? 'border-brand-500 bg-brand-500 text-white'
+                          : 'border-gray-200 bg-white text-gray-600 hover:border-brand-300 hover:text-brand-600'
+                      }`}
+                    >
+                      {occasion}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className="mt-2 text-xs text-gray-400">
+                Choose all occasions where this product should appear. This is better than a single occasion because one gift can suit multiple events.
+              </p>
+            </div>
+          </div>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-6">
+          <div className="mt-4 flex flex-wrap items-center gap-6">
+          {!editProduct && selectedBoughtProduct ? (
+            <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700">
+              Bought Qty: {selectedBoughtProduct.quantity} | Buy Rate: Rs.{Number(selectedBoughtProduct.purchasePrice || 0).toFixed(2)}
+            </div>
+          ) : null}
           <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700">
             Auto Offer: {computedDiscount}% OFF
           </div>
@@ -442,7 +536,7 @@ export default function AdminProducts() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/80 text-left text-xs text-gray-500">
-                    {['#', 'Product', 'Category', 'Price', 'Stock', 'Featured', 'Status', 'Actions'].map((head) => (
+                    {['#', 'Product', 'Category', 'Source', 'Supplier', 'Price', 'Stock', 'Featured', 'Status', 'Actions'].map((head) => (
                       <th key={head} className="px-4 py-3 font-medium">{head}</th>
                     ))}
                   </tr>
@@ -465,6 +559,8 @@ export default function AdminProducts() {
                         </div>
                       </td>
                       <td className="px-4 py-3 text-gray-600">{product.category?.name || '-'}</td>
+                      <td className="px-4 py-3 text-gray-600">{product.sourcePurchase?.productName || '-'}</td>
+                      <td className="px-4 py-3 text-gray-600">{product.supplier?.name || '-'}</td>
                       <td className="px-4 py-3">
                         <div className="font-semibold text-gray-800">Rs.{product.discountedPrice ?? getSellingPrice(product)}</div>
                         {getDiscountPercentage(product) > 0 ? <div className="text-xs text-gray-400 line-through">Rs.{getMrpPrice(product)}</div> : null}

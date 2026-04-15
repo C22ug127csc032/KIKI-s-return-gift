@@ -13,10 +13,14 @@ const productSchema = new mongoose.Schema(
     stock: { type: Number, required: true, default: 0, min: 0 },
     images: [{ url: String, publicId: String }],
     category: { type: mongoose.Schema.Types.ObjectId, ref: 'Category', required: true },
+    supplier: { type: mongoose.Schema.Types.ObjectId, ref: 'Supplier', default: null },
+    sourcePurchase: { type: mongoose.Schema.Types.ObjectId, ref: 'ProductPurchase', default: null, sparse: true },
     occasion: { type: String, trim: true },
+    occasions: [{ type: String, trim: true }],
     sku: { type: String, unique: true, sparse: true },
     featured: { type: Boolean, default: false },
     lowStockThreshold: { type: Number, default: 5 },
+    isVisibleToUsers: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true },
     bom: [
       {
@@ -62,6 +66,7 @@ productSchema.virtual('originalPrice').get(function () {
 
 productSchema.index({ name: 'text', description: 'text' });
 productSchema.index({ category: 1 });
+productSchema.index({ supplier: 1 });
 productSchema.index({ featured: 1 });
 productSchema.index({ price: 1 });
 

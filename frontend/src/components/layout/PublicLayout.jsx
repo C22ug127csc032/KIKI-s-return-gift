@@ -25,8 +25,7 @@ const pageRainItems = [
 
 export default function PublicLayout() {
   const location = useLocation();
-  const showRainAnimation = !['/login', '/register', '/forgot-password'].includes(location.pathname)
-    && !location.pathname.startsWith('/reset-password/');
+  const showRainAnimation = location.pathname === '/';
 
   return (
     <div className="relative flex min-h-screen flex-col">

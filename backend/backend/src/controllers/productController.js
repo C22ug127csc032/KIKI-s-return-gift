@@ -1,5 +1,7 @@
 import mongoose from 'mongoose';
 import Product from '../models/Product.js';
+import ProductPurchase from '../models/ProductPurchase.js';
+import InventoryMovement from '../models/InventoryMovement.js';
 import ApiError from '../utils/apiError.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { sendResponse, sendPaginatedResponse } from '../utils/apiResponse.js';
@@ -35,6 +37,26 @@ const removeLocalProductImage = (imageUrl) => {
 
 const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+const parseOccasions = (value) => {
+  if (value === undefined) return undefined;
+  if (!value) return [];
+
+  const parsed = typeof value === 'string' ? (() => {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return String(value)
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean);
+    }
+  })() : value;
+
+  if (!Array.isArray(parsed)) return [];
+
+  return [...new Set(parsed.map((item) => String(item).trim()).filter(Boolean))];
+};
+
 const ensureUniqueProductName = async (name, productId = null) => {
   if (!name?.trim()) return;
 
@@ -51,9 +73,17 @@ const ensureUniqueProductName = async (name, productId = null) => {
 };
 
 const buildProductFilter = (query) => {
-  const filter = { isActive: true };
+  const filter = { isActive: true, isVisibleToUsers: { $ne: false } };
   if (query.category) filter.category = query.category;
-  if (query.occasion) filter.occasion = new RegExp(query.occasion, 'i');
+  if (query.occasion) {
+    const occasionRegex = new RegExp(query.occasion, 'i');
+    const occasionFilter = [
+      { occasions: occasionRegex },
+      { occasion: occasionRegex },
+    ];
+    if (filter.$and) filter.$and.push({ $or: occasionFilter });
+    else filter.$and = [{ $or: occasionFilter }];
+  }
   if (query.featured === 'true') filter.featured = true;
   if (query.minPrice || query.maxPrice) {
     filter.price = {};
@@ -61,10 +91,12 @@ const buildProductFilter = (query) => {
     if (query.maxPrice) filter.price.$lte = Number(query.maxPrice);
   }
   if (query.search) {
-    filter.$or = [
+    const searchFilter = [
       { name: new RegExp(query.search, 'i') },
       { description: new RegExp(query.search, 'i') },
     ];
+    if (filter.$and) filter.$and.push({ $or: searchFilter });
+    else filter.$or = searchFilter;
   }
   return filter;
 };
@@ -87,7 +119,12 @@ export const getProducts = asyncHandler(async (req, res) => {
   const filter = buildProductFilter(req.query);
   const sort = buildSortQuery(req.query.sortBy);
   const [products, total] = await Promise.all([
-    Product.find(filter).populate('category', 'name slug').sort(sort).skip(skip).limit(limit),
+    Product.find(filter)
+      .populate('category', 'name slug')
+      .populate('supplier', 'name')
+      .sort(sort)
+      .skip(skip)
+      .limit(limit),
     Product.countDocuments(filter),
   ]);
   sendPaginatedResponse(res, 'Products fetched', products, page, limit, total);
@@ -119,6 +156,8 @@ export const getAdminProducts = asyncHandler(async (req, res) => {
   const [products, total] = await Promise.all([
     Product.find(filter)
       .populate('category', 'name')
+      .populate('supplier', 'name')
+      .populate('sourcePurchase', 'productName quantity purchasePrice purchaseDate')
       .populate('bom.rawMaterial', 'name unit')
       .sort(sort)
       .skip(skip)
@@ -130,57 +169,106 @@ export const getAdminProducts = asyncHandler(async (req, res) => {
 
 export const getProductBySlug = asyncHandler(async (req, res) => {
   const { slug } = req.params;
-  let product = await Product.findOne({ slug, isActive: true }).populate('category', 'name slug');
+  let product = await Product.findOne({ slug, isActive: true })
+    .populate('category', 'name slug')
+    .populate('supplier', 'name');
   if (!product && mongoose.Types.ObjectId.isValid(slug)) {
-    product = await Product.findOne({ _id: slug, isActive: true }).populate('category', 'name slug');
+    product = await Product.findOne({ _id: slug, isActive: true })
+      .populate('category', 'name slug')
+      .populate('supplier', 'name');
   }
+  if (product && product.isVisibleToUsers === false) product = null;
   if (!product) throw new ApiError(404, 'Product not found');
   const related = await Product.find({
     category: product.category._id,
     _id: { $ne: product._id },
     isActive: true,
-  }).limit(4).populate('category', 'name slug');
+    isVisibleToUsers: { $ne: false },
+  }).limit(4)
+    .populate('category', 'name slug')
+    .populate('supplier', 'name');
   sendResponse(res, 200, 'Product fetched', { product, related });
 });
 
 export const getProductById = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id)
     .populate('category', 'name slug')
+    .populate('supplier', 'name')
     .populate('bom.rawMaterial', 'name unit');
   if (!product) throw new ApiError(404, 'Product not found');
   sendResponse(res, 200, 'Product fetched', product);
 });
 
 export const createProduct = asyncHandler(async (req, res) => {
-  const { name, description, mrp, price, stock, category, occasion, sku, featured, lowStockThreshold, isActive } = req.body;
+  const { name, description, mrp, price, stock, category, supplier, occasion, sku, featured, lowStockThreshold, isActive, sourcePurchase } = req.body;
   const images = req.files?.map((file) => buildProductImage(req, file)).filter(Boolean) || [];
   const bom = parseBom(req.body.bom);
+  const occasions = parseOccasions(req.body.occasions ?? occasion);
   const normalizedMrp = mrp === undefined || mrp === '' ? null : Number(mrp);
   const sellingPrice = Number(price);
+  let resolvedName = name;
+  let resolvedStock = stock;
+  let resolvedSupplier = supplier || null;
+  let purchaseRecord = null;
 
-  await ensureUniqueProductName(name);
+  if (sourcePurchase) {
+    purchaseRecord = await ProductPurchase.findById(sourcePurchase).populate('supplier', '_id');
+    if (!purchaseRecord) throw new ApiError(404, 'Selected bought product was not found');
+    if (purchaseRecord.linkedProduct) throw new ApiError(409, 'This bought product is already linked to a catalog product');
+    resolvedName = purchaseRecord.productName;
+    resolvedStock = purchaseRecord.quantity;
+    resolvedSupplier = purchaseRecord.supplier?._id || null;
+  }
+
+  if (!sourcePurchase) throw new ApiError(400, 'Please select a bought product first');
+
+  await ensureUniqueProductName(resolvedName);
   if (Number.isNaN(sellingPrice) || sellingPrice < 0) throw new ApiError(400, 'Selling price must be a valid number');
   if (normalizedMrp !== null && (Number.isNaN(normalizedMrp) || normalizedMrp < 0)) throw new ApiError(400, 'MRP must be a valid number');
   if (normalizedMrp !== null && sellingPrice > normalizedMrp) throw new ApiError(400, 'Selling price cannot be greater than MRP');
 
   const product = await Product.create({
-    name,
+    name: resolvedName,
     description,
     mrp: normalizedMrp,
     price: sellingPrice,
     discountPercentage: normalizedMrp ? getProductDiscountPercentage({ mrp: normalizedMrp, price: sellingPrice }) : 0,
-    stock,
+    stock: resolvedStock,
     category,
-    occasion,
+    supplier: resolvedSupplier,
+    sourcePurchase: sourcePurchase || null,
+    occasion: occasions?.[0] || occasion || '',
+    occasions,
     sku,
     featured: featured === 'true' || featured === true,
     lowStockThreshold,
+    isVisibleToUsers: true,
     isActive: isActive === undefined ? true : isActive === 'true' || isActive === true,
     images,
     bom,
   });
+
+  if (purchaseRecord) {
+    purchaseRecord.linkedProduct = product._id;
+    await purchaseRecord.save();
+    await InventoryMovement.create({
+      product: product._id,
+      type: 'IN',
+      quantity: Number(product.stock || 0),
+      previousStock: 0,
+      newStock: Number(product.stock || 0),
+      reason: 'Initial stock from bought product',
+      referenceModel: 'Purchase',
+      referenceId: purchaseRecord._id,
+      note: purchaseRecord.note || '',
+      createdBy: req.user?._id,
+    });
+  }
+
   await product.populate([
     { path: 'category', select: 'name slug' },
+    { path: 'supplier', select: 'name' },
+    { path: 'sourcePurchase', select: 'productName quantity purchasePrice purchaseDate' },
     { path: 'bom.rawMaterial', select: 'name unit' },
   ]);
   sendResponse(res, 201, 'Product created', product);
@@ -190,8 +278,20 @@ export const updateProduct = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id);
   if (!product) throw new ApiError(404, 'Product not found');
   if (req.body.name !== undefined) await ensureUniqueProductName(req.body.name, req.params.id);
-  const fields = ['name', 'description', 'stock', 'category', 'occasion', 'sku', 'featured', 'lowStockThreshold', 'isActive'];
-  fields.forEach((f) => { if (req.body[f] !== undefined) product[f] = req.body[f]; });
+  const fields = ['name', 'description', 'stock', 'category', 'supplier', 'sku', 'featured', 'lowStockThreshold', 'isActive'];
+  fields.forEach((f) => {
+    if (req.body[f] === undefined) return;
+    if (f === 'supplier') {
+      product[f] = req.body[f] || null;
+      return;
+    }
+    product[f] = req.body[f];
+  });
+  if (req.body.occasions !== undefined || req.body.occasion !== undefined) {
+    const occasions = parseOccasions(req.body.occasions ?? req.body.occasion);
+    product.occasions = occasions;
+    product.occasion = occasions?.[0] || '';
+  }
   if (req.body.mrp !== undefined) product.mrp = req.body.mrp === '' ? null : Number(req.body.mrp);
   if (req.body.price !== undefined) product.price = Number(req.body.price);
   if (Number(product.price) < 0 || Number.isNaN(Number(product.price))) throw new ApiError(400, 'Selling price must be a valid number');
@@ -209,6 +309,8 @@ export const updateProduct = asyncHandler(async (req, res) => {
   await product.save();
   await product.populate([
     { path: 'category', select: 'name slug' },
+    { path: 'supplier', select: 'name' },
+    { path: 'sourcePurchase', select: 'productName quantity purchasePrice purchaseDate' },
     { path: 'bom.rawMaterial', select: 'name unit' },
   ]);
   sendResponse(res, 200, 'Product updated', product);
@@ -240,7 +342,10 @@ export const deleteProduct = asyncHandler(async (req, res) => {
 });
 
 export const getFeaturedProducts = asyncHandler(async (req, res) => {
-  const products = await Product.find({ featured: true, isActive: true })
-    .populate('category', 'name slug').limit(8).sort({ createdAt: -1 });
+  const products = await Product.find({ featured: true, isActive: true, isVisibleToUsers: { $ne: false } })
+    .populate('category', 'name slug')
+    .populate('supplier', 'name')
+    .limit(8)
+    .sort({ createdAt: -1 });
   sendResponse(res, 200, 'Featured products fetched', products);
 });

@@ -54,6 +54,7 @@ export default function ProductDetailPage() {
   const hasDiscount = discountPercentage > 0 && sellingPrice < mrpPrice;
   const isOutOfStock = product.stock === 0;
   const isLowStock = product.stock <= product.lowStockThreshold && product.stock > 0;
+  const productOccasions = product.occasions?.length ? product.occasions : (product.occasion ? [product.occasion] : []);
   const notifyHref = buildProductNotifyUrl(whatsapp, product, `/product/${product.slug || product._id}`);
   const enquireHref = `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hi! I'm interested in "${product.name}" (Rs.${sellingPrice}). Can I get more details?`)}`;
 
@@ -131,10 +132,14 @@ export default function ProductDetailPage() {
               {product.name}
             </h1>
 
-            {product.occasion ? (
-              <span className="inline-flex w-fit items-center gap-1.5 text-xs bg-amber-50 border border-amber-200 text-amber-700 px-3 py-1.5 rounded-full mb-4 font-semibold">
-                <FiStar size={11} /> {product.occasion}
-              </span>
+            {productOccasions.length ? (
+              <div className="mb-4 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+                {productOccasions.map((occasion) => (
+                  <span key={occasion} className="inline-flex w-fit items-center gap-1.5 text-xs bg-amber-50 border border-amber-200 text-amber-700 px-3 py-1.5 rounded-full font-semibold">
+                    <FiStar size={11} /> {occasion}
+                  </span>
+                ))}
+              </div>
             ) : null}
 
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mb-5 pb-5 border-b border-gray-100 w-full">

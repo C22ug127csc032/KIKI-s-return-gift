@@ -32,6 +32,7 @@ import AdminLoginPage from './pages/admin/AdminLoginPage.jsx';
 import AdminDashboard from './pages/admin/AdminDashboard.jsx';
 import AdminOrders from './pages/admin/AdminOrders.jsx';
 import AdminProducts from './pages/admin/AdminProducts.jsx';
+import AdminProductPurchases from './pages/admin/AdminProductPurchases.jsx';
 import { AdminCategories, AdminInventory, AdminOfflineSales, AdminSettings } from './pages/admin/AdminPages.jsx';
 import { AdminProductBom, AdminProduction, AdminRawMaterials, AdminSuppliers } from './pages/admin/AdminSupplyChain.jsx';
 import AdminHeroSection from './pages/admin/AdminHeroSection.jsx';
@@ -75,6 +76,7 @@ export default function App() {
               <Route path="dashboard" element={<AdminDashboard />} />
               <Route path="orders" element={<AdminOrders />} />
               <Route path="products" element={<AdminProducts />} />
+              <Route path="product-purchases" element={<AdminProductPurchases />} />
               <Route path="categories" element={<AdminCategories />} />
               <Route path="suppliers" element={<AdminSuppliers />} />
               <Route path="raw-materials" element={<AdminRawMaterials />} />

@@ -1,6 +1,7 @@
 import express from 'express';
 import { getInventoryMovements, adjustStock, getLowStockProducts } from '../controllers/inventoryController.js';
 import { createOfflineSale, getOfflineSales, getOfflineSaleById } from '../controllers/offlineSaleController.js';
+import { createProductPurchase, getProductPurchases } from '../controllers/productPurchaseController.js';
 import { getDashboardStats } from '../controllers/dashboardController.js';
 import { getSettings, updateSettings } from '../controllers/settingsController.js';
 import { getHeroSection, updateHeroSection } from '../controllers/heroSectionController.js';
@@ -23,6 +24,10 @@ offlineSaleRouter.get('/:id/invoice', protect, adminOnly, generateOfflineSaleInv
 
 export const dashboardRouter = express.Router();
 dashboardRouter.get('/stats', protect, adminOnly, getDashboardStats);
+
+export const productPurchaseRouter = express.Router();
+productPurchaseRouter.get('/', protect, adminOnly, getProductPurchases);
+productPurchaseRouter.post('/', protect, adminOnly, createProductPurchase);
 
 export const settingsRouter = express.Router();
 settingsRouter.get('/', publicApiLimiter, getSettings);

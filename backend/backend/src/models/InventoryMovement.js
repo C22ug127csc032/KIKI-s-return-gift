@@ -8,7 +8,7 @@ const inventoryMovementSchema = new mongoose.Schema(
     previousStock: { type: Number },
     newStock: { type: Number },
     reason: { type: String },
-    referenceModel: { type: String, enum: ['Order', 'OfflineSale', 'Manual'] },
+    referenceModel: { type: String, enum: ['Order', 'OfflineSale', 'Manual', 'Purchase'] },
     referenceId: { type: mongoose.Schema.Types.ObjectId },
     note: { type: String },
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
