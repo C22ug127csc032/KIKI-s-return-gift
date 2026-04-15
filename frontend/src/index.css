@@ -1,0 +1,605 @@
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --theme-primary50: #fff7fb;
+  --theme-primary100: #fbeaf3;
+  --theme-primary200: #f6d5e6;
+  --theme-primary300: #eeadc9;
+  --theme-primary400: #e98fb1;
+  --theme-primary500: #78cada;
+  --theme-primary600: #5dc3d5;
+  --theme-primary700: #4aa7c0;
+  --theme-primary800: #6c88d9;
+  --theme-primary900: #2f2444;
+  --theme-accent: #ddb457;
+  --theme-accentSoft: #f7e9ad;
+  --theme-adminSidebarFrom: #efabc0;
+  --theme-adminSidebarVia: #6fd6e6;
+  --theme-adminSidebarTo: #a1a7f4;
+  --theme-heroGradientFrom: rgba(239, 171, 192, 0.92);
+  --theme-heroGradientVia: rgba(111, 214, 230, 0.9);
+  --theme-heroGradientTo: rgba(247, 233, 173, 0.84);
+  --theme-primary50-rgb: 255, 247, 251;
+  --theme-primary100-rgb: 251, 234, 243;
+  --theme-primary200-rgb: 246, 213, 230;
+  --theme-primary300-rgb: 238, 173, 201;
+  --theme-primary400-rgb: 233, 143, 177;
+  --theme-primary500-rgb: 120, 202, 218;
+  --theme-primary600-rgb: 93, 195, 213;
+  --theme-primary700-rgb: 74, 167, 192;
+  --theme-primary800-rgb: 108, 136, 217;
+  --theme-primary900-rgb: 47, 36, 68;
+  --theme-accent-rgb: 221, 180, 87;
+  --theme-accentSoft-rgb: 247, 233, 173;
+  --theme-primary500-rgba-12: rgba(120, 202, 218, 0.12);
+  --theme-primary600-rgba-08: rgba(93, 195, 213, 0.08);
+  --theme-primary600-rgba-12: rgba(93, 195, 213, 0.12);
+  --theme-primary600-rgba-16: rgba(93, 195, 213, 0.16);
+  --theme-primary600-rgba-24: rgba(93, 195, 213, 0.24);
+  --theme-primary600-rgba-32: rgba(93, 195, 213, 0.32);
+  --theme-primary700-rgba-12: rgba(74, 167, 192, 0.12);
+}
+
+@layer base {
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    @apply text-gray-800 bg-white antialiased;
+  }
+  h1, h2, h3, h4 { font-family: 'Cormorant Garamond', serif; }
+}
+
+@layer components {
+  .btn-primary {
+    background-color: var(--theme-primary600);
+    @apply text-white font-semibold px-6 py-3 rounded-full transition-all duration-200 shadow-sm active:scale-95 tracking-wide text-sm;
+  }
+  .btn-primary:hover {
+    background-color: var(--theme-primary700);
+  }
+  .btn-outline {
+    border-color: var(--theme-primary600);
+    color: var(--theme-primary600);
+    @apply border-2 font-semibold px-6 py-3 rounded-full transition-all duration-200 text-sm tracking-wide;
+  }
+  .btn-outline:hover {
+    background-color: var(--theme-primary600);
+    color: #fff;
+  }
+  .btn-ghost {
+    color: var(--theme-primary600);
+    @apply font-medium px-4 py-2 rounded-full transition-all duration-200 text-sm;
+  }
+  .btn-ghost:hover {
+    background-color: var(--theme-primary50);
+  }
+  .btn-white {
+    color: var(--theme-primary700);
+    @apply bg-white font-bold px-8 py-4 rounded-full transition-all duration-200 shadow-xl hover:shadow-2xl text-base;
+  }
+  .btn-white:hover {
+    background-color: var(--theme-primary50);
+  }
+  .card {
+    @apply bg-white rounded-2xl shadow-[0_2px_16px_rgba(0,0,0,0.06)] border border-gray-100 overflow-hidden transition-all duration-300 hover:shadow-[0_8px_32px_rgba(0,0,0,0.12)] hover:-translate-y-0.5;
+  }
+  .product-card {
+    @apply bg-white rounded-2xl overflow-hidden border border-gray-100 transition-all duration-300 hover:-translate-y-1;
+    box-shadow: 0 0 0 rgba(0, 0, 0, 0);
+  }
+  .product-card:hover {
+    box-shadow: 0 8px 32px var(--theme-primary600-rgba-12);
+  }
+  .input-field {
+    @apply w-full border border-gray-200 rounded-xl px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none transition-all bg-white text-sm;
+    --tw-ring-color: var(--theme-primary300);
+  }
+  .input-field:focus {
+    border-color: var(--theme-primary400);
+  }
+  .badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold;
+  }
+  .badge-green { @apply badge bg-emerald-100 text-emerald-700; }
+  .badge-yellow { @apply badge bg-amber-100 text-amber-700; }
+  .badge-red { @apply badge bg-red-100 text-red-700; }
+  .badge-blue { @apply badge bg-blue-100 text-blue-700; }
+  .badge-orange { @apply badge bg-orange-100 text-orange-700; }
+  .badge-gray { @apply badge bg-gray-100 text-gray-600; }
+  .section-title {
+    @apply text-3xl md:text-4xl font-display font-bold text-gray-900 leading-tight;
+  }
+  .page-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+  .skeleton {
+    @apply animate-pulse bg-gray-100 rounded;
+  }
+  .admin-card {
+    @apply bg-white rounded-2xl p-6 shadow-sm border border-gray-100;
+  }
+  .tag-chip {
+    @apply inline-flex items-center gap-1.5 px-4 py-2 rounded-full border text-sm font-medium transition-all duration-200 cursor-pointer;
+  }
+}
+
+.admin-shell .btn-primary {
+  @apply rounded-xl px-5 py-2.5 text-sm font-semibold shadow-none hover:shadow-sm active:scale-100;
+}
+.admin-shell .btn-outline {
+  border-color: var(--theme-primary400);
+  @apply rounded-xl px-5 py-2.5 text-sm font-semibold;
+}
+.admin-shell .btn-outline:hover {
+  background-color: var(--theme-primary50);
+  color: var(--theme-primary600);
+}
+
+:root[data-theme-key='kiki-signature'] .btn-primary {
+  background-image: linear-gradient(
+    90deg,
+    var(--theme-adminSidebarFrom) 0%,
+    color-mix(in srgb, var(--theme-adminSidebarFrom) 72%, white) 16%,
+    var(--theme-adminSidebarVia) 42%,
+    var(--theme-adminSidebarTo) 70%,
+    color-mix(in srgb, var(--theme-adminSidebarTo) 42%, var(--theme-accentSoft) 58%) 86%,
+    var(--theme-accentSoft) 100%
+  );
+  color: var(--theme-primary900) !important;
+  background-size: 220% 220%;
+  animation: signatureGradientFlow 8s ease-in-out infinite;
+  border: 1px solid color-mix(in srgb, var(--theme-accent) 52%, transparent);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.72);
+  box-shadow:
+    0 14px 28px color-mix(in srgb, var(--theme-primary600-rgba-24) 60%, transparent),
+    0 6px 14px color-mix(in srgb, var(--theme-primary700-rgba-12) 70%, transparent);
+}
+
+:root[data-theme-key='kiki-signature'] .btn-primary:hover {
+  color: var(--theme-primary900) !important;
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--theme-adminSidebarFrom) 82%, white) 0%,
+    var(--theme-adminSidebarVia) 34%,
+    var(--theme-adminSidebarTo) 64%,
+    color-mix(in srgb, var(--theme-adminSidebarTo) 40%, var(--theme-accentSoft) 60%) 84%,
+    var(--theme-accent) 100%
+  );
+}
+
+:root[data-theme-key='kiki-signature'] .btn-outline {
+  border-color: color-mix(in srgb, var(--theme-adminSidebarVia) 42%, var(--theme-adminSidebarTo));
+  color: var(--theme-primary900);
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--theme-adminSidebarFrom) 26%, white) 0%,
+    color-mix(in srgb, var(--theme-adminSidebarVia) 18%, white) 40%,
+    color-mix(in srgb, var(--theme-adminSidebarTo) 20%, white) 74%,
+    color-mix(in srgb, var(--theme-accentSoft) 24%, white) 100%
+  );
+}
+
+:root[data-theme-key='kiki-signature'] .btn-outline:hover {
+  color: var(--theme-primary900);
+  border-color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    var(--theme-adminSidebarFrom) 0%,
+    var(--theme-adminSidebarVia) 34%,
+    var(--theme-adminSidebarTo) 66%,
+    color-mix(in srgb, var(--theme-adminSidebarTo) 44%, var(--theme-accentSoft) 56%) 86%,
+    var(--theme-accent) 100%
+  );
+}
+
+:root[data-theme-key='kiki-signature'] .btn-white {
+  color: var(--theme-primary900) !important;
+  background-image: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.96) 0%,
+    color-mix(in srgb, var(--theme-adminSidebarVia) 14%, white) 56%,
+    color-mix(in srgb, var(--theme-adminSidebarTo) 14%, white) 100%
+  );
+  border: 1px solid color-mix(in srgb, var(--theme-primary300) 60%, white);
+}
+
+:root[data-theme-key='kiki-signature'] .card,
+:root[data-theme-key='kiki-signature'] .product-card,
+:root[data-theme-key='kiki-signature'] .admin-card {
+  border-color: color-mix(in srgb, var(--theme-primary100) 50%, white);
+  background-image:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 255, 255, 0.98)),
+    linear-gradient(
+      120deg,
+      color-mix(in srgb, var(--theme-adminSidebarFrom) 78%, transparent),
+      color-mix(in srgb, var(--theme-adminSidebarVia) 70%, transparent),
+      color-mix(in srgb, var(--theme-adminSidebarTo) 72%, transparent),
+      color-mix(in srgb, var(--theme-accentSoft) 76%, transparent)
+    );
+  background-origin: border-box;
+  background-clip: padding-box, border-box;
+}
+
+:root[data-theme-key='kiki-signature'] .card:hover,
+:root[data-theme-key='kiki-signature'] .product-card:hover {
+  box-shadow:
+    0 18px 36px color-mix(in srgb, var(--theme-primary600-rgba-16) 55%, transparent),
+    0 8px 16px color-mix(in srgb, var(--theme-primary700-rgba-12) 55%, transparent);
+}
+
+:root[data-theme-key='kiki-signature'] .section-title {
+  color: var(--theme-primary900);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+:root[data-theme-key='kiki-signature'] .section-title::after {
+  content: '';
+  display: block;
+  width: 96px;
+  max-width: 36%;
+  height: 4px;
+  margin-top: 0.45rem;
+  border-radius: 999px;
+  background-image: linear-gradient(
+    90deg,
+    var(--theme-adminSidebarFrom),
+    var(--theme-adminSidebarVia),
+    var(--theme-adminSidebarTo),
+    color-mix(in srgb, var(--theme-adminSidebarVia) 40%, var(--theme-accentSoft) 60%),
+    var(--theme-accentSoft)
+  );
+}
+
+:root[data-theme-key='kiki-signature'] .tag-chip:hover,
+:root[data-theme-key='kiki-signature'] .theme-soft-bg {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--theme-adminSidebarFrom) 40%, white),
+    color-mix(in srgb, var(--theme-adminSidebarVia) 36%, white),
+    color-mix(in srgb, var(--theme-adminSidebarTo) 42%, white),
+    color-mix(in srgb, var(--theme-adminSidebarVia) 28%, var(--theme-accentSoft) 72%),
+    color-mix(in srgb, var(--theme-accentSoft) 46%, white)
+  );
+}
+
+::-webkit-scrollbar { width: 5px; height: 5px; }
+::-webkit-scrollbar-track { background: var(--theme-primary50); }
+::-webkit-scrollbar-thumb { background: var(--theme-primary600); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--theme-primary700); }
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.animate-marquee { animation: marquee 25s linear infinite; }
+.animate-marquee:hover { animation-play-state: paused; }
+
+@keyframes signatureGradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes heroRainFloat {
+  0% {
+    transform: translate3d(0, -24%, 0) scale(0.84) rotate(0deg);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.96;
+  }
+  82% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate3d(var(--drift, 0px), var(--fall-distance, 100vh), 0) scale(1.06) rotate(20deg);
+    opacity: 0;
+  }
+}
+
+.hero-rain-item {
+  animation: heroRainFloat var(--duration, 12s) linear infinite;
+  animation-delay: var(--delay, 0s);
+  animation-timing-function: cubic-bezier(0.16, 0.82, 0.24, 1);
+  filter: drop-shadow(0 14px 26px rgba(0, 0, 0, 0.22));
+  will-change: transform, opacity;
+}
+
+.page-rain-item {
+  animation: heroRainFloat var(--duration, 10s) linear infinite;
+  animation-delay: var(--delay, 0s);
+  animation-timing-function: cubic-bezier(0.16, 0.82, 0.24, 1);
+  filter: drop-shadow(0 0 14px rgba(255, 255, 255, 0.24)) drop-shadow(0 16px 28px rgba(255, 64, 129, 0.34));
+  will-change: transform, opacity;
+}
+
+.product-img-wrap { overflow: hidden; }
+.product-img-wrap img {
+  transition: transform 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+.product-img-wrap:hover img { transform: scale(1.06); }
+
+.text-brand-500, .text-rose-500, .text-purple-500 { color: var(--theme-primary500) !important; }
+.text-brand-600, .text-rose-600, .text-purple-600 { color: var(--theme-primary600) !important; }
+.text-brand-700, .text-rose-700, .text-purple-700 { color: var(--theme-primary700) !important; }
+.text-rose-100 { color: var(--theme-primary100) !important; }
+.text-rose-200 { color: var(--theme-primary200) !important; }
+.text-rose-300 { color: var(--theme-primary300) !important; }
+.text-rose-400 { color: var(--theme-primary400) !important; }
+
+.bg-brand-50, .bg-rose-50, .bg-purple-50, .from-rose-50 { background-color: var(--theme-primary50) !important; }
+.bg-brand-100, .bg-rose-100, .bg-purple-100 { background-color: var(--theme-primary100) !important; }
+.bg-rose-600, .bg-brand-500, .bg-purple-600 { background-color: var(--theme-primary600) !important; }
+.bg-rose-700, .bg-brand-600, .bg-purple-700 { background-color: var(--theme-primary700) !important; }
+.bg-brand-400 { background-color: var(--theme-primary400) !important; }
+
+.from-rose-600 {
+  --tw-gradient-from: var(--theme-primary600) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(0 0 0 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.from-purple-900 {
+  --tw-gradient-from: var(--theme-primary900) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(0 0 0 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.from-rose-700 {
+  --tw-gradient-from: var(--theme-primary700) var(--tw-gradient-from-position) !important;
+  --tw-gradient-to: rgb(0 0 0 / 0) var(--tw-gradient-to-position) !important;
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
+}
+.via-rose-600 {
+  --tw-gradient-stops: var(--tw-gradient-from), var(--theme-primary600) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+.via-rose-700 {
+  --tw-gradient-stops: var(--tw-gradient-from), var(--theme-primary700) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+.via-rose-800 {
+  --tw-gradient-stops: var(--tw-gradient-from), var(--theme-primary800) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+.via-purple-800 {
+  --tw-gradient-stops: var(--tw-gradient-from), var(--theme-primary800) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+}
+.to-rose-700 {
+  --tw-gradient-to: var(--theme-primary700) var(--tw-gradient-to-position) !important;
+}
+.to-rose-800 {
+  --tw-gradient-to: var(--theme-primary800) var(--tw-gradient-to-position) !important;
+}
+.to-purple-900 {
+  --tw-gradient-to: var(--theme-primary900) var(--tw-gradient-to-position) !important;
+}
+
+.border-brand-100, .border-rose-100, .border-purple-100 { border-color: var(--theme-primary100) !important; }
+.border-brand-200, .border-rose-200, .border-purple-200 { border-color: var(--theme-primary200) !important; }
+.border-brand-300, .border-purple-300 { border-color: var(--theme-primary300) !important; }
+.border-rose-300 { border-color: var(--theme-primary300) !important; }
+.border-rose-400 { border-color: var(--theme-primary400) !important; }
+.border-rose-500 { border-color: var(--theme-primary500) !important; }
+.border-rose-600, .border-purple-600 { border-color: var(--theme-primary600) !important; }
+
+.ring-brand-400 { --tw-ring-color: var(--theme-primary400) !important; }
+
+.hover\:bg-rose-50:hover, .hover\:bg-brand-50:hover, .hover\:bg-purple-50:hover { background-color: var(--theme-primary50) !important; }
+.hover\:bg-rose-100:hover { background-color: var(--theme-primary100) !important; }
+.hover\:bg-rose-600:hover, .hover\:bg-purple-600:hover { background-color: var(--theme-primary600) !important; }
+.hover\:bg-rose-700:hover, .hover\:bg-purple-700:hover { background-color: var(--theme-primary700) !important; }
+.hover\:text-rose-400:hover { color: var(--theme-primary400) !important; }
+.hover\:text-rose-600:hover, .hover\:text-brand-500:hover, .hover\:text-brand-600:hover, .hover\:text-purple-600:hover { color: var(--theme-primary600) !important; }
+.hover\:text-rose-700:hover, .hover\:text-purple-700:hover { color: var(--theme-primary700) !important; }
+.hover\:border-rose-100:hover { border-color: var(--theme-primary100) !important; }
+.hover\:border-rose-200:hover { border-color: var(--theme-primary200) !important; }
+.hover\:border-rose-300:hover { border-color: var(--theme-primary300) !important; }
+
+.shadow-brand-200\/70 { --tw-shadow-color: color-mix(in srgb, var(--theme-primary200) 70%, transparent) !important; }
+
+.admin-shell {
+  background-color: color-mix(in srgb, var(--theme-primary50) 40%, white) !important;
+}
+
+:root[data-theme-key='kiki-signature'] body {
+  background-image:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--theme-adminSidebarFrom) 72%, white) 0%, transparent 34%),
+    radial-gradient(circle at top right, color-mix(in srgb, var(--theme-adminSidebarVia) 68%, white) 0%, transparent 32%),
+    radial-gradient(circle at bottom center, color-mix(in srgb, var(--theme-adminSidebarTo) 62%, white) 0%, transparent 36%),
+    radial-gradient(circle at bottom right, color-mix(in srgb, var(--theme-accentSoft) 52%, white) 0%, transparent 28%),
+    linear-gradient(180deg, #ffffff 0%, color-mix(in srgb, var(--theme-accentSoft) 22%, white) 100%);
+}
+
+:root[data-theme-key='kiki-signature'] .admin-shell {
+  background-image:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--theme-adminSidebarFrom) 68%, white) 0%, transparent 28%),
+    radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--theme-adminSidebarVia) 66%, white) 0%, transparent 28%),
+    radial-gradient(circle at 100% 100%, color-mix(in srgb, var(--theme-adminSidebarTo) 70%, white) 0%, transparent 30%),
+    linear-gradient(135deg, color-mix(in srgb, var(--theme-primary50) 70%, white) 0%, #ffffff 46%, color-mix(in srgb, var(--theme-accentSoft) 34%, white) 100%) !important;
+}
+
+.admin-shell aside {
+  background-image: linear-gradient(
+    to bottom,
+    var(--theme-adminSidebarFrom),
+    var(--theme-adminSidebarVia),
+    var(--theme-adminSidebarTo)
+  ) !important;
+}
+
+:root[data-theme-key='kiki-signature'] .admin-shell header {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--theme-adminSidebarFrom) 30%, white),
+    white 26%,
+    white 74%,
+    color-mix(in srgb, var(--theme-adminSidebarTo) 28%, white)
+  );
+  border-bottom-color: color-mix(in srgb, var(--theme-primary200) 56%, white) !important;
+}
+
+:root[data-theme-key='kiki-signature'] .admin-card {
+  box-shadow:
+    0 14px 40px color-mix(in srgb, var(--theme-primary500-rgba-12) 45%, transparent),
+    0 0 0 1px color-mix(in srgb, var(--theme-primary100) 60%, white);
+}
+
+:root[data-theme-key='kiki-signature'] .admin-shell aside a[aria-current='page'] {
+  background-image: linear-gradient(
+    90deg,
+    var(--theme-adminSidebarFrom) 0%,
+    var(--theme-adminSidebarVia) 34%,
+    var(--theme-adminSidebarTo) 66%,
+    color-mix(in srgb, var(--theme-adminSidebarTo) 40%, var(--theme-accentSoft) 60%) 86%,
+    var(--theme-accent) 100%
+  ) !important;
+  color: var(--theme-primary900) !important;
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--theme-primary600-rgba-24) 60%, transparent);
+}
+
+:root[data-theme-key='kiki-signature'] .site-navbar,
+:root[data-theme-key='kiki-signature'] .site-navbar-drawer,
+:root[data-theme-key='kiki-signature'] .site-signature-band,
+:root[data-theme-key='kiki-signature'] .site-signature-cta,
+:root[data-theme-key='kiki-signature'] .site-footer-cta,
+:root[data-theme-key='kiki-signature'] .site-scroll-top {
+  background-image: linear-gradient(
+    90deg,
+    var(--theme-adminSidebarFrom) 0%,
+    color-mix(in srgb, var(--theme-adminSidebarFrom) 72%, white) 16%,
+    var(--theme-adminSidebarVia) 42%,
+    var(--theme-adminSidebarTo) 70%,
+    color-mix(in srgb, var(--theme-adminSidebarTo) 42%, var(--theme-accentSoft) 58%) 86%,
+    var(--theme-accentSoft) 100%
+  ) !important;
+}
+
+:root[data-theme-key='kiki-signature'] .site-navbar {
+  border-bottom-color: color-mix(in srgb, var(--theme-adminSidebarFrom) 50%, white) !important;
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--theme-primary600-rgba-16) 65%, transparent);
+}
+
+:root[data-theme-key='kiki-signature'] .site-nav-link-active,
+:root[data-theme-key='kiki-signature'] .site-login-pill {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--theme-adminSidebarFrom) 22%, white) 0%,
+    color-mix(in srgb, var(--theme-adminSidebarVia) 18%, white) 40%,
+    color-mix(in srgb, var(--theme-adminSidebarTo) 18%, white) 72%,
+    color-mix(in srgb, var(--theme-accentSoft) 22%, white) 100%
+  ) !important;
+  color: var(--theme-primary900) !important;
+  border: 1px solid color-mix(in srgb, var(--theme-primary100) 70%, white);
+}
+
+:root[data-theme-key='kiki-signature'] .site-login-pill:hover,
+:root[data-theme-key='kiki-signature'] .site-nav-link-active:hover {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--theme-adminSidebarFrom) 28%, white) 0%,
+    color-mix(in srgb, var(--theme-adminSidebarVia) 24%, white) 42%,
+    color-mix(in srgb, var(--theme-adminSidebarTo) 24%, white) 74%,
+    color-mix(in srgb, var(--theme-accentSoft) 28%, white) 100%
+  ) !important;
+}
+
+:root[data-theme-key='kiki-signature'] .site-navbar-drawer {
+  border-right-color: color-mix(in srgb, var(--theme-adminSidebarTo) 42%, white) !important;
+}
+
+:root[data-theme-key='kiki-signature'] .site-signature-band,
+:root[data-theme-key='kiki-signature'] .site-signature-cta,
+:root[data-theme-key='kiki-signature'] .site-footer-cta {
+  background-size: 140% 140%;
+}
+
+:root[data-theme-key='kiki-signature'] .site-scroll-top {
+  box-shadow:
+    0 16px 30px color-mix(in srgb, var(--theme-primary600-rgba-24) 55%, transparent),
+    0 6px 14px color-mix(in srgb, var(--theme-primary700-rgba-12) 60%, transparent) !important;
+}
+
+:root[data-theme-key='kiki-signature'] .bg-rose-600,
+:root[data-theme-key='kiki-signature'] .bg-rose-700,
+:root[data-theme-key='kiki-signature'] .bg-brand-500,
+:root[data-theme-key='kiki-signature'] .bg-brand-600,
+:root[data-theme-key='kiki-signature'] .bg-purple-600,
+:root[data-theme-key='kiki-signature'] .bg-purple-700 {
+  background-image: linear-gradient(
+    90deg,
+    var(--theme-adminSidebarFrom) 0%,
+    color-mix(in srgb, var(--theme-adminSidebarFrom) 72%, white) 16%,
+    var(--theme-adminSidebarVia) 42%,
+    var(--theme-adminSidebarTo) 70%,
+    color-mix(in srgb, var(--theme-adminSidebarTo) 42%, var(--theme-accentSoft) 58%) 86%,
+    var(--theme-accentSoft) 100%
+  ) !important;
+  background-color: transparent !important;
+}
+
+:root[data-theme-key='kiki-signature'] button.bg-rose-600,
+:root[data-theme-key='kiki-signature'] button.bg-rose-700,
+:root[data-theme-key='kiki-signature'] button.bg-brand-500,
+:root[data-theme-key='kiki-signature'] button.bg-brand-600,
+:root[data-theme-key='kiki-signature'] button.bg-purple-600,
+:root[data-theme-key='kiki-signature'] button.bg-purple-700,
+:root[data-theme-key='kiki-signature'] a.bg-rose-600,
+:root[data-theme-key='kiki-signature'] a.bg-rose-700,
+:root[data-theme-key='kiki-signature'] a.bg-brand-500,
+:root[data-theme-key='kiki-signature'] a.bg-brand-600,
+:root[data-theme-key='kiki-signature'] a.bg-purple-600,
+:root[data-theme-key='kiki-signature'] a.bg-purple-700 {
+  color: var(--theme-primary900) !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+:root[data-theme-key='kiki-signature'] .product-discount-badge {
+  background-image: linear-gradient(
+    90deg,
+    var(--theme-adminSidebarFrom) 0%,
+    color-mix(in srgb, var(--theme-adminSidebarFrom) 72%, white) 16%,
+    var(--theme-adminSidebarVia) 42%,
+    var(--theme-adminSidebarTo) 70%,
+    color-mix(in srgb, var(--theme-adminSidebarTo) 42%, var(--theme-accentSoft) 58%) 86%,
+    var(--theme-accentSoft) 100%
+  ) !important;
+  background-color: transparent !important;
+  border: 1px solid color-mix(in srgb, var(--theme-accent) 52%, transparent) !important;
+  color: var(--theme-primary900) !important;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+:root[data-theme-key='kiki-signature'] .hover\:bg-rose-600:hover,
+:root[data-theme-key='kiki-signature'] .hover\:bg-rose-700:hover,
+:root[data-theme-key='kiki-signature'] .hover\:bg-purple-600:hover,
+:root[data-theme-key='kiki-signature'] .hover\:bg-purple-700:hover {
+  background-image: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--theme-adminSidebarFrom) 82%, white) 0%,
+    var(--theme-adminSidebarVia) 34%,
+    var(--theme-adminSidebarTo) 64%,
+    color-mix(in srgb, var(--theme-adminSidebarTo) 40%, var(--theme-accentSoft) 60%) 84%,
+    var(--theme-accent) 100%
+  ) !important;
+  background-color: transparent !important;
+}
+
+.theme-soft-bg {
+  background-color: var(--theme-primary600-rgba-08) !important;
+}
+
+.theme-soft-border {
+  border-color: var(--theme-primary600-rgba-24) !important;
+}
+
+.theme-soft-shadow {
+  box-shadow: 0 14px 30px var(--theme-primary600-rgba-16) !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-rain-item,
+  .page-rain-item {
+    animation: none;
+    opacity: 0.2;
+  }
+}
