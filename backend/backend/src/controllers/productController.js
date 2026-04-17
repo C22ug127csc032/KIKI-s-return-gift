@@ -10,7 +10,7 @@ import { cloudinary } from '../config/cloudinary.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { getProductDiscountPercentage } from '../utils/pricing.js';
+import { calculateLinePricing, getProductDiscountPercentage } from '../utils/pricing.js';
 import { buildLocalUploadPath, getLocalUploadFileName } from '../utils/uploadPaths.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -200,12 +200,37 @@ export const getProductById = asyncHandler(async (req, res) => {
 });
 
 export const createProduct = asyncHandler(async (req, res) => {
-  const { name, description, mrp, price, stock, category, supplier, occasion, sku, featured, lowStockThreshold, isActive, sourcePurchase } = req.body;
+  const {
+    name, description, mrp, price, basePrice, discountPercentage, cgstRate, sgstRate, igstRate, gstRate, stock, category, supplier, occasion, sku, featured, lowStockThreshold, isActive, sourcePurchase,
+  } = req.body;
   const images = req.files?.map((file) => buildProductImage(req, file)).filter(Boolean) || [];
   const bom = parseBom(req.body.bom);
   const occasions = parseOccasions(req.body.occasions ?? occasion);
-  const normalizedMrp = mrp === undefined || mrp === '' ? null : Number(mrp);
-  const sellingPrice = Number(price);
+  const normalizedBasePrice = basePrice === undefined || basePrice === '' ? null : Number(basePrice);
+  const normalizedDiscountPercentage = discountPercentage === undefined || discountPercentage === '' ? 0 : Number(discountPercentage);
+  const normalizedCgstRate = cgstRate === undefined || cgstRate === '' ? 0 : Number(cgstRate);
+  const normalizedSgstRate = sgstRate === undefined || sgstRate === '' ? 0 : Number(sgstRate);
+  const normalizedIgstRate = igstRate === undefined || igstRate === '' ? 0 : Number(igstRate);
+  const derivedPricing = normalizedBasePrice !== null
+    ? calculateLinePricing({
+      basePrice: normalizedBasePrice,
+      discountPercentage: normalizedDiscountPercentage,
+      cgstRate: normalizedCgstRate,
+      sgstRate: normalizedSgstRate,
+      igstRate: normalizedIgstRate,
+    })
+    : null;
+  const sellingPrice = derivedPricing ? derivedPricing.totalUnitPrice : Number(price);
+  const normalizedMrp = mrp === undefined || mrp === ''
+    ? (derivedPricing ? calculateLinePricing({
+      basePrice: normalizedBasePrice,
+      discountPercentage: 0,
+      cgstRate: normalizedCgstRate,
+      sgstRate: normalizedSgstRate,
+      igstRate: normalizedIgstRate,
+    }).totalUnitPrice : null)
+    : Number(mrp);
+  const normalizedGstRate = derivedPricing ? derivedPricing.gstRate : (gstRate === undefined || gstRate === '' ? 0 : Number(gstRate));
   let resolvedName = name;
   let resolvedStock = stock;
   let resolvedSupplier = supplier || null;
@@ -224,15 +249,22 @@ export const createProduct = asyncHandler(async (req, res) => {
 
   await ensureUniqueProductName(resolvedName);
   if (Number.isNaN(sellingPrice) || sellingPrice < 0) throw new ApiError(400, 'Selling price must be a valid number');
+  if (normalizedBasePrice !== null && (Number.isNaN(normalizedBasePrice) || normalizedBasePrice < 0)) throw new ApiError(400, 'Price must be a valid number');
   if (normalizedMrp !== null && (Number.isNaN(normalizedMrp) || normalizedMrp < 0)) throw new ApiError(400, 'MRP must be a valid number');
   if (normalizedMrp !== null && sellingPrice > normalizedMrp) throw new ApiError(400, 'Selling price cannot be greater than MRP');
+  if (!Number.isFinite(normalizedGstRate) || normalizedGstRate < 0 || normalizedGstRate > 100) throw new ApiError(400, 'GST rate must be between 0 and 100');
 
   const product = await Product.create({
     name: resolvedName,
     description,
     mrp: normalizedMrp,
+    basePrice: normalizedBasePrice,
     price: sellingPrice,
-    discountPercentage: normalizedMrp ? getProductDiscountPercentage({ mrp: normalizedMrp, price: sellingPrice }) : 0,
+    gstRate: normalizedGstRate,
+    cgstRate: derivedPricing ? derivedPricing.cgstRate : 0,
+    sgstRate: derivedPricing ? derivedPricing.sgstRate : 0,
+    igstRate: derivedPricing ? derivedPricing.igstRate : 0,
+    discountPercentage: derivedPricing ? derivedPricing.discountPercentage : (normalizedMrp ? getProductDiscountPercentage({ mrp: normalizedMrp, price: sellingPrice }) : 0),
     stock: resolvedStock,
     category,
     supplier: resolvedSupplier,
@@ -292,12 +324,57 @@ export const updateProduct = asyncHandler(async (req, res) => {
     product.occasions = occasions;
     product.occasion = occasions?.[0] || '';
   }
-  if (req.body.mrp !== undefined) product.mrp = req.body.mrp === '' ? null : Number(req.body.mrp);
-  if (req.body.price !== undefined) product.price = Number(req.body.price);
+  const hasStructuredPricing = ['basePrice', 'discountPercentage', 'cgstRate', 'sgstRate', 'igstRate'].some((field) => req.body[field] !== undefined);
+  if (hasStructuredPricing) {
+    const normalizedBasePrice = req.body.basePrice === '' || req.body.basePrice === undefined ? null : Number(req.body.basePrice);
+    const normalizedDiscountPercentage = req.body.discountPercentage === '' || req.body.discountPercentage === undefined ? 0 : Number(req.body.discountPercentage);
+    const normalizedCgstRate = req.body.cgstRate === '' || req.body.cgstRate === undefined ? 0 : Number(req.body.cgstRate);
+    const normalizedSgstRate = req.body.sgstRate === '' || req.body.sgstRate === undefined ? 0 : Number(req.body.sgstRate);
+    const normalizedIgstRate = req.body.igstRate === '' || req.body.igstRate === undefined ? 0 : Number(req.body.igstRate);
+    if (normalizedBasePrice === null || Number.isNaN(normalizedBasePrice) || normalizedBasePrice < 0) {
+      throw new ApiError(400, 'Price must be a valid number');
+    }
+    const derivedPricing = calculateLinePricing({
+      basePrice: normalizedBasePrice,
+      discountPercentage: normalizedDiscountPercentage,
+      cgstRate: normalizedCgstRate,
+      sgstRate: normalizedSgstRate,
+      igstRate: normalizedIgstRate,
+    });
+    product.basePrice = normalizedBasePrice;
+    product.discountPercentage = derivedPricing.discountPercentage;
+    product.cgstRate = derivedPricing.cgstRate;
+    product.sgstRate = derivedPricing.sgstRate;
+    product.igstRate = derivedPricing.igstRate;
+    product.gstRate = derivedPricing.gstRate;
+    product.price = derivedPricing.totalUnitPrice;
+    if (req.body.mrp !== undefined) product.mrp = req.body.mrp === '' ? null : Number(req.body.mrp);
+    else if (product.mrp === null || product.mrp === undefined) {
+      product.mrp = calculateLinePricing({
+        basePrice: normalizedBasePrice,
+        discountPercentage: 0,
+        cgstRate: normalizedCgstRate,
+        sgstRate: normalizedSgstRate,
+        igstRate: normalizedIgstRate,
+      }).totalUnitPrice;
+    }
+  } else {
+    if (req.body.gstRate !== undefined) {
+      const normalizedGstRate = req.body.gstRate === '' ? 0 : Number(req.body.gstRate);
+      if (!Number.isFinite(normalizedGstRate) || normalizedGstRate < 0 || normalizedGstRate > 100) {
+        throw new ApiError(400, 'GST rate must be between 0 and 100');
+      }
+      product.gstRate = normalizedGstRate;
+    }
+    if (req.body.mrp !== undefined) product.mrp = req.body.mrp === '' ? null : Number(req.body.mrp);
+    if (req.body.price !== undefined) product.price = Number(req.body.price);
+  }
   if (Number(product.price) < 0 || Number.isNaN(Number(product.price))) throw new ApiError(400, 'Selling price must be a valid number');
   if (product.mrp !== null && (Number.isNaN(Number(product.mrp)) || Number(product.mrp) < 0)) throw new ApiError(400, 'MRP must be a valid number');
   if (product.mrp !== null && Number(product.price) > Number(product.mrp)) throw new ApiError(400, 'Selling price cannot be greater than MRP');
-  product.discountPercentage = product.mrp ? getProductDiscountPercentage(product) : 0;
+  if (!hasStructuredPricing) {
+    product.discountPercentage = product.mrp ? getProductDiscountPercentage(product) : 0;
+  }
   if (req.body.bom !== undefined) product.bom = parseBom(req.body.bom);
   if (req.files?.length) {
     for (const img of product.images) {

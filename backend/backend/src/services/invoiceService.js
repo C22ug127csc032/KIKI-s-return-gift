@@ -3,7 +3,7 @@ import OfflineSale from '../models/OfflineSale.js';
 import AppSetting from '../models/AppSetting.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import ApiError from '../utils/apiError.js';
-import { getProductMrp } from '../utils/pricing.js';
+import { getGstAmountFromInclusive, getProductGstRate, getProductMrp, getTaxableAmountFromInclusive } from '../utils/pricing.js';
 
 const escapeHtml = (value = '') => String(value ?? '')
   .replaceAll('&', '&amp;')
@@ -29,29 +29,57 @@ const formatDiscountPercentage = (value) => Number(value || 0)
 
 const INVOICE_READY_STATUSES = ['Shipped', 'Completed'];
 
-const calculateInvoiceTotals = (items = [], fallbackSubtotal = 0, fallbackTotal = 0) => {
-  const actualTotal = items.reduce((sum, item) => {
+const calculateInvoiceTotals = (items = [], fallbackSubtotal = 0, fallbackTax = 0, fallbackTotal = 0) => {
+  const mrpTotal = items.reduce((sum, item) => {
     const quantity = Number(item.quantity || 0);
     const originalPrice = Number(item.originalPrice || item.price || 0);
     return sum + (originalPrice * quantity);
   }, 0);
-  const subTotal = Number(fallbackSubtotal || fallbackTotal || 0);
-  const discount = Math.max(actualTotal - subTotal, 0);
-  const discountPercentage = actualTotal > 0 ? (discount / actualTotal) * 100 : 0;
+  const grandTotal = Number(fallbackTotal || 0);
+  const gst = Number(fallbackTax || items.reduce((sum, item) => sum + Number(item.gstAmount || 0), 0));
+  const cgst = items.reduce((sum, item) => sum + Number(item.cgstAmount || 0), 0);
+  const sgst = items.reduce((sum, item) => sum + Number(item.sgstAmount || 0), 0);
+  const igst = items.reduce((sum, item) => sum + Number(item.igstAmount || 0), 0);
+  const taxableSubtotal = Number(fallbackSubtotal || Math.max(grandTotal - gst, 0));
+  const discount = Math.max(mrpTotal - grandTotal, 0);
+  const discountPercentage = mrpTotal > 0 ? (discount / mrpTotal) * 100 : 0;
 
   return {
-    actualTotal: actualTotal || subTotal,
+    mrpTotal: mrpTotal || grandTotal,
     discount,
     discountPercentage: formatDiscountPercentage(discountPercentage),
-    subTotal,
+    taxableSubtotal,
+    gst,
+    cgst,
+    sgst,
+    igst,
+    grandTotal,
   };
 };
 
 const normalizeItemsForInvoice = (items = []) => items.map((item) => {
   const source = typeof item.toObject === 'function' ? item.toObject() : item;
+  const quantity = Number(source.quantity || 0);
+  const totalAmount = Number(source.totalAmount || (Number(source.price || 0) * quantity));
+  const gstRate = Number(source.gstRate ?? source.product?.gstRate ?? 0);
+  const taxableAmount = Number(source.taxableAmount ?? getTaxableAmountFromInclusive(totalAmount, gstRate));
+  const gstAmount = Number(source.gstAmount ?? getGstAmountFromInclusive(totalAmount, gstRate));
   return {
     ...source,
     originalPrice: source.originalPrice || (source.product ? getProductMrp(source.product) : source.price),
+    basePrice: Number(source.basePrice || 0),
+    discountPercentage: Number(source.discountPercentage || 0),
+    discountAmount: Number(source.discountAmount || 0),
+    gstRate: gstRate || getProductGstRate(source.product),
+    cgstRate: Number(source.cgstRate || 0),
+    sgstRate: Number(source.sgstRate || 0),
+    igstRate: Number(source.igstRate || 0),
+    taxableAmount,
+    gstAmount,
+    cgstAmount: Number(source.cgstAmount || 0),
+    sgstAmount: Number(source.sgstAmount || 0),
+    igstAmount: Number(source.igstAmount || 0),
+    totalAmount,
   };
 });
 
@@ -62,23 +90,38 @@ const buildInvoiceHtml = (data, settings) => {
     : (settings?.storeTagline || 'Return Gifts'));
   const bankName = escapeHtml(settings?.bankAccountName || settings?.bankName || 'WXYZ Bank');
   const accountNo = escapeHtml(settings?.bankAccountNumber || 'xxx xxxx xxx');
-  const totals = calculateInvoiceTotals(data.items, data.subtotal, data.totalAmount);
+  const totals = calculateInvoiceTotals(data.items, data.subtotal, data.tax, data.totalAmount);
   const rows = (data.items || []).map((item) => {
     const quantity = Number(item.quantity || 0);
     const price = Number(item.price || 0);
-    const total = quantity * price;
+    const discountAmount = Number(item.discountAmount || 0);
+    const taxableAmount = Number(item.taxableAmount || 0);
+    const cgstAmount = Number(item.cgstAmount || 0);
+    const sgstAmount = Number(item.sgstAmount || 0);
+    const igstAmount = Number(item.igstAmount || 0);
+    const total = Number(item.totalAmount || (quantity * price));
 
     return `
         <tr>
           <td>${escapeHtml(item.name || 'product/service')}</td>
           <td>${quantity}</td>
-          <td>${formatCurrency(price)}</td>
+          <td>${formatCurrency(item.basePrice || price)}</td>
+          <td>${formatCurrency(discountAmount)}</td>
+          <td>${formatCurrency(taxableAmount)}</td>
+          <td>${formatCurrency(cgstAmount)}</td>
+          <td>${formatCurrency(sgstAmount)}</td>
+          <td>${formatCurrency(igstAmount)}</td>
           <td>${formatCurrency(total)}</td>
         </tr>`;
   }).join('') || `
         <tr>
           <td>product/service</td>
           <td>0</td>
+          <td>${formatCurrency(0)}</td>
+          <td>${formatCurrency(0)}</td>
+          <td>${formatCurrency(0)}</td>
+          <td>${formatCurrency(0)}</td>
+          <td>${formatCurrency(0)}</td>
           <td>${formatCurrency(0)}</td>
           <td>${formatCurrency(0)}</td>
         </tr>`;
@@ -509,40 +552,70 @@ const buildInvoiceHtml = (data, settings) => {
   <div class="table-wrap">
     <table>
       <thead>
-        <tr>
-          <th>Product</th>
-          <th>QTY</th>
-          <th>Price</th>
-          <th>Total</th>
-        </tr>
+	        <tr>
+	          <th>Product</th>
+	          <th>QTY</th>
+	          <th>Price</th>
+	          <th>Discount</th>
+	          <th>Taxable</th>
+	          <th>CGST</th>
+	          <th>SGST</th>
+	          <th>IGST</th>
+	          <th>Total</th>
+	        </tr>
       </thead>
       <tbody id="invoiceRows">${rows}
       </tbody>
     </table>
   </div>
 
-  <div class="totals-section">
-    <div class="subtotal-labels">
-      <p><strong>Total :</strong></p>
-      <p>Discount: ${totals.discountPercentage}%</p>
-      <p>Sub Total :</p>
-    </div>
+	  <div class="totals-section">
+	    <div class="subtotal-labels">
+	      <p><strong>MRP Total :</strong></p>
+	      <p>Discount: ${totals.discountPercentage}%</p>
+	      <p>Taxable Amount :</p>
+	      <p>CGST :</p>
+	      <p>SGST :</p>
+	      <p>IGST :</p>
+	      <p>GST :</p>
+	      <p>Grand Total :</p>
+	    </div>
 
-    <div class="totals-values">
-      <div class="totals-row">
-        <span class="label">Total :</span>
-        <span id="actualTotal">${formatCurrency(totals.actualTotal)}</span>
-      </div>
-      <div class="totals-row">
-        <span class="label">Discount (${totals.discountPercentage}%) :</span>
-        <span id="discountVal">- ${formatCurrency(totals.discount)}</span>
-      </div>
-      <div class="total-final">
-        <span>Sub Total :</span>
-        <span id="subTotal">${formatCurrency(totals.subTotal)}</span>
-      </div>
-    </div>
-  </div>
+	    <div class="totals-values">
+	      <div class="totals-row">
+	        <span class="label">MRP Total :</span>
+	        <span id="actualTotal">${formatCurrency(totals.mrpTotal)}</span>
+	      </div>
+	      <div class="totals-row">
+	        <span class="label">Discount (${totals.discountPercentage}%) :</span>
+	        <span id="discountVal">- ${formatCurrency(totals.discount)}</span>
+	      </div>
+	      <div class="totals-row">
+	        <span class="label">Taxable Amount :</span>
+	        <span id="subTotal">${formatCurrency(totals.taxableSubtotal)}</span>
+	      </div>
+	      <div class="totals-row">
+	        <span class="label">CGST :</span>
+	        <span id="cgstTotal">${formatCurrency(totals.cgst)}</span>
+	      </div>
+	      <div class="totals-row">
+	        <span class="label">SGST :</span>
+	        <span id="sgstTotal">${formatCurrency(totals.sgst)}</span>
+	      </div>
+	      <div class="totals-row">
+	        <span class="label">IGST :</span>
+	        <span id="igstTotal">${formatCurrency(totals.igst)}</span>
+	      </div>
+	      <div class="totals-row">
+	        <span class="label">GST :</span>
+	        <span id="gstTotal">${formatCurrency(totals.gst)}</span>
+	      </div>
+	      <div class="total-final">
+	        <span>Grand Total :</span>
+	        <span id="grandTotal">${formatCurrency(totals.grandTotal)}</span>
+	      </div>
+	    </div>
+	  </div>
 
   <div class="invoice-footer">
     <div class="payment-section">
@@ -614,6 +687,7 @@ export const generateOrderInvoice = asyncHandler(async (req, res) => {
     customerAddress: order.customerAddress,
     items: normalizeItemsForInvoice(order.items),
     subtotal: order.subtotal,
+    tax: order.tax,
     totalAmount: order.totalAmount,
   }, settings);
 });
@@ -633,6 +707,7 @@ export const generateOfflineSaleInvoice = asyncHandler(async (req, res) => {
     customerAddress: sale.address,
     items: normalizeItemsForInvoice(sale.items),
     subtotal: sale.subtotal,
+    tax: sale.tax,
     totalAmount: sale.totalAmount,
   }, settings);
 });

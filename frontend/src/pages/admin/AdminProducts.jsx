@@ -3,14 +3,19 @@ import toast from 'react-hot-toast';
 import { FiChevronDown, FiGift, FiSearch, FiShoppingBag, FiStar, FiX } from 'react-icons/fi';
 import api from '../../api/api.js';
 import { EmptyState, PageLoader, Pagination } from '../../components/ui/index.jsx';
-import { getDiscountPercentage, getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
+import { calculatePricing, getDiscountPercentage, getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
 
 const emptyForm = {
   sourcePurchase: '',
   name: '',
   description: '',
   mrp: '',
+  basePrice: '',
   price: '',
+  discountPercentage: '',
+  cgstRate: '',
+  sgstRate: '',
+  igstRate: '',
   stock: '',
   category: '',
   occasions: [],
@@ -21,6 +26,14 @@ const emptyForm = {
 };
 
 const occasionOptions = ['Wedding', 'Birthday', 'Diwali', 'Pooja', 'Baby Shower', 'Anniversary', 'Housewarming', 'Corporate', 'Festive', 'Return Gift'];
+
+const normalizeOccasionLabel = (value = '') => value
+  .trim()
+  .replace(/\s+/g, ' ')
+  .split(' ')
+  .filter(Boolean)
+  .map((part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase())
+  .join(' ');
 
 function SearchableSelectField({ options, value, onChange, placeholder = 'Search option', disabled = false }) {
   const fieldRef = useRef(null);
@@ -154,6 +167,7 @@ export default function AdminProducts() {
   const [form, setForm] = useState(emptyForm);
   const [images, setImages] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [customOccasion, setCustomOccasion] = useState('');
   const categoryOptions = categories.map((category) => ({
     value: category._id,
     label: category.name,
@@ -186,6 +200,7 @@ export default function AdminProducts() {
     setEditProduct(null);
     setForm(emptyForm);
     setImages([]);
+    setCustomOccasion('');
   };
 
   const openEdit = (product) => {
@@ -194,7 +209,12 @@ export default function AdminProducts() {
       name: product.name,
       description: product.description,
       mrp: product.mrp ?? product.price,
+      basePrice: product.basePrice ?? product.price,
       price: product.price,
+      discountPercentage: product.discountPercentage ?? '',
+      cgstRate: product.cgstRate ?? '',
+      sgstRate: product.sgstRate ?? '',
+      igstRate: product.igstRate ?? '',
       stock: product.stock,
       sourcePurchase: product.sourcePurchase?._id || '',
       category: product.category?._id || '',
@@ -205,6 +225,7 @@ export default function AdminProducts() {
       isActive: product.isActive,
     });
     setImages([]);
+    setCustomOccasion('');
     requestAnimationFrame(() => {
       formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -212,8 +233,16 @@ export default function AdminProducts() {
 
   const handleSave = async () => {
     const mrp = Number(form.mrp || 0);
-    const sellingPrice = Number(form.price || 0);
+    const basePrice = Number(form.basePrice || 0);
     const stock = Number(form.stock);
+    const pricing = calculatePricing({
+      basePrice,
+      discountPercentage: form.discountPercentage,
+      cgstRate: form.cgstRate,
+      sgstRate: form.sgstRate,
+      igstRate: form.igstRate,
+    });
+    const sellingPrice = pricing.totalUnitPrice;
 
     if (!editProduct && !form.sourcePurchase) {
       toast.error('Please select a bought product first');
@@ -240,13 +269,17 @@ export default function AdminProducts() {
       return;
     }
 
-    if (!mrp || mrp < 0 || !sellingPrice || sellingPrice < 0) {
-      toast.error('Enter valid MRP and selling price');
+    if (!basePrice || basePrice < 0) {
+      toast.error('Enter a valid price');
       return;
     }
 
     if (sellingPrice > mrp) {
       toast.error('Selling price cannot be greater than MRP');
+      return;
+    }
+    if ([form.discountPercentage, form.cgstRate, form.sgstRate, form.igstRate].some((value) => !Number.isFinite(Number(value)) || Number(value) < 0 || Number(value) > 100)) {
+      toast.error('Discount and tax rates must be between 0 and 100');
       return;
     }
 
@@ -255,6 +288,8 @@ export default function AdminProducts() {
       const fd = new FormData();
       const payload = {
         ...form,
+        price: sellingPrice,
+        gstRate: pricing.gstRate,
         name: form.name.trim(),
         description: form.description.trim(),
         occasions: JSON.stringify(form.occasions),
@@ -308,8 +343,25 @@ export default function AdminProducts() {
     setForm({ ...form, [key]: value });
   };
 
-  const computedDiscount = getDiscountPercentage(form.mrp, form.price);
+  const pricingPreview = calculatePricing({
+    basePrice: form.basePrice,
+    discountPercentage: form.discountPercentage,
+    cgstRate: form.cgstRate,
+    sgstRate: form.sgstRate,
+    igstRate: form.igstRate,
+  });
+  const computedDiscount = getDiscountPercentage(form.mrp, pricingPreview.totalUnitPrice);
   const selectedBoughtProduct = boughtProducts.find((purchase) => purchase._id === form.sourcePurchase);
+  const existingOccasionOptions = Array.from(new Set(
+    products.flatMap((product) => product.occasions?.length ? product.occasions : (product.occasion ? [product.occasion] : []))
+      .map((occasion) => normalizeOccasionLabel(String(occasion || '')))
+      .filter(Boolean)
+  )).sort((a, b) => a.localeCompare(b));
+  const allOccasionOptions = Array.from(new Set([
+    ...existingOccasionOptions,
+    ...occasionOptions.map((occasion) => normalizeOccasionLabel(occasion)),
+    ...form.occasions.map((occasion) => normalizeOccasionLabel(occasion)),
+  ]));
   const toggleOccasion = (occasion) => {
     setForm((current) => ({
       ...current,
@@ -317,6 +369,20 @@ export default function AdminProducts() {
         ? current.occasions.filter((item) => item !== occasion)
         : [...current.occasions, occasion],
     }));
+  };
+  const addCustomOccasion = () => {
+    const normalizedOccasion = normalizeOccasionLabel(customOccasion);
+    if (!normalizedOccasion) {
+      toast.error('Enter an occasion name');
+      return;
+    }
+    setForm((current) => ({
+      ...current,
+      occasions: current.occasions.includes(normalizedOccasion)
+        ? current.occasions
+        : [...current.occasions, normalizedOccasion],
+    }));
+    setCustomOccasion('');
   };
 
   return (
@@ -363,7 +429,12 @@ export default function AdminProducts() {
             </div>
           )}
           <input type="number" value={form.mrp} onChange={setField('mrp')} min="0" placeholder="MRP Price *" className="input-field" />
-          <input type="number" value={form.price} onChange={setField('price')} min="0" placeholder="Selling Price *" className="input-field" />
+          <input type="number" value={form.basePrice} onChange={setField('basePrice')} min="0" placeholder="Price *" className="input-field" />
+          <input type="number" value={form.discountPercentage} onChange={setField('discountPercentage')} min="0" max="100" step="0.01" placeholder="Discount %" className="input-field" />
+          <input type="number" value={form.cgstRate} onChange={setField('cgstRate')} min="0" max="100" step="0.01" placeholder="CGST %" className="input-field" />
+          <input type="number" value={form.sgstRate} onChange={setField('sgstRate')} min="0" max="100" step="0.01" placeholder="SGST %" className="input-field" />
+          <input type="number" value={form.igstRate} onChange={setField('igstRate')} min="0" max="100" step="0.01" placeholder="IGST %" className="input-field" />
+          <input type="number" value={form.basePrice === '' ? '' : pricingPreview.totalUnitPrice} readOnly placeholder="Total" className="input-field bg-gray-50 font-semibold text-gray-700" />
           <input
             type="number"
             value={form.stock}
@@ -382,6 +453,9 @@ export default function AdminProducts() {
           />
           <input value={form.sku} onChange={setField('sku')} placeholder="SKU" className="input-field self-start" />
           <textarea value={form.description} onChange={setField('description')} rows={3} placeholder="Description *" className="input-field resize-none xl:col-span-3" />
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 xl:col-span-4">
+            Calculation: Price Rs.{Number(form.basePrice || 0).toFixed(2)} - Discount Rs.{pricingPreview.discountAmountPerUnit.toFixed(2)} + CGST Rs.{pricingPreview.cgstAmountPerUnit.toFixed(2)} + SGST Rs.{pricingPreview.sgstAmountPerUnit.toFixed(2)} + IGST Rs.{pricingPreview.igstAmountPerUnit.toFixed(2)} = Total Rs.{pricingPreview.totalUnitPrice.toFixed(2)}
+          </div>
           <div className="xl:col-span-1 self-start">
             <label className="mb-1.5 block text-sm font-medium text-gray-700">Images</label>
             <input
@@ -397,7 +471,7 @@ export default function AdminProducts() {
             <label className="mb-2 block text-sm font-medium text-gray-700">Occasions</label>
             <div className="rounded-2xl border border-gray-200 bg-gray-50/70 p-3">
               <div className="flex flex-wrap gap-2">
-                {occasionOptions.map((occasion) => {
+                {allOccasionOptions.map((occasion) => {
                   const selected = form.occasions.includes(occasion);
                   return (
                     <button
@@ -415,8 +489,25 @@ export default function AdminProducts() {
                   );
                 })}
               </div>
+              <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+                <input
+                  value={customOccasion}
+                  onChange={(e) => setCustomOccasion(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      addCustomOccasion();
+                    }
+                  }}
+                  placeholder="Add new occasion"
+                  className="input-field"
+                />
+                <button type="button" onClick={addCustomOccasion} className="btn-outline whitespace-nowrap">
+                  Add Occasion
+                </button>
+              </div>
               <p className="mt-2 text-xs text-gray-400">
-                Choose all occasions where this product should appear. This is better than a single occasion because one gift can suit multiple events.
+                Choose from existing occasions or add a new one here. One product can belong to multiple occasions.
               </p>
             </div>
           </div>

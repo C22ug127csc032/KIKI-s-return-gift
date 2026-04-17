@@ -24,7 +24,19 @@ function InputWrap({ icon: Icon, label, required, children }) {
 }
 
 export default function CheckoutPage() {
-  const { items, subtotal, clearCart } = useCart();
+  const {
+    items,
+    taxableSubtotal,
+    gstTotal,
+    cgstTotal,
+    sgstTotal,
+    igstTotal,
+    grandTotal,
+    actualTotal,
+    discountTotal,
+    discountPercentage,
+    clearCart,
+  } = useCart();
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -208,6 +220,9 @@ export default function CheckoutPage() {
                           {hasDiscount ? (
                             <span className="ml-1.5 line-through">Rs.{Number(item.originalPrice).toFixed(2)}</span>
                           ) : null}
+                          {Number(item.gstRate || 0) > 0 ? (
+                            <span className="ml-1.5 text-emerald-600">incl. GST {Number(item.gstRate)}%</span>
+                          ) : null}
                         </div>
                         <p className="text-sm font-bold text-gray-800 mt-1 sm:hidden">
                           Rs.{(item.price * item.quantity).toFixed(2)}
@@ -223,14 +238,44 @@ export default function CheckoutPage() {
                   Orders are confirmed through WhatsApp only. Payment instructions will be shown on the next page after the WhatsApp step.
                 </div>
                 <div className="border-t border-gray-100 pt-4 space-y-2 mb-5">
+                  {discountTotal > 0 ? (
+                    <>
+                      <div className="flex justify-between text-sm text-gray-500">
+                        <span>MRP Total</span><span className="font-semibold text-gray-800">Rs.{actualTotal.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-gray-500">
+                        <span>Discount ({discountPercentage.toFixed(2).replace(/\.?0+$/, '')}%)</span><span className="font-semibold text-emerald-600">- Rs.{discountTotal.toFixed(2)}</span>
+                      </div>
+                    </>
+                  ) : null}
                   <div className="flex justify-between text-sm text-gray-500">
-                    <span>Subtotal</span><span className="font-semibold text-gray-800">Rs.{subtotal.toFixed(2)}</span>
+                    <span>Taxable Amount</span><span className="font-semibold text-gray-800">Rs.{taxableSubtotal.toFixed(2)}</span>
                   </div>
+                  {cgstTotal > 0 ? (
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>CGST</span><span className="font-semibold text-gray-800">Rs.{cgstTotal.toFixed(2)}</span>
+                    </div>
+                  ) : null}
+                  {sgstTotal > 0 ? (
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>SGST</span><span className="font-semibold text-gray-800">Rs.{sgstTotal.toFixed(2)}</span>
+                    </div>
+                  ) : null}
+                  {igstTotal > 0 ? (
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>IGST</span><span className="font-semibold text-gray-800">Rs.{igstTotal.toFixed(2)}</span>
+                    </div>
+                  ) : null}
+                  {gstTotal > 0 ? (
+                    <div className="flex justify-between text-sm text-gray-500">
+                      <span>GST</span><span className="font-semibold text-gray-800">Rs.{gstTotal.toFixed(2)}</span>
+                    </div>
+                  ) : null}
                   <div className="flex justify-between text-sm text-gray-500">
                     <span>Shipping</span><span className="text-emerald-600 font-semibold text-xs">To be confirmed</span>
                   </div>
                   <div className="flex justify-between font-bold text-gray-900 text-base pt-2 border-t border-gray-100">
-                    <span>Total</span><span className="text-rose-600">Rs.{subtotal.toFixed(2)}</span>
+                    <span>Grand Total</span><span className="text-rose-600">Rs.{grandTotal.toFixed(2)}</span>
                   </div>
                 </div>
                 <motion.button

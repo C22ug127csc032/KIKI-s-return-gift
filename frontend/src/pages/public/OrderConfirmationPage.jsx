@@ -46,20 +46,30 @@ export default function OrderConfirmationPage() {
   );
   const orderTotals = useMemo(() => {
     const items = order?.items || [];
-    const total = items.reduce((sum, item) => {
+    const mrpTotal = items.reduce((sum, item) => {
       const quantity = Number(item.quantity || 0);
       const originalPrice = Number(item.originalPrice || item.price || 0);
       return sum + (originalPrice * quantity);
     }, 0);
-    const subTotal = Number(order?.subtotal || order?.totalAmount || 0);
-    const discount = Math.max(total - subTotal, 0);
-    const discountPercentage = total > 0 ? (discount / total) * 100 : 0;
+    const grandTotal = Number(order?.totalAmount || 0);
+    const taxableSubtotal = Number(order?.subtotal || Math.max(grandTotal - Number(order?.tax || 0), 0));
+    const gst = Number(order?.tax || Math.max(grandTotal - taxableSubtotal, 0));
+    const cgst = items.reduce((sum, item) => sum + Number(item.cgstAmount || 0), 0);
+    const sgst = items.reduce((sum, item) => sum + Number(item.sgstAmount || 0), 0);
+    const igst = items.reduce((sum, item) => sum + Number(item.igstAmount || 0), 0);
+    const discount = Math.max(mrpTotal - grandTotal, 0);
+    const discountPercentage = mrpTotal > 0 ? (discount / mrpTotal) * 100 : 0;
 
     return {
-      total: total || subTotal,
+      mrpTotal: mrpTotal || grandTotal,
       discount,
       discountPercentage: formatDiscountPercentage(discountPercentage),
-      subTotal,
+      taxableSubtotal,
+      gst,
+      cgst,
+      sgst,
+      igst,
+      grandTotal,
     };
   }, [order]);
 
@@ -188,23 +198,52 @@ export default function OrderConfirmationPage() {
                             {hasDiscount ? (
                               <span className="ml-1.5 line-through">Rs.{Number(item.originalPrice).toFixed(2)}</span>
                             ) : null}
+                            {Number(item.gstRate || 0) > 0 ? (
+                              <span className="text-emerald-600">incl. GST {Number(item.gstRate)}%</span>
+                            ) : null}
                           </div>
                         </div>
-                        <p className="text-sm font-bold text-gray-800 flex-shrink-0 self-start">Rs.{(item.price * item.quantity).toFixed(2)}</p>
+                        <p className="text-sm font-bold text-gray-800 flex-shrink-0 self-start">Rs.{Number(item.totalAmount || (item.price * item.quantity)).toFixed(2)}</p>
                       </div>
                     )})}
                     <div className="border-t border-gray-100 pt-3 space-y-2">
                       <div className="flex justify-between text-sm text-gray-500">
-                        <span>Total</span>
-                        <span>{formatOrderAmount(orderTotals.total)}</span>
+                        <span>MRP Total</span>
+                        <span>{formatOrderAmount(orderTotals.mrpTotal)}</span>
                       </div>
                       <div className="flex justify-between text-sm text-gray-500">
                         <span>Discount ({orderTotals.discountPercentage}%)</span>
                         <span>- {formatOrderAmount(orderTotals.discount)}</span>
                       </div>
+                      <div className="flex justify-between text-sm text-gray-500">
+                        <span>Taxable Amount</span>
+                        <span>{formatOrderAmount(orderTotals.taxableSubtotal)}</span>
+                      </div>
+                      {orderTotals.cgst > 0 ? (
+                        <div className="flex justify-between text-sm text-gray-500">
+                          <span>CGST</span>
+                          <span>{formatOrderAmount(orderTotals.cgst)}</span>
+                        </div>
+                      ) : null}
+                      {orderTotals.sgst > 0 ? (
+                        <div className="flex justify-between text-sm text-gray-500">
+                          <span>SGST</span>
+                          <span>{formatOrderAmount(orderTotals.sgst)}</span>
+                        </div>
+                      ) : null}
+                      {orderTotals.igst > 0 ? (
+                        <div className="flex justify-between text-sm text-gray-500">
+                          <span>IGST</span>
+                          <span>{formatOrderAmount(orderTotals.igst)}</span>
+                        </div>
+                      ) : null}
+                      <div className="flex justify-between text-sm text-gray-500">
+                        <span>GST</span>
+                        <span>{formatOrderAmount(orderTotals.gst)}</span>
+                      </div>
                       <div className="flex justify-between font-bold text-gray-800 text-sm">
-                        <span>Sub Total</span>
-                        <span className="text-rose-600">{formatOrderAmount(orderTotals.subTotal)}</span>
+                        <span>Grand Total</span>
+                        <span className="text-rose-600">{formatOrderAmount(orderTotals.grandTotal)}</span>
                       </div>
                     </div>
                   </div>
@@ -281,10 +320,6 @@ export default function OrderConfirmationPage() {
                   <div>
                     <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">Branch Name</p>
                     <p className="font-semibold text-gray-800">{paymentInfo?.bankBranch || 'Not set'}</p>
-                  </div>
-                  <div>
-                    <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">GST (%)</p>
-                    <p className="font-semibold text-gray-800">{paymentInfo?.gstPercentage ?? 0}</p>
                   </div>
                   <div>
                     <p className="text-xs uppercase tracking-wide text-gray-400 mb-1">GST Number</p>

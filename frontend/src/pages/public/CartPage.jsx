@@ -7,7 +7,20 @@ import { useCart } from '../../context/CartContext.jsx';
 import { EmptyState } from '../../components/ui/index.jsx';
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, subtotal, totalItems } = useCart();
+  const {
+    items,
+    removeItem,
+    updateQuantity,
+    taxableSubtotal,
+    gstTotal,
+    cgstTotal,
+    sgstTotal,
+    igstTotal,
+    grandTotal,
+    discountTotal,
+    discountPercentage,
+    totalItems,
+  } = useCart();
   const navigate = useNavigate();
 
   useEffect(() => { document.title = "Cart - KIKI'S Store"; }, []);
@@ -53,6 +66,9 @@ export default function CartPage() {
                         {item.originalPrice > item.price && (
                           <span className="ml-2 text-xs text-gray-300 line-through">Rs.{item.originalPrice}</span>
                         )}
+                        {Number(item.gstRate || 0) > 0 ? (
+                          <span className="ml-2 text-xs text-emerald-600">incl. GST {Number(item.gstRate)}%</span>
+                        ) : null}
                       </div>
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-3">
                         <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50 w-fit">
@@ -84,22 +100,52 @@ export default function CartPage() {
               <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 shadow-sm lg:sticky lg:top-24">
                 <h2 className="font-display text-xl font-bold text-gray-900 mb-5 text-center sm:text-left">Order Summary</h2>
                 <div className="space-y-3 mb-5">
+                  {discountTotal > 0 ? (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">Discount ({discountPercentage.toFixed(2).replace(/\.?0+$/, '')}%)</span>
+                      <span className="font-semibold text-emerald-600">- Rs.{discountTotal.toFixed(2)}</span>
+                    </div>
+                  ) : null}
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Subtotal ({totalItems} {totalItems === 1 ? 'item' : 'items'})</span>
-                    <span className="font-semibold text-gray-800">Rs.{subtotal.toFixed(2)}</span>
+                    <span className="text-gray-500">Taxable Amount ({totalItems} {totalItems === 1 ? 'item' : 'items'})</span>
+                    <span className="font-semibold text-gray-800">Rs.{taxableSubtotal.toFixed(2)}</span>
                   </div>
+                  {cgstTotal > 0 ? (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">CGST</span>
+                      <span className="font-semibold text-gray-800">Rs.{cgstTotal.toFixed(2)}</span>
+                    </div>
+                  ) : null}
+                  {sgstTotal > 0 ? (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">SGST</span>
+                      <span className="font-semibold text-gray-800">Rs.{sgstTotal.toFixed(2)}</span>
+                    </div>
+                  ) : null}
+                  {igstTotal > 0 ? (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">IGST</span>
+                      <span className="font-semibold text-gray-800">Rs.{igstTotal.toFixed(2)}</span>
+                    </div>
+                  ) : null}
+                  {gstTotal > 0 ? (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-500">GST</span>
+                      <span className="font-semibold text-gray-800">Rs.{gstTotal.toFixed(2)}</span>
+                    </div>
+                  ) : null}
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Shipping</span>
                     <span className="text-emerald-600 font-semibold text-xs">To be confirmed</span>
                   </div>
-                  {subtotal >= 999 && (
+                  {grandTotal >= 999 && (
                     <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-2 rounded-xl border border-emerald-100">
                       <FiTag size={12} /> Free shipping unlocked <FiGift size={12} />
                     </div>
                   )}
                   <div className="border-t border-gray-100 pt-3 flex justify-between">
                     <span className="font-bold text-gray-900">Total</span>
-                    <span className="font-bold text-rose-600 text-lg">Rs.{subtotal.toFixed(2)}</span>
+                    <span className="font-bold text-rose-600 text-lg">Rs.{grandTotal.toFixed(2)}</span>
                   </div>
                 </div>
                 <button onClick={() => navigate('/checkout')}

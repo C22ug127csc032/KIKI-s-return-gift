@@ -252,8 +252,8 @@ export function AdminSuppliers() {
   };
 
   const handleSave = async () => {
-    if (!form.address.trim()) {
-      toast.error('Address is required');
+    if (!form.name.trim()) {
+      toast.error('Supplier name is required');
       return;
     }
     if (form.phone && !isValidPhone(form.phone)) {
@@ -338,10 +338,10 @@ export function AdminSuppliers() {
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
           <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Supplier Name *" className="input-field" />
-          <input value={form.phone} onChange={(e) => setForm({ ...form, phone: normalizePhone(e.target.value) })} placeholder="Mobile Number *" className="input-field" />
+          <input value={form.phone} onChange={(e) => setForm({ ...form, phone: normalizePhone(e.target.value) })} placeholder="Mobile Number" className="input-field" />
           <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email" className="input-field" />
           <input value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} placeholder="Contact Person" className="input-field" />
-          <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Address *" className="input-field xl:col-span-2" />
+          <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Address" className="input-field xl:col-span-2" />
           <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notes" className="input-field xl:col-span-2" />
           <div className="xl:col-span-4 flex flex-wrap items-center justify-end gap-4 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
             <button onClick={handleSave} disabled={saving} className="btn-primary min-w-[160px]">

@@ -7,7 +7,14 @@ import asyncHandler from '../utils/asyncHandler.js';
 import { sendResponse, sendPaginatedResponse } from '../utils/apiResponse.js';
 import { getPagination, buildSortQuery } from '../utils/pagination.js';
 import { generateOrderNumber, generateInvoiceNumber } from '../utils/generators.js';
-import { getProductMrp, getProductSellingPrice } from '../utils/pricing.js';
+import {
+  calculateLinePricing,
+  getProductGstRate,
+  getProductMrp,
+  getProductSellingPrice,
+  getProductTaxRates,
+  getTaxableAmountFromInclusive,
+} from '../utils/pricing.js';
 import { isValidEmail, isValidPhone, normalizeEmail, normalizePhone } from '../utils/validation.js';
 
 const formatMessageAmount = (value) => Number(value || 0).toFixed(2);
@@ -17,20 +24,30 @@ const formatDiscountPercentage = (value) => Number(value || 0)
   .replace(/\.?0+$/, '');
 
 const calculateOrderDiscountSummary = (order) => {
-  const actualTotal = order.items.reduce((sum, item) => {
+  const mrpTotal = order.items.reduce((sum, item) => {
     const quantity = Number(item.quantity || 0);
     const originalPrice = Number(item.originalPrice || item.price || 0);
     return sum + (originalPrice * quantity);
   }, 0);
-  const subTotal = Number(order.subtotal || order.totalAmount || 0);
-  const discount = Math.max(actualTotal - subTotal, 0);
-  const discountPercentage = actualTotal > 0 ? (discount / actualTotal) * 100 : 0;
+  const grandTotal = Number(order.totalAmount || 0);
+  const taxableSubtotal = Number(order.subtotal || Math.max(grandTotal - Number(order.tax || 0), 0));
+  const gst = Number(order.tax || Math.max(grandTotal - taxableSubtotal, 0));
+  const cgst = order.items.reduce((sum, item) => sum + Number(item.cgstAmount || 0), 0);
+  const sgst = order.items.reduce((sum, item) => sum + Number(item.sgstAmount || 0), 0);
+  const igst = order.items.reduce((sum, item) => sum + Number(item.igstAmount || 0), 0);
+  const discount = Math.max(mrpTotal - grandTotal, 0);
+  const discountPercentage = mrpTotal > 0 ? (discount / mrpTotal) * 100 : 0;
 
   return {
-    total: actualTotal || subTotal,
+    mrpTotal: mrpTotal || grandTotal,
     discount,
     discountPercentage: formatDiscountPercentage(discountPercentage),
-    subTotal,
+    taxableSubtotal,
+    gst,
+    cgst,
+    sgst,
+    igst,
+    grandTotal,
   };
 };
 
@@ -38,9 +55,17 @@ const buildWhatsAppMessage = (order, settings) => {
   const totals = calculateOrderDiscountSummary(order);
   const itemsText = order.items
     .map((i) => {
-      const baseLine = `- ${i.name} x${i.quantity} @ Rs.${i.price}`;
+      const lineTotal = Number(i.totalAmount || (Number(i.price || 0) * Number(i.quantity || 0)));
+      const calculationParts = [
+        `Price Rs.${formatMessageAmount(i.basePrice || i.price)}`,
+        `Discount Rs.${formatMessageAmount(i.discountAmount || 0)}`,
+        `CGST Rs.${formatMessageAmount(i.cgstAmount || 0)}`,
+        `SGST Rs.${formatMessageAmount(i.sgstAmount || 0)}`,
+        `IGST Rs.${formatMessageAmount(i.igstAmount || 0)}`,
+      ];
+      const baseLine = `- ${i.name} x${i.quantity}: ${calculationParts.join(', ')} => Total Rs.${formatMessageAmount(lineTotal)}`;
       return i.originalPrice && Number(i.originalPrice) > Number(i.price)
-        ? `${baseLine} (was Rs.${i.originalPrice})`
+        ? `${baseLine} (was Rs.${formatMessageAmount(i.originalPrice)})`
         : baseLine;
     })
     .join('\n');
@@ -51,9 +76,14 @@ const buildWhatsAppMessage = (order, settings) => {
     `Phone: ${order.customerPhone}\n` +
     `Address: ${order.customerAddress}\n\n` +
     `*Items:*\n${itemsText}\n\n` +
-    `Total: Rs.${formatMessageAmount(totals.total)}\n` +
+    `MRP Total: Rs.${formatMessageAmount(totals.mrpTotal)}\n` +
     `Discount (${totals.discountPercentage}%): - Rs.${formatMessageAmount(totals.discount)}\n` +
-    `*Sub Total: Rs.${formatMessageAmount(totals.subTotal)}*\n\n` +
+    `Taxable Amount: Rs.${formatMessageAmount(totals.taxableSubtotal)}\n` +
+    `CGST: Rs.${formatMessageAmount(totals.cgst)}\n` +
+    `SGST: Rs.${formatMessageAmount(totals.sgst)}\n` +
+    `IGST: Rs.${formatMessageAmount(totals.igst)}\n` +
+    `GST: Rs.${formatMessageAmount(totals.gst)}\n` +
+    `*Grand Total: Rs.${formatMessageAmount(totals.grandTotal)}*\n\n` +
     (order.customerNotes ? `Notes: ${order.customerNotes}\n\n` : '') +
     `Please confirm this order. Thank you!`;
 };
@@ -80,6 +110,8 @@ export const createOrder = asyncHandler(async (req, res) => {
 
   const orderItems = [];
   let subtotal = 0;
+  let tax = 0;
+  let totalAmount = 0;
   for (const item of items) {
     const product = await Product.findById(item.product);
     if (!product || !product.isActive) throw new ApiError(400, `Product not found: ${item.product}`);
@@ -87,21 +119,43 @@ export const createOrder = asyncHandler(async (req, res) => {
       throw new ApiError(400, `Insufficient stock for ${product.name}. Available: ${product.stock}`);
     }
     const sellingPrice = getProductSellingPrice(product);
+    const taxRates = getProductTaxRates(product);
+    const basePrice = Number(product.basePrice ?? getTaxableAmountFromInclusive(sellingPrice, getProductGstRate(product)));
+    const pricing = calculateLinePricing({
+      basePrice,
+      discountPercentage: product.discountPercentage || 0,
+      cgstRate: taxRates.cgstRate,
+      sgstRate: taxRates.sgstRate,
+      igstRate: taxRates.igstRate,
+      quantity: item.quantity,
+    });
     orderItems.push({
       product: product._id,
       name: product.name,
+      basePrice: pricing.basePrice,
+      discountPercentage: pricing.discountPercentage,
+      discountAmount: pricing.discountAmount,
       price: sellingPrice,
       originalPrice: getProductMrp(product),
+      gstRate: pricing.gstRate,
+      cgstRate: pricing.cgstRate,
+      sgstRate: pricing.sgstRate,
+      igstRate: pricing.igstRate,
+      taxableAmount: pricing.taxableAmount,
+      gstAmount: pricing.gstAmount,
+      cgstAmount: pricing.cgstAmount,
+      sgstAmount: pricing.sgstAmount,
+      igstAmount: pricing.igstAmount,
+      totalAmount: pricing.totalAmount,
       quantity: item.quantity,
       image: product.images?.[0]?.url || '',
     });
-    subtotal += sellingPrice * item.quantity;
+    subtotal += pricing.taxableAmount;
+    tax += pricing.gstAmount;
+    totalAmount += pricing.totalAmount;
   }
 
   const settings = await AppSetting.findOne();
-  const taxRate = settings?.gstPercentage || 0;
-  const tax = Math.round(subtotal * taxRate / 100 * 100) / 100;
-  const totalAmount = subtotal + tax;
 
   const order = await Order.create({
     orderNumber: generateOrderNumber(),
@@ -112,9 +166,9 @@ export const createOrder = asyncHandler(async (req, res) => {
     customerPhone,
     customerAddress,
     items: orderItems,
-    subtotal,
-    tax,
-    totalAmount,
+    subtotal: Number(subtotal.toFixed(2)),
+    tax: Number(tax.toFixed(2)),
+    totalAmount: Number(totalAmount.toFixed(2)),
     source: 'whatsapp',
     customerNotes,
   });
