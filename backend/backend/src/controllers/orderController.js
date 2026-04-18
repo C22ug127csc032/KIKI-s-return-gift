@@ -57,16 +57,13 @@ const buildWhatsAppMessage = (order, settings) => {
     .map((i) => {
       const lineTotal = Number(i.totalAmount || (Number(i.price || 0) * Number(i.quantity || 0)));
       const calculationParts = [
-        `Price Rs.${formatMessageAmount(i.basePrice || i.price)}`,
+        `MRP Rs.${formatMessageAmount(i.originalPrice || i.price)}`,
         `Discount Rs.${formatMessageAmount(i.discountAmount || 0)}`,
         `CGST Rs.${formatMessageAmount(i.cgstAmount || 0)}`,
         `SGST Rs.${formatMessageAmount(i.sgstAmount || 0)}`,
         `IGST Rs.${formatMessageAmount(i.igstAmount || 0)}`,
       ];
-      const baseLine = `- ${i.name} x${i.quantity}: ${calculationParts.join(', ')} => Total Rs.${formatMessageAmount(lineTotal)}`;
-      return i.originalPrice && Number(i.originalPrice) > Number(i.price)
-        ? `${baseLine} (was Rs.${formatMessageAmount(i.originalPrice)})`
-        : baseLine;
+      return `- ${i.name} x${i.quantity}: ${calculationParts.join(', ')} => Total Rs.${formatMessageAmount(lineTotal)}`;
     })
     .join('\n');
 

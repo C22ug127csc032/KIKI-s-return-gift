@@ -10,6 +10,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import ProductCard from '../../components/shop/ProductCard.jsx';
 import { PageLoader } from '../../components/ui/index.jsx';
 import { getDiscountPercentage, getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
+import { getDisplayProductName } from '../../utils/productName.js';
 import { buildProductNotifyUrl, useStoreWhatsappNumber } from '../../hooks/useStoreWhatsappNumber.js';
 
 export default function ProductDetailPage() {
@@ -29,7 +30,7 @@ export default function ProductDetailPage() {
       setData(r.data.data);
       setQty(1);
       setSelectedImg(0);
-      document.title = `${r.data.data.product.name} - KIKI'S Store`;
+      document.title = `${getDisplayProductName(r.data.data.product)} - KIKI'S Store`;
     }).catch(() => {}).finally(() => setLoading(false));
     window.scrollTo(0, 0);
   }, [slug]);
@@ -47,6 +48,7 @@ export default function ProductDetailPage() {
   }
 
   const { product, related } = data;
+  const displayName = getDisplayProductName(product);
   const image = product.images?.[selectedImg]?.url;
   const sellingPrice = product.discountedPrice ?? getSellingPrice(product);
   const mrpPrice = getMrpPrice(product);
@@ -56,7 +58,7 @@ export default function ProductDetailPage() {
   const isLowStock = product.stock <= product.lowStockThreshold && product.stock > 0;
   const productOccasions = product.occasions?.length ? product.occasions : (product.occasion ? [product.occasion] : []);
   const notifyHref = buildProductNotifyUrl(whatsapp, product, `/product/${product.slug || product._id}`);
-  const enquireHref = `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hi! I'm interested in "${product.name}" (Rs.${sellingPrice}). Can I get more details?`)}`;
+  const enquireHref = `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hi! I'm interested in "${displayName}" (Rs.${sellingPrice}). Can I get more details?`)}`;
 
   const guarantees = [
     { icon: FiTruck, label: 'Fast Delivery' },
@@ -88,14 +90,14 @@ export default function ProductDetailPage() {
             </>
           ) : null}
           <span>/</span>
-          <span className="text-gray-600 truncate max-w-[160px]">{product.name}</span>
+          <span className="text-gray-600 truncate max-w-[160px]">{displayName}</span>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1fr)] gap-8 xl:gap-10 items-start">
           <motion.div initial={{ opacity: 0, x: -16 }} animate={{ opacity: 1, x: 0 }}>
             <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden shadow-sm aspect-[0.95/0.82] max-h-[520px] flex items-center justify-center p-4 sm:p-6 product-img-wrap">
               {image ? (
-                <img src={image} alt={product.name} loading="eager" className="max-w-[82%] max-h-[82%] object-contain" />
+                <img src={image} alt={displayName} loading="eager" className="max-w-[82%] max-h-[82%] object-contain" />
               ) : (
                 <div className="flex items-center justify-center text-rose-200">
                   <RiGiftLine size={72} />
@@ -129,7 +131,7 @@ export default function ProductDetailPage() {
             ) : null}
 
             <h1 className="font-display text-3xl lg:text-4xl font-bold text-gray-900 leading-tight mb-3">
-              {product.name}
+              {displayName}
             </h1>
 
             {productOccasions.length ? (

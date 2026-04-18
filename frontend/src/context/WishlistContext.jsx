@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import api from '../api/api.js';
+import { getDisplayProductName } from '../utils/productName.js';
 import { useAuth } from './AuthContext.jsx';
 
 const WishlistContext = createContext(null);
@@ -41,7 +42,7 @@ export const WishlistProvider = ({ children }) => {
     try {
       const res = await api.post(`/auth/wishlist/${product._id}`);
       setItems(res.data.data || []);
-      toast.success(`${product.name} added to wishlist`);
+      toast.success(`${getDisplayProductName(product)} added to wishlist`);
       return true;
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed to add to wishlist');
@@ -65,7 +66,7 @@ export const WishlistProvider = ({ children }) => {
   const toggleWishlist = async (product) => {
     if (!user?._id) return false;
     if (wishlistIds.has(product._id)) {
-      return removeFromWishlist(product._id, product.name);
+      return removeFromWishlist(product._id, getDisplayProductName(product));
     }
     return addToWishlist(product);
   };

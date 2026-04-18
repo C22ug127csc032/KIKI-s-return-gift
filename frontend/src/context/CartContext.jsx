@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { calculatePricing, getGstAmount, getGstRate, getMrpPrice, getSellingPrice, getTaxRates, getTaxableAmount } from '../utils/pricing.js';
+import { getDisplayProductName } from '../utils/productName.js';
 import { normalizeAssetUrls } from '../utils/assetUrl.js';
 import { useAuth } from './AuthContext.jsx';
 
@@ -33,6 +34,7 @@ export const CartProvider = ({ children }) => {
 
   const normalizeCartItem = (product, quantity) => {
     const normalizedProduct = normalizeAssetUrls(product);
+    const displayName = getDisplayProductName(product);
     const sellingPrice = product.discountedPrice ?? getSellingPrice(product);
     const taxRates = getTaxRates(product);
     const pricing = calculatePricing({
@@ -45,6 +47,7 @@ export const CartProvider = ({ children }) => {
     });
     return {
       ...normalizedProduct,
+      name: displayName,
       quantity,
       basePrice: pricing.basePrice,
       discountPercentage: pricing.discountPercentage,
@@ -82,7 +85,7 @@ export const CartProvider = ({ children }) => {
         return prev;
       }
       const normalizedItem = normalizeCartItem(product, quantity);
-      toast.success(`${product.name} added to cart!`);
+      toast.success(`${getDisplayProductName(product)} added to cart!`);
       return [...prev, normalizedItem];
     });
   };

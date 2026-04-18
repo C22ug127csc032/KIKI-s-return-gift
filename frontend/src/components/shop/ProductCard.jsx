@@ -6,6 +6,7 @@ import { useCart } from '../../context/CartContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useWishlist } from '../../context/WishlistContext.jsx';
 import { getDiscountPercentage, getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
+import { getDisplayProductName } from '../../utils/productName.js';
 import { buildProductNotifyUrl, useStoreWhatsappNumber } from '../../hooks/useStoreWhatsappNumber.js';
 
 export default function ProductCard({ product, index = 0 }) {
@@ -16,6 +17,7 @@ export default function ProductCard({ product, index = 0 }) {
   const location = useLocation();
   const productPath = `/product/${product.slug || product._id}`;
   const image = product.images?.[0]?.url;
+  const displayName = getDisplayProductName(product);
   const sellingPrice = product.discountedPrice ?? getSellingPrice(product);
   const mrpPrice = getMrpPrice(product);
   const discountPercentage = getDiscountPercentage(product);
@@ -59,7 +61,7 @@ export default function ProductCard({ product, index = 0 }) {
     >
       <Link to={productPath} className="block relative product-img-wrap bg-gray-50" style={{ aspectRatio: '1/1' }}>
         {image ? (
-          <img src={image} alt={product.name} loading="lazy" decoding="async" className="w-full h-full object-contain p-3" />
+          <img src={image} alt={displayName} loading="lazy" decoding="async" className="w-full h-full object-contain p-3" />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-rose-200">
             <FiGift size={48} />
@@ -102,7 +104,7 @@ export default function ProductCard({ product, index = 0 }) {
         ) : null}
         <Link to={productPath}>
           <h3 className="font-semibold text-gray-800 text-xs sm:text-sm leading-snug mb-2.5 line-clamp-2 hover:text-rose-600 transition-colors">
-            {product.name}
+            {displayName}
           </h3>
         </Link>
 

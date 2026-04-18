@@ -89,18 +89,28 @@ export const getProductGstRate = (product) => {
 };
 
 export const getProductSellingPrice = (product) => {
+  if (product?.mrp !== undefined && product?.mrp !== null && product?.mrp !== '') {
+    const pricing = calculateLinePricing({
+      basePrice: product.mrp,
+      discountPercentage: product.discountPercentage,
+      cgstRate: 0,
+      sgstRate: 0,
+      igstRate: 0,
+    });
+    return pricing.taxableUnitPrice;
+  }
+  if (product?.price !== undefined && product?.price !== null && product?.price !== '') {
+    return roundCurrency(product?.price || 0);
+  }
   if (product?.basePrice !== undefined && product?.basePrice !== null && product?.basePrice !== '') {
     const pricing = calculateLinePricing({
       basePrice: product.basePrice,
       discountPercentage: product.discountPercentage,
-      cgstRate: product.cgstRate,
-      sgstRate: product.sgstRate,
-      igstRate: product.igstRate,
+      cgstRate: 0,
+      sgstRate: 0,
+      igstRate: 0,
     });
-    return pricing.totalUnitPrice;
-  }
-  if (product?.mrp !== undefined && product?.mrp !== null) {
-    return roundCurrency(product?.price || 0);
+    return pricing.taxableUnitPrice;
   }
 
   const basePrice = Number(product?.price || 0);
@@ -109,14 +119,14 @@ export const getProductSellingPrice = (product) => {
 };
 
 export const getProductDiscountPercentage = (product) => {
-  if (product?.basePrice !== undefined && product?.basePrice !== null && product?.basePrice !== '') {
-    return Math.round(getSafeRate(product?.discountPercentage || 0));
-  }
   if (product?.mrp !== undefined && product?.mrp !== null) {
     const mrp = Number(product?.mrp || 0);
-    const sellingPrice = Number(product?.price || 0);
+    const sellingPrice = Number(getProductSellingPrice(product) || 0);
     if (mrp <= 0 || sellingPrice >= mrp) return 0;
     return Math.round(((mrp - sellingPrice) / mrp) * 100);
+  }
+  if (product?.basePrice !== undefined && product?.basePrice !== null && product?.basePrice !== '') {
+    return Math.round(getSafeRate(product?.discountPercentage || 0));
   }
 
   return Math.round(Math.min(Math.max(Number(product?.discountPercentage || 0), 0), 100));

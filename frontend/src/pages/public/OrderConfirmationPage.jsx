@@ -198,9 +198,6 @@ export default function OrderConfirmationPage() {
                             {hasDiscount ? (
                               <span className="ml-1.5 line-through">Rs.{Number(item.originalPrice).toFixed(2)}</span>
                             ) : null}
-                            {Number(item.gstRate || 0) > 0 ? (
-                              <span className="text-emerald-600">incl. GST {Number(item.gstRate)}%</span>
-                            ) : null}
                           </div>
                         </div>
                         <p className="text-sm font-bold text-gray-800 flex-shrink-0 self-start">Rs.{Number(item.totalAmount || (item.price * item.quantity)).toFixed(2)}</p>

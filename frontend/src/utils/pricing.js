@@ -99,17 +99,26 @@ export const getGstRate = (productOrRate) => {
 
 export const getSellingPrice = (productOrPrice, discountPercentage = 0) => {
   if (typeof productOrPrice === 'object' && productOrPrice !== null) {
+    if (productOrPrice.mrp !== undefined && productOrPrice.mrp !== null && productOrPrice.mrp !== '') {
+      return calculatePricing({
+        basePrice: productOrPrice.mrp,
+        discountPercentage: productOrPrice.discountPercentage,
+        cgstRate: 0,
+        sgstRate: 0,
+        igstRate: 0,
+      }).taxableUnitPrice;
+    }
+    if (productOrPrice.price !== undefined && productOrPrice.price !== null && productOrPrice.price !== '') {
+      return roundCurrency(productOrPrice.price || 0);
+    }
     if (productOrPrice.basePrice !== undefined && productOrPrice.basePrice !== null && productOrPrice.basePrice !== '') {
       return calculatePricing({
         basePrice: productOrPrice.basePrice,
         discountPercentage: productOrPrice.discountPercentage,
-        cgstRate: productOrPrice.cgstRate,
-        sgstRate: productOrPrice.sgstRate,
-        igstRate: productOrPrice.igstRate,
-      }).totalUnitPrice;
-    }
-    if (productOrPrice.mrp !== undefined && productOrPrice.mrp !== null && productOrPrice.mrp !== '') {
-      return roundCurrency(productOrPrice.price || 0);
+        cgstRate: 0,
+        sgstRate: 0,
+        igstRate: 0,
+      }).taxableUnitPrice;
     }
 
     const basePrice = Number(productOrPrice.price || 0);
@@ -124,14 +133,14 @@ export const getSellingPrice = (productOrPrice, discountPercentage = 0) => {
 
 export const getDiscountPercentage = (productOrMrp, maybeSellingPrice = 0) => {
   if (typeof productOrMrp === 'object' && productOrMrp !== null) {
-    if (productOrMrp.basePrice !== undefined && productOrMrp.basePrice !== null && productOrMrp.basePrice !== '') {
-      return Math.round(getSafeRate(productOrMrp.discountPercentage || 0));
-    }
     if (productOrMrp.mrp !== undefined && productOrMrp.mrp !== null && productOrMrp.mrp !== '') {
       const mrp = Number(productOrMrp.mrp || 0);
-      const sellingPrice = Number(productOrMrp.price || 0);
+      const sellingPrice = Number(getSellingPrice(productOrMrp) || 0);
       if (mrp <= 0 || sellingPrice >= mrp) return 0;
       return Math.round(((mrp - sellingPrice) / mrp) * 100);
+    }
+    if (productOrMrp.basePrice !== undefined && productOrMrp.basePrice !== null && productOrMrp.basePrice !== '') {
+      return Math.round(getSafeRate(productOrMrp.discountPercentage || 0));
     }
 
     return Math.round(Math.min(Math.max(Number(productOrMrp.discountPercentage || 0), 0), 100));

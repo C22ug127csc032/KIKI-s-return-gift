@@ -6,11 +6,11 @@ import { EmptyState, PageLoader, Pagination } from '../../components/ui/index.js
 import { calculatePricing, getDiscountPercentage, getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
 
 const emptyForm = {
+  sourceType: 'purchase',
   sourcePurchase: '',
   name: '',
   description: '',
   mrp: '',
-  basePrice: '',
   price: '',
   discountPercentage: '',
   cgstRate: '',
@@ -174,7 +174,7 @@ export default function AdminProducts() {
   }));
   const boughtProductOptions = boughtProducts.map((purchase) => ({
     value: purchase._id,
-    label: `${purchase.productName}${purchase.supplier?.name ? ` - ${purchase.supplier.name}` : ''}`,
+    label: purchase.productName,
   }));
 
   useEffect(() => {
@@ -206,10 +206,10 @@ export default function AdminProducts() {
   const openEdit = (product) => {
     setEditProduct(product);
     setForm({
+      sourceType: product.sourcePurchase?._id ? 'purchase' : 'manual',
       name: product.name,
       description: product.description,
       mrp: product.mrp ?? product.price,
-      basePrice: product.basePrice ?? product.price,
       price: product.price,
       discountPercentage: product.discountPercentage ?? '',
       cgstRate: product.cgstRate ?? '',
@@ -233,18 +233,18 @@ export default function AdminProducts() {
 
   const handleSave = async () => {
     const mrp = Number(form.mrp || 0);
-    const basePrice = Number(form.basePrice || 0);
     const stock = Number(form.stock);
+    const isManualEntry = !editProduct && form.sourceType === 'manual';
     const pricing = calculatePricing({
-      basePrice,
+      basePrice: mrp,
       discountPercentage: form.discountPercentage,
       cgstRate: form.cgstRate,
       sgstRate: form.sgstRate,
       igstRate: form.igstRate,
     });
-    const sellingPrice = pricing.totalUnitPrice;
+    const sellingPrice = Math.round(pricing.taxableUnitPrice);
 
-    if (!editProduct && !form.sourcePurchase) {
+    if (!editProduct && !isManualEntry && !form.sourcePurchase) {
       toast.error('Please select a bought product first');
       return;
     }
@@ -264,20 +264,16 @@ export default function AdminProducts() {
       return;
     }
 
-    if (Number.isNaN(stock) || stock < 0) {
+    if ((editProduct || isManualEntry) && (Number.isNaN(stock) || stock < 0)) {
       toast.error('Enter a valid stock quantity');
       return;
     }
 
-    if (!basePrice || basePrice < 0) {
-      toast.error('Enter a valid price');
+    if (!mrp || mrp < 0) {
+      toast.error('Enter a valid MRP');
       return;
     }
 
-    if (sellingPrice > mrp) {
-      toast.error('Selling price cannot be greater than MRP');
-      return;
-    }
     if ([form.discountPercentage, form.cgstRate, form.sgstRate, form.igstRate].some((value) => !Number.isFinite(Number(value)) || Number(value) < 0 || Number(value) > 100)) {
       toast.error('Discount and tax rates must be between 0 and 100');
       return;
@@ -288,6 +284,7 @@ export default function AdminProducts() {
       const fd = new FormData();
       const payload = {
         ...form,
+        sourcePurchase: isManualEntry ? '' : form.sourcePurchase,
         price: sellingPrice,
         gstRate: pricing.gstRate,
         name: form.name.trim(),
@@ -344,13 +341,13 @@ export default function AdminProducts() {
   };
 
   const pricingPreview = calculatePricing({
-    basePrice: form.basePrice,
+    basePrice: form.mrp,
     discountPercentage: form.discountPercentage,
     cgstRate: form.cgstRate,
     sgstRate: form.sgstRate,
     igstRate: form.igstRate,
   });
-  const computedDiscount = getDiscountPercentage(form.mrp, pricingPreview.totalUnitPrice);
+  const roundedCurrentPrice = Math.round(pricingPreview.totalUnitPrice || 0);
   const selectedBoughtProduct = boughtProducts.find((purchase) => purchase._id === form.sourcePurchase);
   const existingOccasionOptions = Array.from(new Set(
     products.flatMap((product) => product.occasions?.length ? product.occasions : (product.occasion ? [product.occasion] : []))
@@ -407,6 +404,39 @@ export default function AdminProducts() {
           {editProduct ? (
             <input value={form.name} onChange={setField('name')} placeholder="Product Name *" className="input-field xl:col-span-2" />
           ) : (
+            <>
+              <div className="xl:col-span-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {[
+                    { value: 'purchase', label: 'From Purchase', note: 'Link a bought product and use its stock.' },
+                    { value: 'manual', label: 'Manual Entry', note: 'Create a catalog product without a purchase record.' },
+                  ].map((option) => {
+                    const selected = form.sourceType === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        onClick={() => setForm({
+                          ...form,
+                          sourceType: option.value,
+                          sourcePurchase: option.value === 'purchase' ? form.sourcePurchase : '',
+                          name: option.value === 'purchase' ? form.name : '',
+                          stock: option.value === 'purchase' ? form.stock : '',
+                        })}
+                        className={`rounded-2xl border px-4 py-3 text-left transition ${
+                          selected
+                            ? 'border-brand-500 bg-brand-50 shadow-sm'
+                            : 'border-gray-200 bg-white hover:border-brand-300 hover:bg-brand-50/40'
+                        }`}
+                      >
+                        <div className="text-sm font-semibold text-gray-900">{option.label}</div>
+                        <p className="mt-1 text-xs text-gray-500">{option.note}</p>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+              {form.sourceType === 'purchase' ? (
             <div className="xl:col-span-2">
               <SearchableSelectField
                 options={boughtProductOptions}
@@ -416,6 +446,7 @@ export default function AdminProducts() {
                   setForm({
                     ...form,
                     sourcePurchase,
+                    sourceType: 'purchase',
                     name: selected?.productName || '',
                     stock: selected?.quantity ?? '',
                   });
@@ -427,22 +458,25 @@ export default function AdminProducts() {
                 First buy the new product in Product Purchases, then select it here to add it to the user-facing product catalog.
               </p>
             </div>
+              ) : (
+                <input value={form.name} onChange={setField('name')} placeholder="Product Name *" className="input-field xl:col-span-2" />
+              )}
+            </>
           )}
-          <input type="number" value={form.mrp} onChange={setField('mrp')} min="0" placeholder="MRP Price *" className="input-field" />
-          <input type="number" value={form.basePrice} onChange={setField('basePrice')} min="0" placeholder="Price *" className="input-field" />
-          <input type="number" value={form.discountPercentage} onChange={setField('discountPercentage')} min="0" max="100" step="0.01" placeholder="Discount %" className="input-field" />
+          <input type="number" value={form.mrp} onChange={setField('mrp')} min="0" placeholder="MRP Price *" className="input-field max-w-full xl:max-w-[240px]" />
+          <input type="number" value={form.discountPercentage} onChange={setField('discountPercentage')} min="0" max="100" step="0.01" placeholder="Discount %" className="input-field max-w-full xl:max-w-[240px]" />
           <input type="number" value={form.cgstRate} onChange={setField('cgstRate')} min="0" max="100" step="0.01" placeholder="CGST %" className="input-field" />
           <input type="number" value={form.sgstRate} onChange={setField('sgstRate')} min="0" max="100" step="0.01" placeholder="SGST %" className="input-field" />
           <input type="number" value={form.igstRate} onChange={setField('igstRate')} min="0" max="100" step="0.01" placeholder="IGST %" className="input-field" />
-          <input type="number" value={form.basePrice === '' ? '' : pricingPreview.totalUnitPrice} readOnly placeholder="Total" className="input-field bg-gray-50 font-semibold text-gray-700" />
+          <input type="number" value={form.mrp === '' ? '' : roundedCurrentPrice} readOnly placeholder="Current Price" className="input-field bg-gray-50 font-semibold text-gray-700" />
           <input
             type="number"
             value={form.stock}
             onChange={setField('stock')}
             min="0"
             placeholder="Stock *"
-            disabled={!editProduct}
-            className={`input-field ${!editProduct ? 'cursor-not-allowed bg-gray-100 text-gray-400' : ''}`}
+            disabled={!editProduct && form.sourceType !== 'manual'}
+            className={`input-field ${!editProduct && form.sourceType !== 'manual' ? 'cursor-not-allowed bg-gray-100 text-gray-400' : ''}`}
           />
           <input type="number" value={form.lowStockThreshold} onChange={setField('lowStockThreshold')} min="0" placeholder="Stock Alert Level" className="input-field" />
           <SearchableSelectField
@@ -454,7 +488,7 @@ export default function AdminProducts() {
           <input value={form.sku} onChange={setField('sku')} placeholder="SKU" className="input-field self-start" />
           <textarea value={form.description} onChange={setField('description')} rows={3} placeholder="Description *" className="input-field resize-none xl:col-span-3" />
           <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 xl:col-span-4">
-            Calculation: Price Rs.{Number(form.basePrice || 0).toFixed(2)} - Discount Rs.{pricingPreview.discountAmountPerUnit.toFixed(2)} + CGST Rs.{pricingPreview.cgstAmountPerUnit.toFixed(2)} + SGST Rs.{pricingPreview.sgstAmountPerUnit.toFixed(2)} + IGST Rs.{pricingPreview.igstAmountPerUnit.toFixed(2)} = Total Rs.{pricingPreview.totalUnitPrice.toFixed(2)}
+            Calculation: MRP Rs.{Number(form.mrp || 0).toFixed(2)} - Discount Rs.{pricingPreview.discountAmountPerUnit.toFixed(2)} + GST Rs.{pricingPreview.gstAmountPerUnit.toFixed(2)} = Current Price Rs.{roundedCurrentPrice}
           </div>
           <div className="xl:col-span-1 self-start">
             <label className="mb-1.5 block text-sm font-medium text-gray-700">Images</label>
@@ -519,9 +553,6 @@ export default function AdminProducts() {
               Bought Qty: {selectedBoughtProduct.quantity} | Buy Rate: Rs.{Number(selectedBoughtProduct.purchasePrice || 0).toFixed(2)}
             </div>
           ) : null}
-          <div className="rounded-xl border border-emerald-100 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700">
-            Auto Offer: {computedDiscount}% OFF
-          </div>
           <label className="flex items-center gap-2 text-sm text-gray-700">
             <input type="checkbox" checked={form.featured} onChange={setField('featured')} className="h-4 w-4 rounded text-brand-500" />
             Featured product

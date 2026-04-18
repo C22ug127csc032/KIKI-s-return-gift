@@ -66,9 +66,6 @@ export default function CartPage() {
                         {item.originalPrice > item.price && (
                           <span className="ml-2 text-xs text-gray-300 line-through">Rs.{item.originalPrice}</span>
                         )}
-                        {Number(item.gstRate || 0) > 0 ? (
-                          <span className="ml-2 text-xs text-emerald-600">incl. GST {Number(item.gstRate)}%</span>
-                        ) : null}
                       </div>
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-3">
                         <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50 w-fit">

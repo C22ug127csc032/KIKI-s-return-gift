@@ -220,9 +220,6 @@ export default function CheckoutPage() {
                           {hasDiscount ? (
                             <span className="ml-1.5 line-through">Rs.{Number(item.originalPrice).toFixed(2)}</span>
                           ) : null}
-                          {Number(item.gstRate || 0) > 0 ? (
-                            <span className="ml-1.5 text-emerald-600">incl. GST {Number(item.gstRate)}%</span>
-                          ) : null}
                         </div>
                         <p className="text-sm font-bold text-gray-800 mt-1 sm:hidden">
                           Rs.{(item.price * item.quantity).toFixed(2)}

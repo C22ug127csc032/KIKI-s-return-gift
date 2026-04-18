@@ -715,20 +715,24 @@ export function AdminRawMaterials() {
           </div>
 
           {editMaterial ? (
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
-              <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Raw material name" className="input-field xl:col-span-2" />
-              <select value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="input-field">
-                {['pcs', 'kg', 'g', 'ltr', 'ml', 'box', 'pack', 'set', 'roll'].map((unit) => <option key={unit} value={unit}>{unit}</option>)}
-              </select>
-              <input type="number" min="0" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder="Opening stock" className="input-field" />
-              <input type="number" min="0" value={form.purchasePrice} onChange={(e) => setForm({ ...form, purchasePrice: e.target.value })} placeholder="Purchase price per unit" className="input-field" />
-              <input type="number" min="0" value={form.lowStockThreshold} onChange={(e) => setForm({ ...form, lowStockThreshold: e.target.value })} placeholder="Low stock alert level" className="input-field" />
-            </div>
+            <>
+              <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
+                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Raw material name" className="input-field xl:col-span-2" />
+                <select value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="input-field">
+                  {['pcs', 'kg', 'g', 'ltr', 'ml', 'box', 'pack', 'set', 'roll'].map((unit) => <option key={unit} value={unit}>{unit}</option>)}
+                </select>
+                <input type="number" min="0" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder="Opening stock" className="input-field" />
+                <input type="number" min="0" value={form.purchasePrice} onChange={(e) => setForm({ ...form, purchasePrice: e.target.value })} placeholder="Purchase price per unit" className="input-field" />
+                <input type="number" min="0" value={form.lowStockThreshold} onChange={(e) => setForm({ ...form, lowStockThreshold: e.target.value })} placeholder="Low stock alert level" className="input-field" />
+              </div>
+              <p className="text-xs text-gray-500">Tip: for consumables like milk, oil, sugar, or powder, prefer smaller units like `ml` or `g` so BOM quantities stay simple. Example: use `100 ml` instead of `0.1 ltr`.</p>
+            </>
           ) : (
             <div className="space-y-4">
               <div>
                 <p className="text-sm font-semibold text-gray-800">Raw Material Items</p>
                 <p className="text-xs text-gray-500">Create multiple items together with stock and pricing details.</p>
+                <p className="mt-1 text-xs text-gray-500">Tip: choose smaller units like `ml` or `g` for consumables so BOM usage stays easier to enter.</p>
               </div>
               <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
                 {createItems.map((item, index) => (
@@ -1135,7 +1139,7 @@ export function AdminProductBom() {
           </div>
           <div>
             <h2 className="text-2xl font-semibold text-gray-900">{selectedBomProduct ? `Edit BOM for ${selectedBomProduct.name}` : 'BOM Editor'}</h2>
-            <p className="text-sm text-gray-500">BOM is the recipe for one finished unit. Stock is deducted only when you record production.</p>
+            <p className="text-sm text-gray-500">BOM is the recipe for one finished unit. Enter the quantity needed for 1 product in the same unit as the raw material stock, and stock is deducted only when you record production.</p>
           </div>
         </div>
 
@@ -1154,7 +1158,7 @@ export function AdminProductBom() {
             <div className="rounded-2xl border border-gray-100 bg-gray-50 p-4">
               <div className="mb-3">
                 <p className="font-semibold text-gray-800">{selectedBomProduct?.name} Recipe</p>
-                <p className="text-xs text-gray-500">Add each raw material and how much is needed to make one unit of this product.</p>
+                <p className="text-xs text-gray-500">Add each raw material and how much is needed to make one unit of this product. Example: if Milk stock is in liters, enter 0.1 for 100 ml. If you want simpler numbers, create the raw material in ml or g instead of ltr or kg.</p>
               </div>
 
               <div className="space-y-3 rounded-2xl border border-gray-200 bg-white p-4">
@@ -1199,14 +1203,17 @@ export function AdminProductBom() {
                       const showWarning = enteredQty > currentStock;
 
                       return (
-                        <div className="mt-3 text-xs">
-                          <span className="text-gray-500">
+                        <div className="mt-3 space-y-1 text-xs">
+                          <div className="text-gray-500">
                             Current stock: {currentStock} {selectedMaterial?.unit || ''}
-                          </span>
+                          </div>
+                          <div className="text-gray-500">
+                            For 1 {selectedBomProduct?.name || 'product'}, enter quantity in {selectedMaterial?.unit || 'the same unit'}.
+                          </div>
                           {showWarning ? (
-                            <span className="ml-2 text-red-500">
+                            <div className="text-red-500">
                               This recipe uses more than the current stock for one unit. Save is allowed, but production will stay blocked until stock increases.
-                            </span>
+                            </div>
                           ) : null}
                         </div>
                       );

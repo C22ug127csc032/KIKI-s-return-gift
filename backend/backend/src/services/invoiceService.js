@@ -555,7 +555,7 @@ const buildInvoiceHtml = (data, settings) => {
 	        <tr>
 	          <th>Product</th>
 	          <th>QTY</th>
-	          <th>Price</th>
+	          <th>Base</th>
 	          <th>Discount</th>
 	          <th>Taxable</th>
 	          <th>CGST</th>

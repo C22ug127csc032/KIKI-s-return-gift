@@ -37,6 +37,18 @@ const removeLocalProductImage = (imageUrl) => {
 
 const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+const stripSupplierFromProductName = (productName = '', supplierName = '') => {
+  const trimmedName = String(productName || '').trim();
+  const trimmedSupplier = String(supplierName || '').trim();
+  if (!trimmedSupplier) return trimmedName;
+
+  const supplierPattern = escapeRegex(trimmedSupplier);
+  return trimmedName
+    .replace(new RegExp(`\\s*-\\s*${supplierPattern}$`, 'i'), '')
+    .replace(new RegExp(`\\s*\\(\\s*${supplierPattern}\\s*\\)$`, 'i'), '')
+    .trim();
+};
+
 const parseOccasions = (value) => {
   if (value === undefined) return undefined;
   if (!value) return [];
@@ -211,26 +223,28 @@ export const createProduct = asyncHandler(async (req, res) => {
   const normalizedCgstRate = cgstRate === undefined || cgstRate === '' ? 0 : Number(cgstRate);
   const normalizedSgstRate = sgstRate === undefined || sgstRate === '' ? 0 : Number(sgstRate);
   const normalizedIgstRate = igstRate === undefined || igstRate === '' ? 0 : Number(igstRate);
-  const derivedPricing = normalizedBasePrice !== null
+  const normalizedMrp = mrp === undefined || mrp === '' ? null : Number(mrp);
+  const normalizedGstRate = gstRate === undefined || gstRate === '' ? (normalizedCgstRate + normalizedSgstRate + normalizedIgstRate) : Number(gstRate);
+  const pricingBase = normalizedMrp !== null ? normalizedMrp : normalizedBasePrice;
+  const derivedPricing = pricingBase !== null
     ? calculateLinePricing({
-      basePrice: normalizedBasePrice,
+      basePrice: pricingBase,
       discountPercentage: normalizedDiscountPercentage,
       cgstRate: normalizedCgstRate,
       sgstRate: normalizedSgstRate,
       igstRate: normalizedIgstRate,
     })
     : null;
-  const sellingPrice = derivedPricing ? derivedPricing.totalUnitPrice : Number(price);
-  const normalizedMrp = mrp === undefined || mrp === ''
+  const sellingPrice = derivedPricing ? Math.round(derivedPricing.taxableUnitPrice) : Math.round(Number(price));
+  const resolvedMrp = normalizedMrp === null
     ? (derivedPricing ? calculateLinePricing({
-      basePrice: normalizedBasePrice,
+      basePrice: pricingBase,
       discountPercentage: 0,
       cgstRate: normalizedCgstRate,
       sgstRate: normalizedSgstRate,
       igstRate: normalizedIgstRate,
     }).totalUnitPrice : null)
-    : Number(mrp);
-  const normalizedGstRate = derivedPricing ? derivedPricing.gstRate : (gstRate === undefined || gstRate === '' ? 0 : Number(gstRate));
+    : normalizedMrp;
   let resolvedName = name;
   let resolvedStock = stock;
   let resolvedSupplier = supplier || null;
@@ -240,32 +254,33 @@ export const createProduct = asyncHandler(async (req, res) => {
     purchaseRecord = await ProductPurchase.findById(sourcePurchase).populate('supplier', '_id');
     if (!purchaseRecord) throw new ApiError(404, 'Selected bought product was not found');
     if (purchaseRecord.linkedProduct) throw new ApiError(409, 'This bought product is already linked to a catalog product');
-    resolvedName = purchaseRecord.productName;
+    resolvedName = stripSupplierFromProductName(purchaseRecord.productName, purchaseRecord.supplier?.name);
     resolvedStock = purchaseRecord.quantity;
     resolvedSupplier = purchaseRecord.supplier?._id || null;
   }
 
-  if (!sourcePurchase) throw new ApiError(400, 'Please select a bought product first');
-
   await ensureUniqueProductName(resolvedName);
+  if (!resolvedName?.trim()) throw new ApiError(400, 'Product name is required');
+  if (resolvedStock === undefined || resolvedStock === '' || Number.isNaN(Number(resolvedStock)) || Number(resolvedStock) < 0) {
+    throw new ApiError(400, 'Stock must be a valid number');
+  }
   if (Number.isNaN(sellingPrice) || sellingPrice < 0) throw new ApiError(400, 'Selling price must be a valid number');
-  if (normalizedBasePrice !== null && (Number.isNaN(normalizedBasePrice) || normalizedBasePrice < 0)) throw new ApiError(400, 'Price must be a valid number');
-  if (normalizedMrp !== null && (Number.isNaN(normalizedMrp) || normalizedMrp < 0)) throw new ApiError(400, 'MRP must be a valid number');
-  if (normalizedMrp !== null && sellingPrice > normalizedMrp) throw new ApiError(400, 'Selling price cannot be greater than MRP');
+  if (pricingBase !== null && (Number.isNaN(pricingBase) || pricingBase < 0)) throw new ApiError(400, 'MRP must be a valid number');
+  if (resolvedMrp !== null && (Number.isNaN(resolvedMrp) || resolvedMrp < 0)) throw new ApiError(400, 'MRP must be a valid number');
   if (!Number.isFinite(normalizedGstRate) || normalizedGstRate < 0 || normalizedGstRate > 100) throw new ApiError(400, 'GST rate must be between 0 and 100');
 
   const product = await Product.create({
     name: resolvedName,
     description,
-    mrp: normalizedMrp,
-    basePrice: normalizedBasePrice,
+    mrp: resolvedMrp,
+    basePrice: pricingBase,
     price: sellingPrice,
     gstRate: normalizedGstRate,
     cgstRate: derivedPricing ? derivedPricing.cgstRate : 0,
     sgstRate: derivedPricing ? derivedPricing.sgstRate : 0,
     igstRate: derivedPricing ? derivedPricing.igstRate : 0,
     discountPercentage: derivedPricing ? derivedPricing.discountPercentage : (normalizedMrp ? getProductDiscountPercentage({ mrp: normalizedMrp, price: sellingPrice }) : 0),
-    stock: resolvedStock,
+    stock: Number(resolvedStock),
     category,
     supplier: resolvedSupplier,
     sourcePurchase: sourcePurchase || null,
@@ -293,6 +308,17 @@ export const createProduct = asyncHandler(async (req, res) => {
       referenceModel: 'Purchase',
       referenceId: purchaseRecord._id,
       note: purchaseRecord.note || '',
+      createdBy: req.user?._id,
+    });
+  } else if (Number(product.stock || 0) > 0) {
+    await InventoryMovement.create({
+      product: product._id,
+      type: 'IN',
+      quantity: Number(product.stock || 0),
+      previousStock: 0,
+      newStock: Number(product.stock || 0),
+      reason: 'Initial stock from manual product entry',
+      note: 'Catalog product created without a purchase link',
       createdBy: req.user?._id,
     });
   }
@@ -324,34 +350,37 @@ export const updateProduct = asyncHandler(async (req, res) => {
     product.occasions = occasions;
     product.occasion = occasions?.[0] || '';
   }
-  const hasStructuredPricing = ['basePrice', 'discountPercentage', 'cgstRate', 'sgstRate', 'igstRate'].some((field) => req.body[field] !== undefined);
+  const hasStructuredPricing = ['mrp', 'basePrice', 'discountPercentage', 'cgstRate', 'sgstRate', 'igstRate'].some((field) => req.body[field] !== undefined);
   if (hasStructuredPricing) {
     const normalizedBasePrice = req.body.basePrice === '' || req.body.basePrice === undefined ? null : Number(req.body.basePrice);
+    const normalizedMrp = req.body.mrp === '' || req.body.mrp === undefined ? (product.mrp ?? null) : Number(req.body.mrp);
     const normalizedDiscountPercentage = req.body.discountPercentage === '' || req.body.discountPercentage === undefined ? 0 : Number(req.body.discountPercentage);
     const normalizedCgstRate = req.body.cgstRate === '' || req.body.cgstRate === undefined ? 0 : Number(req.body.cgstRate);
     const normalizedSgstRate = req.body.sgstRate === '' || req.body.sgstRate === undefined ? 0 : Number(req.body.sgstRate);
     const normalizedIgstRate = req.body.igstRate === '' || req.body.igstRate === undefined ? 0 : Number(req.body.igstRate);
-    if (normalizedBasePrice === null || Number.isNaN(normalizedBasePrice) || normalizedBasePrice < 0) {
-      throw new ApiError(400, 'Price must be a valid number');
+    const normalizedGstRate = normalizedCgstRate + normalizedSgstRate + normalizedIgstRate;
+    const pricingBase = normalizedMrp !== null ? normalizedMrp : normalizedBasePrice;
+    if (pricingBase === null || Number.isNaN(pricingBase) || pricingBase < 0) {
+      throw new ApiError(400, 'MRP must be a valid number');
     }
     const derivedPricing = calculateLinePricing({
-      basePrice: normalizedBasePrice,
+      basePrice: pricingBase,
       discountPercentage: normalizedDiscountPercentage,
       cgstRate: normalizedCgstRate,
       sgstRate: normalizedSgstRate,
       igstRate: normalizedIgstRate,
     });
-    product.basePrice = normalizedBasePrice;
+    product.basePrice = pricingBase;
     product.discountPercentage = derivedPricing.discountPercentage;
     product.cgstRate = derivedPricing.cgstRate;
     product.sgstRate = derivedPricing.sgstRate;
     product.igstRate = derivedPricing.igstRate;
     product.gstRate = derivedPricing.gstRate;
-    product.price = derivedPricing.totalUnitPrice;
+    product.price = Math.round(derivedPricing.taxableUnitPrice);
     if (req.body.mrp !== undefined) product.mrp = req.body.mrp === '' ? null : Number(req.body.mrp);
     else if (product.mrp === null || product.mrp === undefined) {
       product.mrp = calculateLinePricing({
-        basePrice: normalizedBasePrice,
+        basePrice: pricingBase,
         discountPercentage: 0,
         cgstRate: normalizedCgstRate,
         sgstRate: normalizedSgstRate,
@@ -371,7 +400,6 @@ export const updateProduct = asyncHandler(async (req, res) => {
   }
   if (Number(product.price) < 0 || Number.isNaN(Number(product.price))) throw new ApiError(400, 'Selling price must be a valid number');
   if (product.mrp !== null && (Number.isNaN(Number(product.mrp)) || Number(product.mrp) < 0)) throw new ApiError(400, 'MRP must be a valid number');
-  if (product.mrp !== null && Number(product.price) > Number(product.mrp)) throw new ApiError(400, 'Selling price cannot be greater than MRP');
   if (!hasStructuredPricing) {
     product.discountPercentage = product.mrp ? getProductDiscountPercentage(product) : 0;
   }
@@ -413,6 +441,9 @@ export const deleteProduct = asyncHandler(async (req, res) => {
   for (const img of product.images) {
     if (img.publicId) await cloudinary.uploader.destroy(img.publicId);
     else removeLocalProductImage(img.url);
+  }
+  if (product.sourcePurchase) {
+    await ProductPurchase.findByIdAndUpdate(product.sourcePurchase, { linkedProduct: null });
   }
   await product.deleteOne();
   sendResponse(res, 200, 'Product deleted');
