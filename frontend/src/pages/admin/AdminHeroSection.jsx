@@ -14,8 +14,7 @@ const defaultSlides = [
     tag: 'Wedding & Haldi',
     mobileTag: 'Wedding Gifts',
     titleLineOne: 'Perfect Gifts',
-    titleLineTwo: 'for Every',
-    titleLineThree: 'Celebration',
+    titleLineTwo: 'for Every Celebration',
     subtitle: 'Curated return gifts for weddings, birthdays, pooja, and every special occasion. Premium quality, affordable prices.',
     buttonText: 'Shop Gifts',
     buttonLink: '/shop?occasion=Wedding',
@@ -31,8 +30,7 @@ const defaultSlides = [
     tag: 'Birthday & Anniversary',
     mobileTag: 'Birthday Gifts',
     titleLineOne: 'Celebrate Every',
-    titleLineTwo: 'Special',
-    titleLineThree: 'Occasion',
+    titleLineTwo: 'Special Occasion',
     subtitle: 'From sweet hampers to luxury boxes - find the perfect birthday return gift for every age and taste.',
     buttonText: 'Shop Gifts',
     buttonLink: '/shop?occasion=Birthday',
@@ -48,8 +46,7 @@ const defaultSlides = [
     tag: 'Pooja & Diwali',
     mobileTag: 'Pooja Gifts',
     titleLineOne: 'Bless Every',
-    titleLineTwo: 'Home with',
-    titleLineThree: 'Joy & Love',
+    titleLineTwo: 'Home with Joy & Love',
     subtitle: 'Handpicked pooja and Diwali return gifts with traditional charm - thoughtful, affordable and delivered pan-India.',
     buttonText: 'Shop Gifts',
     buttonLink: '/shop?occasion=Diwali',
@@ -100,7 +97,7 @@ export default function AdminHeroSection() {
     mobileTag: slide.mobileTag,
     titleLineOne: slide.titleLineOne,
     titleLineTwo: slide.titleLineTwo,
-    titleLineThree: slide.titleLineThree,
+    titleLineThree: '',
     subtitle: slide.subtitle,
     buttonText: slide.buttonText,
     buttonLink: slide.buttonLink,
@@ -148,7 +145,7 @@ export default function AdminHeroSection() {
     <div>
       <div className="mb-8">
         <h1 className="font-display text-3xl font-bold text-gray-900">Hero Section</h1>
-        <p className="mt-1 text-sm text-gray-500">Manage the full homepage hero slides, including complete images and all visible content.</p>
+        <p className="mt-1 text-sm text-gray-500">Manage the homepage hero image and centered title text for each slide.</p>
       </div>
 
       <div className="space-y-6">
@@ -157,14 +154,14 @@ export default function AdminHeroSection() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-2xl font-semibold text-gray-900">Slide {index + 1}</h2>
-                <p className="text-sm text-gray-500">Replace the full hero image and update the slide content from here.</p>
+                <p className="text-sm text-gray-500">Replace the hero image and update the two title lines shown on the homepage.</p>
               </div>
               <span className="inline-flex w-fit items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700">
                 <FiImage size={14} /> Full Image Control
               </span>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
+            <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
               <div className="space-y-4">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700">Hero Image</label>
@@ -203,33 +200,15 @@ export default function AdminHeroSection() {
                   />
                   <p className="mt-2 text-xs text-gray-400">Upload a full hero banner image. Removing it will automatically restore the original built-in slide image.</p>
                 </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <Field label="Tag" value={slide.tag} onChange={(value) => updateSlide(index, 'tag', value)} />
-                  <Field label="Mobile Tag" value={slide.mobileTag} onChange={(value) => updateSlide(index, 'mobileTag', value)} />
-                  <Field label="Button Text" value={slide.buttonText} onChange={(value) => updateSlide(index, 'buttonText', value)} />
-                  <Field label="Button Link" value={slide.buttonLink} onChange={(value) => updateSlide(index, 'buttonLink', value)} />
-                </div>
               </div>
 
               <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Title Line 1" value={slide.titleLineOne} onChange={(value) => updateSlide(index, 'titleLineOne', value)} />
                   <Field label="Title Line 2" value={slide.titleLineTwo} onChange={(value) => updateSlide(index, 'titleLineTwo', value)} />
-                  <Field label="Title Line 3" value={slide.titleLineThree} onChange={(value) => updateSlide(index, 'titleLineThree', value)} />
                 </div>
-                <FloatingField
-                  as="textarea"
-                  label="Subtitle"
-                  value={slide.subtitle}
-                  onChange={(e) => updateSlide(index, 'subtitle', e.target.value)}
-                  rows={4}
-                  className="resize-none"
-                />
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <Field label="Badge 1 Label" value={slide.badgeOneLabel} onChange={(value) => updateSlide(index, 'badgeOneLabel', value)} />
-                  <Field label="Badge 1 Value" value={slide.badgeOneValue} onChange={(value) => updateSlide(index, 'badgeOneValue', value)} />
-                  <Field label="Badge 2 Label" value={slide.badgeTwoLabel} onChange={(value) => updateSlide(index, 'badgeTwoLabel', value)} />
-                  <Field label="Badge 2 Value" value={slide.badgeTwoValue} onChange={(value) => updateSlide(index, 'badgeTwoValue', value)} />
+                <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                  The homepage hero now shows only the centered title with fixed Shop and WhatsApp buttons.
                 </div>
               </div>
             </div>

@@ -1,9 +1,9 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'framer-motion';
 import {
   FiArrowRight, FiStar, FiTruck, FiShield, FiHeart, FiGift,
-  FiSun, FiCheckCircle, FiHome, FiBriefcase, FiChevronLeft, FiChevronRight
+  FiSun, FiCheckCircle, FiHome, FiBriefcase
 } from 'react-icons/fi';
 import { RiGiftLine, RiSparklingLine, RiStarSmileLine, RiCake2Line } from 'react-icons/ri';
 import { FaWhatsapp, FaRing, FaBaby, FaHeart } from 'react-icons/fa';
@@ -19,8 +19,6 @@ import heroImage2 from '../../assets/hero-2.jpg';
 import heroImage3 from '../../assets/hero-3.jpg';
 import { useStoreWhatsappNumber } from '../../hooks/useStoreWhatsappNumber.js';
 
-const fadeUp = { initial: { opacity: 0, y: 24 }, animate: { opacity: 1, y: 0 } };
-
 const heroSlides = [
   {
     id: 0,
@@ -28,7 +26,7 @@ const heroSlides = [
     tag: 'Wedding & Haldi',
     mobileTag: 'Wedding Gifts',
     tagIcon: FaRing,
-    heading: ['Perfect Gifts', 'for Every', 'Celebration'],
+    heading: ['Perfect Gifts', 'for Every Celebration'],
     italicLine: 1,
     sub: 'Curated return gifts for weddings, birthdays, pooja, and every special occasion. Premium quality, affordable prices.',
     cta: 'Shop Gifts',
@@ -43,7 +41,7 @@ const heroSlides = [
     tag: 'Birthday & Anniversary',
     mobileTag: 'Birthday Gifts',
     tagIcon: RiCake2Line,
-    heading: ['Celebrate Every', 'Special', 'Occasion'],
+    heading: ['Celebrate Every', 'Special Occasion'],
     italicLine: 1,
     sub: 'From sweet hampers to luxury boxes — find the perfect birthday return gift for every age and taste.',
     cta: 'Shop Gifts',
@@ -58,7 +56,7 @@ const heroSlides = [
     tag: 'Pooja & Diwali',
     mobileTag: 'Pooja Gifts',
     tagIcon: PiHandsPrayingLight,
-    heading: ['Bless Every', 'Home with', 'Joy & Love'],
+    heading: ['Bless Every', 'Home with Joy & Love'],
     italicLine: 1,
     sub: 'Handpicked pooja and Diwali return gifts with traditional charm — thoughtful, affordable & delivered pan-India.',
     cta: 'Shop Gifts',
@@ -104,24 +102,11 @@ const mergeHeroSlides = (slides = []) =>
     return {
       ...defaultSlide,
       image: apiSlide.image || defaultSlide.image,
-      tag: apiSlide.tag || defaultSlide.tag,
-      mobileTag: apiSlide.mobileTag || defaultSlide.mobileTag,
       heading: [
-        apiSlide.titleLineOne || defaultSlide.heading[0],
-        apiSlide.titleLineTwo || defaultSlide.heading[1],
-        apiSlide.titleLineThree || defaultSlide.heading[2],
+        apiSlide.titleLineOne ?? defaultSlide.heading[0],
+        apiSlide.titleLineTwo ?? defaultSlide.heading[1],
       ],
-      sub: apiSlide.subtitle || defaultSlide.sub,
-      cta: apiSlide.buttonText || defaultSlide.cta,
       ctaLink: apiSlide.buttonLink || defaultSlide.ctaLink,
-      badge1: {
-        label: apiSlide.badgeOneLabel || defaultSlide.badge1.label,
-        value: apiSlide.badgeOneValue || defaultSlide.badge1.value,
-      },
-      badge2: {
-        label: apiSlide.badgeTwoLabel || defaultSlide.badge2.label,
-        value: apiSlide.badgeTwoValue || defaultSlide.badge2.value,
-      },
     };
   });
 
@@ -134,6 +119,7 @@ export default function HomePage() {
   const [heroPaused, setHeroPaused] = useState(false);
   const heroTimer = useRef(null);
   const heroSectionRef = useRef(null);
+  const heroTouchStartXRef = useRef(null);
   const whatsapp = useStoreWhatsappNumber();
   const { scrollYProgress } = useScroll({
     target: heroSectionRef,
@@ -155,15 +141,32 @@ export default function HomePage() {
     mass: 0.4,
   });
   const heroContentOpacity = useTransform(scrollYProgress, [0, 0.7, 1], [1, 0.9, 0.72]);
-  const heroBadgeY = useSpring(useTransform(scrollYProgress, [0, 1], ['0%', '-8%']), {
-    stiffness: 110,
-    damping: 26,
-    mass: 0.35,
-  });
 
-  const gotoSlide = useCallback((idx) => {
-    setHeroIndex((idx + dynamicHeroSlides.length) % dynamicHeroSlides.length);
-  }, [dynamicHeroSlides.length]);
+  const changeHeroSlide = (direction) => {
+    setHeroIndex((current) => {
+      const totalSlides = dynamicHeroSlides.length || 1;
+      return (current + direction + totalSlides) % totalSlides;
+    });
+  };
+
+  const handleHeroTouchStart = (event) => {
+    heroTouchStartXRef.current = event.touches?.[0]?.clientX ?? null;
+    setHeroPaused(true);
+  };
+
+  const handleHeroTouchEnd = (event) => {
+    const touchStartX = heroTouchStartXRef.current;
+    const touchEndX = event.changedTouches?.[0]?.clientX ?? null;
+    heroTouchStartXRef.current = null;
+    setHeroPaused(false);
+
+    if (touchStartX === null || touchEndX === null) return;
+
+    const swipeDistance = touchStartX - touchEndX;
+    if (Math.abs(swipeDistance) < 40) return;
+
+    changeHeroSlide(swipeDistance > 0 ? 1 : -1);
+  };
 
   useEffect(() => {
     if (heroPaused) return;
@@ -185,6 +188,7 @@ export default function HomePage() {
   }, []);
 
   const slide = dynamicHeroSlides[heroIndex];
+  const heroHeadingLines = [slide.heading[0], slide.heading[1]].filter(Boolean);
 
   return (
     <div className="relative overflow-x-hidden">
@@ -195,6 +199,8 @@ export default function HomePage() {
         className="relative h-[92vh] min-h-[560px] max-h-[820px] overflow-hidden"
         onMouseEnter={() => setHeroPaused(true)}
         onMouseLeave={() => setHeroPaused(false)}
+        onTouchStart={handleHeroTouchStart}
+        onTouchEnd={handleHeroTouchEnd}
       >
         {/* Slide backgrounds */}
         {dynamicHeroSlides.map((s, i) => (
@@ -239,7 +245,7 @@ export default function HomePage() {
           style={{ y: heroContentY, opacity: heroContentOpacity }}
         >
           <div className="page-container w-full">
-            <div className="mx-auto max-w-2xl text-center sm:mx-0 sm:text-left">
+            <div className="mx-auto max-w-3xl text-center">
               <AnimatePresence mode="wait">
                 <motion.div
                   key={heroIndex}
@@ -248,37 +254,20 @@ export default function HomePage() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.55, ease: 'easeOut' }}
                 >
-                  {/* Tag pill */}
-                  <span className="mb-5 inline-flex max-w-full items-center gap-2 whitespace-nowrap rounded-full border border-white/40 bg-white/15 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-white backdrop-blur-sm sm:text-xs sm:tracking-widest">
-                    <slide.tagIcon size={13} />
-                    <span className="truncate sm:hidden">{slide.mobileTag || slide.tag}</span>
-                    <span className="hidden sm:inline">{slide.tag}</span>
-                  </span>
-
-                  {/* Heading */}
-                  <h1 className="mx-auto mb-5 max-w-[12ch] font-display text-4xl font-bold leading-[1.04] text-white drop-shadow-sm sm:mx-0 sm:max-w-none sm:text-5xl md:text-6xl lg:text-7xl">
-                    {slide.heading.map((line, li) => (
-                      <span key={li}>
-                        {li === slide.italicLine
-                          ? <em className="italic text-rose-200">{line}</em>
-                          : line}
-                        {li < slide.heading.length - 1 && <br />}
+                  <h1 className="mx-auto mb-8 flex w-full max-w-[24ch] flex-col items-center gap-1.5 font-display text-4xl font-bold leading-[1.08] text-white drop-shadow-sm sm:max-w-[26ch] sm:text-5xl md:gap-2 md:text-6xl lg:text-7xl">
+                    {heroHeadingLines.map((line, li) => (
+                      <span key={li} className="block whitespace-nowrap text-center">
+                        {line}
                       </span>
                     ))}
                   </h1>
 
-                  {/* Subtext */}
-                  <p className="mx-auto mb-10 max-w-[34ch] text-sm leading-7 text-white/90 sm:mx-0 sm:mb-8 sm:max-w-md sm:text-base sm:leading-relaxed sm:text-white/85">
-                    {slide.sub}
-                  </p>
-
-                  {/* CTAs */}
-                  <div className="mb-10 flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:items-start">
+                  <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
                     <Link
                       to={slide.ctaLink}
                       className="inline-flex min-w-[210px] items-center justify-center gap-2 rounded-full bg-rose-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-rose-700 hover:shadow-rose-500/40 active:scale-95 sm:min-w-0"
                     >
-                      {slide.cta} <FiArrowRight size={15} />
+                      Shop <FiArrowRight size={15} />
                     </Link>
                     <Link
                       to={`https://wa.me/${whatsapp}?text=Hello! I'd like to know more about your return gifts.`}
@@ -288,73 +277,12 @@ export default function HomePage() {
                     >
                       <FaWhatsapp size={17} /> WhatsApp Us
                     </Link>
-
-                  </div>
-
-                  {/* Stats */}
-                  <div className="mx-auto grid max-w-md grid-cols-3 gap-5 border-t border-white/20 pt-5 sm:mx-0 sm:flex sm:max-w-none sm:flex-wrap sm:gap-8">
-                    {[['500+', 'Happy Customers'], ['50+', 'Gift Varieties'], ['100%', 'Quality Assured']].map(([num, label]) => (
-                      <div key={label} className="text-center sm:text-left">
-                        <p className="font-display text-3xl font-bold text-white">{num}</p>
-                        <p className="mt-0.5 text-xs font-medium leading-5 text-white/65">{label}</p>
-                      </div>
-                    ))}
                   </div>
                 </motion.div>
               </AnimatePresence>
             </div>
           </div>
         </motion.div>
-
-        {/* Floating badges — desktop */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={`badges-${heroIndex}`}
-            initial={{ opacity: 0, x: 24 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 24 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-            className="absolute right-10 top-1/2 z-10 hidden -translate-y-1/2 flex-col gap-4 lg:flex"
-            style={{ y: heroBadgeY }}
-          >
-            <div className="rounded-2xl border border-white/30 bg-white/90 px-5 py-3.5 shadow-xl backdrop-blur-md">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-rose-500">{slide.badge1.label}</p>
-              <p className="mt-1 text-sm font-semibold text-gray-800">{slide.badge1.value}</p>
-            </div>
-            <div className="rounded-2xl border border-white/30 bg-white/90 px-5 py-3.5 shadow-xl backdrop-blur-md">
-              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-rose-500">{slide.badge2.label}</p>
-              <p className="mt-1 text-sm font-semibold text-gray-800">{slide.badge2.value}</p>
-            </div>
-          </motion.div>
-        </AnimatePresence>
-
-        {/* Arrow navigation */}
-        <button
-          onClick={() => gotoSlide(heroIndex - 1)}
-          className="absolute left-4 top-1/2 z-10 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-white/15 text-white backdrop-blur-sm transition-all hover:bg-white/30 md:left-6"
-          aria-label="Previous slide"
-        >
-          <FiChevronLeft size={22} />
-        </button>
-        <button
-          onClick={() => gotoSlide(heroIndex + 1)}
-          className="absolute right-4 top-1/2 z-10 -translate-y-1/2 flex h-11 w-11 items-center justify-center rounded-full border border-white/40 bg-white/15 text-white backdrop-blur-sm transition-all hover:bg-white/30 md:right-6"
-          aria-label="Next slide"
-        >
-          <FiChevronRight size={22} />
-        </button>
-
-        {/* Dot indicators */}
-        <div className="absolute bottom-6 left-1/2 z-10 flex -translate-x-1/2 gap-2">
-          {dynamicHeroSlides.map((s, i) => (
-            <button
-              key={s.id}
-              onClick={() => gotoSlide(i)}
-              aria-label={`Go to slide ${i + 1}`}
-              className={`h-2 rounded-full transition-all duration-300 ${i === heroIndex ? 'w-8 bg-white' : 'w-2 bg-white/45 hover:bg-white/70'}`}
-            />
-          ))}
-        </div>
       </section>
 
       <div className="site-signature-band relative my-4 overflow-hidden bg-rose-600 py-2.5 sm:my-5">

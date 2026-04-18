@@ -10,8 +10,8 @@ const defaultSlides = [
     tag: 'Wedding & Haldi',
     mobileTag: 'Wedding Gifts',
     titleLineOne: 'Perfect Gifts',
-    titleLineTwo: 'for Every',
-    titleLineThree: 'Celebration',
+    titleLineTwo: 'for Every Celebration',
+    titleLineThree: '',
     subtitle: 'Curated return gifts for weddings, birthdays, pooja, and every special occasion. Premium quality, affordable prices.',
     buttonText: 'Shop Gifts',
     buttonLink: '/shop?occasion=Wedding',
@@ -27,8 +27,8 @@ const defaultSlides = [
     tag: 'Birthday & Anniversary',
     mobileTag: 'Birthday Gifts',
     titleLineOne: 'Celebrate Every',
-    titleLineTwo: 'Special',
-    titleLineThree: 'Occasion',
+    titleLineTwo: 'Special Occasion',
+    titleLineThree: '',
     subtitle: 'From sweet hampers to luxury boxes - find the perfect birthday return gift for every age and taste.',
     buttonText: 'Shop Gifts',
     buttonLink: '/shop?occasion=Birthday',
@@ -44,8 +44,8 @@ const defaultSlides = [
     tag: 'Pooja & Diwali',
     mobileTag: 'Pooja Gifts',
     titleLineOne: 'Bless Every',
-    titleLineTwo: 'Home with',
-    titleLineThree: 'Joy & Love',
+    titleLineTwo: 'Home with Joy & Love',
+    titleLineThree: '',
     subtitle: 'Handpicked pooja and Diwali return gifts with traditional charm - thoughtful, affordable and delivered pan-India.',
     buttonText: 'Shop Gifts',
     buttonLink: '/shop?occasion=Diwali',
@@ -74,6 +74,9 @@ const normalizeSlides = (slides = []) =>
       ...defaultSlide,
       ...incomingSlide,
       order: index,
+      titleLineOne: incomingSlide.titleLineOne ?? defaultSlide.titleLineOne,
+      titleLineTwo: incomingSlide.titleLineTwo ?? defaultSlide.titleLineTwo,
+      titleLineThree: '',
       image: incomingSlide.image || defaultSlide.image,
       imagePublicId: incomingSlide.imagePublicId || defaultSlide.imagePublicId,
     };
@@ -92,6 +95,7 @@ const ensureHeroSection = async () => {
 
 export const getHeroSection = asyncHandler(async (_req, res) => {
   const heroSection = await ensureHeroSection();
+  heroSection.slides = normalizeSlides(heroSection.slides);
   sendResponse(res, 200, 'Hero section fetched', heroSection);
 });
 
@@ -149,7 +153,7 @@ export const updateHeroSection = asyncHandler(async (req, res) => {
 
     delete nextSlides[slideIndex].removeImage;
 
-    heroSection.slides = nextSlides;
+    heroSection.slides = normalizeSlides(nextSlides);
     await heroSection.save();
 
     sendResponse(res, 200, 'Hero slide updated', heroSection);
@@ -201,7 +205,7 @@ export const updateHeroSection = asyncHandler(async (req, res) => {
     delete nextSlides[index].removeImage;
   }
 
-  heroSection.slides = nextSlides;
+  heroSection.slides = normalizeSlides(nextSlides);
   await heroSection.save();
 
   sendResponse(res, 200, 'Hero section updated', heroSection);
