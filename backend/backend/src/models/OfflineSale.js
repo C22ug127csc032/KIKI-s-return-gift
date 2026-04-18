@@ -12,6 +12,11 @@ const offlineSaleSchema = new mongoose.Schema(
       },
     },
     address: { type: String },
+    gstMode: {
+      type: String,
+      enum: ['with_gst', 'without_gst'],
+      default: 'with_gst',
+    },
     items: [
       {
         product: { type: mongoose.Schema.Types.ObjectId, ref: 'Product' },

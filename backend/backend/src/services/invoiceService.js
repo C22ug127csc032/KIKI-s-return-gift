@@ -4,6 +4,7 @@ import AppSetting from '../models/AppSetting.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import ApiError from '../utils/apiError.js';
 import { getGstAmountFromInclusive, getProductGstRate, getProductMrp, getTaxableAmountFromInclusive } from '../utils/pricing.js';
+import { generateInvoiceNumber } from '../utils/generators.js';
 
 const escapeHtml = (value = '') => String(value ?? '')
   .replaceAll('&', '&amp;')
@@ -35,17 +36,28 @@ const calculateInvoiceTotals = (items = [], fallbackSubtotal = 0, fallbackTax = 
     const originalPrice = Number(item.originalPrice || item.price || 0);
     return sum + (originalPrice * quantity);
   }, 0);
-  const grandTotal = Number(fallbackTotal || 0);
-  const gst = Number(fallbackTax || items.reduce((sum, item) => sum + Number(item.gstAmount || 0), 0));
+  const sellingPriceTotal = items.reduce((sum, item) => {
+    const quantity = Number(item.quantity || 0);
+    const basePrice = Number(item.basePrice || item.price || 0);
+    return sum + (basePrice * quantity);
+  }, 0);
+  const discount = items.reduce((sum, item) => sum + Number(item.discountAmount || 0), 0);
+  const taxableSubtotal = Number(
+    items.reduce((sum, item) => sum + Number(item.taxableAmount || 0), 0)
+    || fallbackSubtotal
+    || Math.max(Number(fallbackTotal || 0) - Number(fallbackTax || 0), 0)
+  );
   const cgst = items.reduce((sum, item) => sum + Number(item.cgstAmount || 0), 0);
   const sgst = items.reduce((sum, item) => sum + Number(item.sgstAmount || 0), 0);
   const igst = items.reduce((sum, item) => sum + Number(item.igstAmount || 0), 0);
-  const taxableSubtotal = Number(fallbackSubtotal || Math.max(grandTotal - gst, 0));
-  const discount = Math.max(mrpTotal - grandTotal, 0);
-  const discountPercentage = mrpTotal > 0 ? (discount / mrpTotal) * 100 : 0;
+  const gst = Number(fallbackTax || items.reduce((sum, item) => sum + Number(item.gstAmount || 0), 0));
+  const grandTotal = Number(fallbackTotal || (taxableSubtotal + gst));
+  const roundOff = grandTotal - (taxableSubtotal + gst);
+  const discountPercentage = sellingPriceTotal > 0 ? (discount / sellingPriceTotal) * 100 : 0;
 
   return {
     mrpTotal: mrpTotal || grandTotal,
+    sellingPriceTotal,
     discount,
     discountPercentage: formatDiscountPercentage(discountPercentage),
     taxableSubtotal,
@@ -53,6 +65,7 @@ const calculateInvoiceTotals = (items = [], fallbackSubtotal = 0, fallbackTax = 
     cgst,
     sgst,
     igst,
+    roundOff,
     grandTotal,
   };
 };
@@ -88,6 +101,8 @@ const buildInvoiceHtml = (data, settings) => {
   const tagline = escapeHtml(settings?.storeTagline === 'Perfect Gifts for Every Occasion'
     ? 'Return Gifts'
     : (settings?.storeTagline || 'Return Gifts'));
+  const gstNumber = escapeHtml(settings?.gstNumber || '');
+  const showGstNumber = data.showGstNumber !== false && Boolean(gstNumber);
   const bankName = escapeHtml(settings?.bankAccountName || settings?.bankName || 'WXYZ Bank');
   const accountNo = escapeHtml(settings?.bankAccountNumber || 'xxx xxxx xxx');
   const totals = calculateInvoiceTotals(data.items, data.subtotal, data.tax, data.totalAmount);
@@ -166,7 +181,7 @@ const buildInvoiceHtml = (data, settings) => {
     .invoice-card {
       background: var(--white);
       width: 100%;
-      max-width: 720px;
+      max-width: 960px;
       border-radius: 20px;
       box-shadow: var(--shadow);
       overflow: hidden;
@@ -226,6 +241,13 @@ const buildInvoiceHtml = (data, settings) => {
       color: var(--pink-main);
       margin-top: 3px;
       font-weight: 500;
+    }
+    .company-meta {
+      font-size: 11px;
+      color: var(--ink-muted);
+      margin-top: 6px;
+      font-weight: 500;
+      letter-spacing: 0.04em;
     }
 
     .invoice-title-block {
@@ -301,18 +323,22 @@ const buildInvoiceHtml = (data, settings) => {
       font-weight: 600;
     }
 
-    .table-wrap { margin: 0 40px 24px; }
+    .table-wrap {
+      margin: 0 40px 24px;
+      overflow-x: auto;
+    }
 
     table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 13.5px;
+      min-width: 860px;
+      font-size: 13px;
     }
 
     thead tr { background: var(--pink-soft); }
 
     thead th {
-      padding: 12px 16px;
+      padding: 12px 12px;
       text-align: left;
       font-size: 11px;
       letter-spacing: 0.14em;
@@ -328,14 +354,15 @@ const buildInvoiceHtml = (data, settings) => {
     tbody tr:last-child { border-bottom: 2px solid var(--border); }
 
     tbody td {
-      padding: 14px 16px;
+      padding: 14px 12px;
       border-left: 1px solid var(--border);
       border-right: 1px solid var(--border);
       color: var(--ink);
       font-weight: 300;
     }
     tbody td:not(:first-child) { text-align: center; }
-    tbody td:last-child { text-align: right; font-weight: 500; }
+    tbody td:nth-child(n+3) { white-space: nowrap; }
+    tbody td:last-child { text-align: right; font-weight: 600; white-space: nowrap; }
 
     .totals-section {
       display: flex;
@@ -343,12 +370,14 @@ const buildInvoiceHtml = (data, settings) => {
       align-items: flex-start;
       padding: 0 40px 32px;
       gap: 20px;
+      flex-wrap: wrap;
     }
 
     .subtotal-labels {
       display: flex;
       flex-direction: column;
       gap: 6px;
+      min-width: 220px;
     }
     .subtotal-labels p {
       font-family: 'Cormorant Garamond', serif;
@@ -357,7 +386,11 @@ const buildInvoiceHtml = (data, settings) => {
       color: var(--ink);
     }
 
-    .totals-values { min-width: 200px; }
+    .totals-values {
+      min-width: 280px;
+      flex: 1;
+      max-width: 360px;
+    }
 
     .totals-row {
       display: flex;
@@ -368,7 +401,12 @@ const buildInvoiceHtml = (data, settings) => {
       color: var(--ink-muted);
       font-weight: 300;
     }
-    .totals-row .label { margin-right: 40px; }
+    .totals-row .label { margin-right: 24px; }
+    .totals-row span:last-child,
+    .total-final span:last-child {
+      white-space: nowrap;
+      text-align: right;
+    }
 
     .total-final {
       display: flex;
@@ -508,6 +546,7 @@ const buildInvoiceHtml = (data, settings) => {
       <div>
         <div class="company-name">${storeName}</div>
         <div class="company-tagline">${tagline}</div>
+        ${showGstNumber ? `<div class="company-meta">GSTIN: ${gstNumber}</div>` : ''}
       </div>
     </div>
 
@@ -572,12 +611,14 @@ const buildInvoiceHtml = (data, settings) => {
 	  <div class="totals-section">
 	    <div class="subtotal-labels">
 	      <p><strong>MRP Total :</strong></p>
+	      <p>Selling Price :</p>
 	      <p>Discount: ${totals.discountPercentage}%</p>
 	      <p>Taxable Amount :</p>
 	      <p>CGST :</p>
 	      <p>SGST :</p>
 	      <p>IGST :</p>
 	      <p>GST :</p>
+	      ${Math.abs(totals.roundOff) > 0.001 ? '<p>Round Off :</p>' : ''}
 	      <p>Grand Total :</p>
 	    </div>
 
@@ -585,6 +626,10 @@ const buildInvoiceHtml = (data, settings) => {
 	      <div class="totals-row">
 	        <span class="label">MRP Total :</span>
 	        <span id="actualTotal">${formatCurrency(totals.mrpTotal)}</span>
+	      </div>
+	      <div class="totals-row">
+	        <span class="label">Selling Price :</span>
+	        <span id="sellingPriceTotal">${formatCurrency(totals.sellingPriceTotal)}</span>
 	      </div>
 	      <div class="totals-row">
 	        <span class="label">Discount (${totals.discountPercentage}%) :</span>
@@ -610,6 +655,11 @@ const buildInvoiceHtml = (data, settings) => {
 	        <span class="label">GST :</span>
 	        <span id="gstTotal">${formatCurrency(totals.gst)}</span>
 	      </div>
+	      ${Math.abs(totals.roundOff) > 0.001 ? `
+	      <div class="totals-row">
+	        <span class="label">Round Off :</span>
+	        <span id="roundOffTotal">${formatCurrency(totals.roundOff)}</span>
+	      </div>` : ''}
 	      <div class="total-final">
 	        <span>Grand Total :</span>
 	        <span id="grandTotal">${formatCurrency(totals.grandTotal)}</span>
@@ -676,7 +726,11 @@ export const generateOrderInvoice = asyncHandler(async (req, res) => {
   }
 
   const settings = await AppSetting.findOne();
-  const invoiceNumber = order.invoiceNumber || order.orderNumber;
+  if (!order.invoiceNumber) {
+    order.invoiceNumber = await generateInvoiceNumber(Order, 'K-ON');
+    await order.save();
+  }
+  const invoiceNumber = order.invoiceNumber;
 
   sendInvoiceHtml(res, invoiceNumber, {
     invoiceNumber,
@@ -689,6 +743,7 @@ export const generateOrderInvoice = asyncHandler(async (req, res) => {
     subtotal: order.subtotal,
     tax: order.tax,
     totalAmount: order.totalAmount,
+    showGstNumber: true,
   }, settings);
 });
 
@@ -709,5 +764,6 @@ export const generateOfflineSaleInvoice = asyncHandler(async (req, res) => {
     subtotal: sale.subtotal,
     tax: sale.tax,
     totalAmount: sale.totalAmount,
+    showGstNumber: sale.gstMode !== 'without_gst',
   }, settings);
 });

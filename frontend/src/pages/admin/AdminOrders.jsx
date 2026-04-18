@@ -9,6 +9,56 @@ import { downloadInvoiceFile, showInvoiceDownloadError } from '../../utils/invoi
 const STATUS_OPTIONS = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Completed', 'Cancelled'];
 const PAYMENT_OPTIONS = ['Pending', 'Paid', 'Refunded'];
 const orderHasStockIssue = (order) => order.hasStockIssue || order.items?.some((item) => item.hasStockIssue || Number(item.backorderQuantity || 0) > 0);
+const formatOrderAmount = (value) => `Rs.${Math.round(Number(value || 0))}`;
+const formatPercentage = (value) => Number(value || 0)
+  .toFixed(2)
+  .replace(/\.?0+$/, '');
+
+const calculateOrderTotals = (order) => {
+  const items = order?.items || [];
+  const mrpTotal = items.reduce((sum, item) => {
+    const quantity = Number(item.quantity || 0);
+    const originalPrice = Number(item.originalPrice || item.price || 0);
+    return sum + (originalPrice * quantity);
+  }, 0);
+  const sellingPriceTotal = items.reduce((sum, item) => {
+    const quantity = Number(item.quantity || 0);
+    const sellingPrice = Number(item.basePrice || item.price || 0);
+    return sum + (sellingPrice * quantity);
+  }, 0);
+  const discount = items.reduce((sum, item) => sum + Number(item.discountAmount || 0), 0);
+  const taxableSubtotal = items.reduce((sum, item) => {
+    const quantity = Number(item.quantity || 0);
+    return sum + Number(item.taxableAmount || ((item.price || 0) * quantity));
+  }, 0);
+  const cgst = items.reduce((sum, item) => sum + Number(item.cgstAmount || 0), 0);
+  const sgst = items.reduce((sum, item) => sum + Number(item.sgstAmount || 0), 0);
+  const igst = items.reduce((sum, item) => sum + Number(item.igstAmount || 0), 0);
+  const gst = cgst + sgst + igst;
+  const grandTotal = Number(order?.totalAmount || (taxableSubtotal + gst));
+  const roundOff = grandTotal - (taxableSubtotal + gst);
+  const discountPercentage = sellingPriceTotal > 0 ? (discount / sellingPriceTotal) * 100 : 0;
+  const cgstPercentage = taxableSubtotal > 0 ? (cgst / taxableSubtotal) * 100 : 0;
+  const sgstPercentage = taxableSubtotal > 0 ? (sgst / taxableSubtotal) * 100 : 0;
+  const igstPercentage = taxableSubtotal > 0 ? (igst / taxableSubtotal) * 100 : 0;
+
+  return {
+    mrpTotal: mrpTotal || sellingPriceTotal || grandTotal,
+    sellingPriceTotal,
+    discount,
+    discountPercentage: formatPercentage(discountPercentage),
+    taxableSubtotal,
+    cgst,
+    sgst,
+    igst,
+    gst,
+    cgstPercentage: formatPercentage(cgstPercentage),
+    sgstPercentage: formatPercentage(sgstPercentage),
+    igstPercentage: formatPercentage(igstPercentage),
+    roundOff,
+    grandTotal,
+  };
+};
 
 export default function AdminOrders() {
   const [orders, setOrders] = useState([]);
@@ -108,87 +158,149 @@ export default function AdminOrders() {
       ) : (
         <>
           <div className="space-y-3">
-            {orders.map((order) => (
-              <motion.div
-                key={order._id}
-                layout
-                className={`admin-card overflow-hidden ${orderHasStockIssue(order) ? 'border-amber-200 bg-amber-50/50' : ''}`}
-              >
-                <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-1">
-                      <span className="font-bold text-sm text-gray-800">{order.invoiceNumber || order.orderNumber}</span>
-                      <Badge status={order.orderStatus} label="Order" />
-                      <Badge status={order.paymentStatus} type="payment" label="Payment" />
-                      {order.source === 'offline' && <span className="badge badge-blue">Offline</span>}
-                      {orderHasStockIssue(order) ? <span className="badge badge-red">Stock Attention Needed</span> : null}
-                    </div>
-                    <p className="text-sm text-gray-600">{order.customerName} · {order.customerPhone}</p>
-                    <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleString('en-IN')} · ₹{order.totalAmount}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => {
-                        setEditOrder(order);
-                        setEditForm({ orderStatus: order.orderStatus, paymentStatus: order.paymentStatus, adminNotes: order.adminNotes || '' });
-                      }}
-                      className="p-2 text-gray-400 hover:text-brand-500 hover:bg-brand-50 rounded-lg transition-colors"
-                    >
-                      <FiEdit size={16} />
-                    </button>
-                    <button
-                      onClick={() => downloadInvoice(order._id, order.invoiceNumber || order.orderNumber)}
-                      className="p-2 text-gray-400 hover:text-brand-500 hover:bg-brand-50 rounded-lg transition-colors"
-                    >
-                      <FiDownload size={16} />
-                    </button>
-                    <button
-                      onClick={() => setExpandedId(expandedId === order._id ? null : order._id)}
-                      className="p-2 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
-                    >
-                      {expandedId === order._id ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
-                    </button>
-                  </div>
-                </div>
+            {orders.map((order) => {
+              const orderTotals = calculateOrderTotals(order);
 
-                {expandedId === order._id && (
-                  <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} className="border-t border-gray-100 pt-4 mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Order Items</p>
-                      <div className="space-y-1">
-                        {order.items.map((item, index) => (
-                          <div
-                            key={index}
-                            className={`flex justify-between rounded-lg px-2 py-1.5 text-sm ${item.hasStockIssue || Number(item.backorderQuantity || 0) > 0 ? 'bg-amber-100 text-amber-800' : ''}`}
-                          >
-                            <span className="text-gray-700">
-                              {item.name} x{item.quantity}
-                              {item.hasStockIssue || Number(item.backorderQuantity || 0) > 0 ? ` (${item.backorderQuantity || item.quantity} awaiting confirmation)` : ''}
-                            </span>
-                            <span className="font-medium">₹{item.price * item.quantity}</span>
+              return (
+                <motion.div
+                  key={order._id}
+                  layout
+                  className={`admin-card overflow-hidden ${orderHasStockIssue(order) ? 'border-amber-200 bg-amber-50/50' : ''}`}
+                >
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-center gap-2 mb-1">
+                        <span className="font-bold text-sm text-gray-800">{order.invoiceNumber || order.orderNumber}</span>
+                        <Badge status={order.orderStatus} label="Order" />
+                        <Badge status={order.paymentStatus} type="payment" label="Payment" />
+                        {order.source === 'offline' && <span className="badge badge-blue">Offline</span>}
+                        {orderHasStockIssue(order) ? <span className="badge badge-red">Stock Attention Needed</span> : null}
+                      </div>
+                      <p className="text-sm text-gray-600">{order.customerName} · {order.customerPhone}</p>
+                      <p className="text-xs text-gray-400">{new Date(order.createdAt).toLocaleString('en-IN')} · {formatOrderAmount(order.totalAmount)}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => {
+                          setEditOrder(order);
+                          setEditForm({ orderStatus: order.orderStatus, paymentStatus: order.paymentStatus, adminNotes: order.adminNotes || '' });
+                        }}
+                        className="p-2 text-gray-400 hover:text-brand-500 hover:bg-brand-50 rounded-lg transition-colors"
+                      >
+                        <FiEdit size={16} />
+                      </button>
+                      <button
+                        onClick={() => downloadInvoice(order._id, order.invoiceNumber || order.orderNumber)}
+                        className="p-2 text-gray-400 hover:text-brand-500 hover:bg-brand-50 rounded-lg transition-colors"
+                      >
+                        <FiDownload size={16} />
+                      </button>
+                      <button
+                        onClick={() => setExpandedId(expandedId === order._id ? null : order._id)}
+                        className="p-2 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
+                      >
+                        {expandedId === order._id ? <FiChevronUp size={16} /> : <FiChevronDown size={16} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {expandedId === order._id && (
+                    <motion.div initial={{ height: 0 }} animate={{ height: 'auto' }} className="border-t border-gray-100 pt-4 mt-4 grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-4">
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 mb-2 uppercase tracking-wide">Order Items</p>
+                        <div className="space-y-2 mb-4">
+                          {order.items.map((item, index) => (
+                            <div
+                              key={index}
+                              className={`rounded-lg px-3 py-2 text-sm ${item.hasStockIssue || Number(item.backorderQuantity || 0) > 0 ? 'bg-amber-50' : 'bg-gray-50'}`}
+                            >
+                              <div className="flex justify-between gap-3">
+                                <div className="min-w-0">
+                                  <p className="font-medium text-gray-700">{item.name} x{item.quantity}</p>
+                                  <p className="text-xs text-gray-500 mt-1">
+                                    Available stock: <span className="font-semibold text-gray-700">{Number(item.product?.stock || 0)}</span>
+                                  </p>
+                                  {item.hasStockIssue || Number(item.backorderQuantity || 0) > 0 ? (
+                                    <p className="text-xs font-medium text-amber-700 mt-1">
+                                      Needs confirmation for {item.backorderQuantity || item.quantity} item(s)
+                                    </p>
+                                  ) : null}
+                                </div>
+                                <span className="font-medium text-gray-800 whitespace-nowrap">{formatOrderAmount(item.totalAmount || (item.price * item.quantity))}</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+
+                        <div className="rounded-xl border border-gray-200 bg-white p-4 space-y-2 text-sm">
+                          <div className="flex justify-between text-gray-500">
+                            <span>MRP Total</span>
+                            <span>{formatOrderAmount(orderTotals.mrpTotal)}</span>
                           </div>
-                        ))}
-                        <div className="border-t pt-1 flex justify-between font-bold text-sm">
-                          <span>Total</span><span className="text-brand-600">₹{order.totalAmount}</span>
+                          <div className="flex justify-between text-gray-500">
+                            <span>Selling Price</span>
+                            <span>{formatOrderAmount(orderTotals.sellingPriceTotal)}</span>
+                          </div>
+                          <div className="flex justify-between text-gray-500">
+                            <span>Discount ({orderTotals.discountPercentage}%)</span>
+                            <span>- {formatOrderAmount(orderTotals.discount)}</span>
+                          </div>
+                          <div className="flex justify-between text-gray-500">
+                            <span>Taxable Amount</span>
+                            <span>{formatOrderAmount(orderTotals.taxableSubtotal)}</span>
+                          </div>
+                          {orderTotals.cgst > 0 ? (
+                            <div className="flex justify-between text-gray-500">
+                              <span>CGST ({orderTotals.cgstPercentage}%)</span>
+                              <span>{formatOrderAmount(orderTotals.cgst)}</span>
+                            </div>
+                          ) : null}
+                          {orderTotals.sgst > 0 ? (
+                            <div className="flex justify-between text-gray-500">
+                              <span>SGST ({orderTotals.sgstPercentage}%)</span>
+                              <span>{formatOrderAmount(orderTotals.sgst)}</span>
+                            </div>
+                          ) : null}
+                          {orderTotals.igst > 0 ? (
+                            <div className="flex justify-between text-gray-500">
+                              <span>IGST ({orderTotals.igstPercentage}%)</span>
+                              <span>{formatOrderAmount(orderTotals.igst)}</span>
+                            </div>
+                          ) : null}
+                          <div className="flex justify-between text-gray-500">
+                            <span>GST</span>
+                            <span>{formatOrderAmount(orderTotals.gst)}</span>
+                          </div>
+                          {Math.abs(orderTotals.roundOff) > 0.001 ? (
+                            <div className="flex justify-between text-gray-500">
+                              <span>Round Off</span>
+                              <span>{formatOrderAmount(orderTotals.roundOff)}</span>
+                            </div>
+                          ) : null}
+                          <div className="border-t pt-2 flex justify-between font-bold text-sm">
+                            <span>Total</span>
+                            <span className="text-brand-600">{formatOrderAmount(orderTotals.grandTotal)}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="text-sm space-y-1.5">
-                      <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Customer Details</p>
-                      <p><span className="text-gray-500">Phone:</span> {order.customerPhone}</p>
-                      <p><span className="text-gray-500">Address:</span> {order.customerAddress}</p>
-                      {order.customerNotes && <p><span className="text-gray-500">Notes:</span> {order.customerNotes}</p>}
-                      {order.adminNotes && <p><span className="text-gray-500">Admin Note:</span> {order.adminNotes}</p>}
-                      {order.paymentScreenshot && (
-                        <a href={order.paymentScreenshot} target="_blank" rel="noopener noreferrer" className="text-brand-500 hover:underline text-xs">
-                          View Payment Screenshot →
-                        </a>
-                      )}
-                    </div>
-                  </motion.div>
-                )}
-              </motion.div>
-            ))}
+
+                      <div className="text-sm space-y-1.5">
+                        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Customer Details</p>
+                        <p><span className="text-gray-500">Phone:</span> {order.customerPhone}</p>
+                        <p><span className="text-gray-500">Address:</span> {order.customerAddress}</p>
+                        {order.customerNotes && <p><span className="text-gray-500">Notes:</span> {order.customerNotes}</p>}
+                        {order.adminNotes && <p><span className="text-gray-500">Admin Note:</span> {order.adminNotes}</p>}
+                        {order.paymentScreenshot && (
+                          <a href={order.paymentScreenshot} target="_blank" rel="noopener noreferrer" className="text-brand-500 hover:underline text-xs">
+                            View Payment Screenshot →
+                          </a>
+                        )}
+                      </div>
+                    </motion.div>
+                  )}
+                </motion.div>
+              );
+            })}
           </div>
           <Pagination currentPage={meta.page} totalPages={meta.totalPages} onPageChange={(page) => setFilters({ ...filters, page })} />
         </>

@@ -9,7 +9,56 @@ import { downloadInvoiceFile, showInvoiceDownloadError } from '../../utils/invoi
 
 const INVOICE_READY_STATUSES = ['Shipped', 'Completed'];
 const isInvoiceReady = (order) => INVOICE_READY_STATUSES.includes(order?.orderStatus);
-const orderHasStockIssue = (order) => order.hasStockIssue || order.items?.some((item) => item.hasStockIssue || Number(item.backorderQuantity || 0) > 0);
+const formatOrderAmount = (value) => `Rs.${Math.round(Number(value || 0))}`;
+const formatPercentage = (value) => Number(value || 0)
+  .toFixed(2)
+  .replace(/\.?0+$/, '');
+
+const calculateOrderTotals = (order) => {
+  const items = order?.items || [];
+  const mrpTotal = items.reduce((sum, item) => {
+    const quantity = Number(item.quantity || 0);
+    const originalPrice = Number(item.originalPrice || item.price || 0);
+    return sum + (originalPrice * quantity);
+  }, 0);
+  const sellingPriceTotal = items.reduce((sum, item) => {
+    const quantity = Number(item.quantity || 0);
+    const sellingPrice = Number(item.basePrice || item.price || 0);
+    return sum + (sellingPrice * quantity);
+  }, 0);
+  const discount = items.reduce((sum, item) => sum + Number(item.discountAmount || 0), 0);
+  const taxableSubtotal = items.reduce((sum, item) => {
+    const quantity = Number(item.quantity || 0);
+    return sum + Number(item.taxableAmount || ((item.price || 0) * quantity));
+  }, 0);
+  const cgst = items.reduce((sum, item) => sum + Number(item.cgstAmount || 0), 0);
+  const sgst = items.reduce((sum, item) => sum + Number(item.sgstAmount || 0), 0);
+  const igst = items.reduce((sum, item) => sum + Number(item.igstAmount || 0), 0);
+  const gst = cgst + sgst + igst;
+  const grandTotal = Number(order?.totalAmount || (taxableSubtotal + gst));
+  const roundOff = grandTotal - (taxableSubtotal + gst);
+  const discountPercentage = sellingPriceTotal > 0 ? (discount / sellingPriceTotal) * 100 : 0;
+  const cgstPercentage = taxableSubtotal > 0 ? (cgst / taxableSubtotal) * 100 : 0;
+  const sgstPercentage = taxableSubtotal > 0 ? (sgst / taxableSubtotal) * 100 : 0;
+  const igstPercentage = taxableSubtotal > 0 ? (igst / taxableSubtotal) * 100 : 0;
+
+  return {
+    mrpTotal: mrpTotal || sellingPriceTotal || grandTotal,
+    sellingPriceTotal,
+    discount,
+    discountPercentage: formatPercentage(discountPercentage),
+    taxableSubtotal,
+    cgst,
+    sgst,
+    igst,
+    gst,
+    cgstPercentage: formatPercentage(cgstPercentage),
+    sgstPercentage: formatPercentage(sgstPercentage),
+    igstPercentage: formatPercentage(igstPercentage),
+    roundOff,
+    grandTotal,
+  };
+};
 
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -57,103 +106,156 @@ export default function MyOrdersPage() {
         ) : (
           <>
             <div className="space-y-3">
-              {orders.map((order) => (
-                <motion.div
-                  key={order._id}
-                  layout
-                  className={`bg-white rounded-2xl border shadow-sm overflow-hidden hover:shadow-md transition-shadow ${orderHasStockIssue(order) ? 'border-amber-200 bg-amber-50/30' : 'border-gray-100'}`}
-                >
-                  <div className="p-5 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1.5">
-                        <div className="w-7 h-7 bg-rose-50 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <FiPackage size={14} className="text-rose-600" />
-                        </div>
-                        <span className="font-bold text-gray-800 text-sm font-mono">{order.invoiceNumber || order.orderNumber}</span>
-                      </div>
-                      <p className="text-xs text-gray-400 flex items-center gap-1.5 ml-9">
-                        <FiClock size={11} />
-                        {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
-                        <span className="text-gray-300">·</span>
-                        {order.items.length} item{order.items.length > 1 ? 's' : ''}
-                        <span className="text-gray-300">·</span>
-                        <span className="font-bold text-gray-600">₹{order.totalAmount}</span>
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-                      <Badge status={order.orderStatus} label="Order" />
-                      <Badge status={order.paymentStatus} type="payment" label="Payment" />
-                      {orderHasStockIssue(order) ? <span className="badge badge-red">Stock Update Pending</span> : null}
-                      <button
-                        onClick={() => downloadInvoice(order._id)}
-                        disabled={!isInvoiceReady(order)}
-                        className={`p-2 rounded-lg transition-colors ${
-                          isInvoiceReady(order)
-                            ? 'text-gray-300 hover:text-rose-600 hover:bg-rose-50'
-                            : 'cursor-not-allowed text-gray-200 bg-gray-50'
-                        }`}
-                        title={isInvoiceReady(order) ? 'Download Invoice' : 'Invoice available after shipping'}
-                        aria-label={isInvoiceReady(order) ? 'Download Invoice' : 'Invoice available after shipping'}
-                      >
-                        <FiDownload size={15} />
-                      </button>
-                      <button
-                        onClick={() => setExpandedId(expandedId === order._id ? null : order._id)}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                      >
-                        {expandedId === order._id ? <FiChevronUp size={15} /> : <FiChevronDown size={15} />}
-                      </button>
-                    </div>
-                  </div>
+              {orders.map((order) => {
+                const orderTotals = calculateOrderTotals(order);
 
-                  <AnimatePresence>
-                    {expandedId === order._id && (
-                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-gray-100 overflow-hidden">
-                        <div className="p-5 bg-gray-50/50">
-                          <div className="space-y-2.5 mb-4">
-                            {order.items.map((item, index) => (
-                              <div key={index} className="flex items-center justify-between text-sm gap-3">
-                                <div className="flex items-center gap-2 min-w-0">
-                                  <div className="w-8 h-8 bg-white rounded-lg border border-gray-100 flex items-center justify-center flex-shrink-0">
-                                    <RiGiftLine size={14} className="text-rose-300" />
-                                  </div>
-                                  <div className="min-w-0">
-                                    <p className="text-gray-700 font-medium">{item.name}</p>
-                                    {item.hasStockIssue || Number(item.backorderQuantity || 0) > 0 ? (
-                                      <p className="text-[11px] font-semibold text-amber-700">
-                                        Awaiting admin stock confirmation for {item.backorderQuantity || item.quantity} item(s)
-                                      </p>
-                                    ) : null}
-                                  </div>
-                                  <span className="text-gray-400 text-xs flex-shrink-0">x{item.quantity}</span>
-                                </div>
-                                <span className="font-bold text-gray-800 flex-shrink-0">₹{item.price * item.quantity}</span>
-                              </div>
-                            ))}
-                            <div className="border-t border-gray-200 pt-2.5 flex justify-between font-bold text-sm">
-                              <span className="text-gray-700">Total</span>
-                              <span className="text-rose-600">₹{order.totalAmount}</span>
-                            </div>
+                return (
+                  <motion.div
+                    key={order._id}
+                    layout
+                    className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow"
+                  >
+                    <div className="p-5 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 mb-1.5">
+                          <div className="w-7 h-7 bg-rose-50 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <FiPackage size={14} className="text-rose-600" />
                           </div>
-                          {order.customerAddress && (
-                            <div className="text-xs text-gray-400 space-y-1 bg-white rounded-xl p-3 border border-gray-100">
-                              <p className="font-semibold text-gray-600 mb-1">Delivery Address</p>
-                              <p>{order.customerAddress}</p>
-                              {order.customerNotes && <p className="text-gray-500 italic">Note: {order.customerNotes}</p>}
-                              {order.adminNotes ? (
-                                <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800">
-                                  <p className="font-semibold mb-1">Admin Note</p>
-                                  <p>{order.adminNotes}</p>
+                          <span className="font-bold text-gray-800 text-sm font-mono">{order.invoiceNumber || order.orderNumber}</span>
+                        </div>
+                        <p className="text-xs text-gray-400 flex items-center gap-1.5 ml-9">
+                          <FiClock size={11} />
+                          {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                          <span className="text-gray-300">·</span>
+                          {order.items.length} item{order.items.length > 1 ? 's' : ''}
+                          <span className="text-gray-300">·</span>
+                          <span className="font-bold text-gray-600">{formatOrderAmount(order.totalAmount)}</span>
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                        <Badge status={order.orderStatus} label="Order" />
+                        <Badge status={order.paymentStatus} type="payment" label="Payment" />
+                        <button
+                          onClick={() => downloadInvoice(order._id)}
+                          disabled={!isInvoiceReady(order)}
+                          className={`p-2 rounded-lg transition-colors ${
+                            isInvoiceReady(order)
+                              ? 'text-gray-300 hover:text-rose-600 hover:bg-rose-50'
+                              : 'cursor-not-allowed text-gray-200 bg-gray-50'
+                          }`}
+                          title={isInvoiceReady(order) ? 'Download Invoice' : 'Invoice available after shipping'}
+                          aria-label={isInvoiceReady(order) ? 'Download Invoice' : 'Invoice available after shipping'}
+                        >
+                          <FiDownload size={15} />
+                        </button>
+                        <button
+                          onClick={() => setExpandedId(expandedId === order._id ? null : order._id)}
+                          className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                        >
+                          {expandedId === order._id ? <FiChevronUp size={15} /> : <FiChevronDown size={15} />}
+                        </button>
+                      </div>
+                    </div>
+
+                    <AnimatePresence>
+                      {expandedId === order._id && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          className="border-t border-gray-100 overflow-hidden"
+                        >
+                          <div className="p-5 bg-gray-50/50">
+                            <div className="space-y-2.5 mb-4">
+                              {order.items.map((item, index) => (
+                                <div key={index} className="flex items-center justify-between text-sm gap-3">
+                                  <div className="flex items-center gap-2 min-w-0">
+                                    <div className="w-8 h-8 bg-white rounded-lg border border-gray-100 flex items-center justify-center flex-shrink-0">
+                                      <RiGiftLine size={14} className="text-rose-300" />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <p className="text-gray-700 font-medium">{item.name}</p>
+                                    </div>
+                                    <span className="text-gray-400 text-xs flex-shrink-0">x{item.quantity}</span>
+                                  </div>
+                                  <span className="font-bold text-gray-800 flex-shrink-0">
+                                    {formatOrderAmount(item.totalAmount || (item.price * item.quantity))}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="mb-4 rounded-xl border border-gray-200 bg-white p-4 space-y-2 text-sm">
+                              <div className="flex justify-between text-gray-500">
+                                <span>MRP Total</span>
+                                <span>{formatOrderAmount(orderTotals.mrpTotal)}</span>
+                              </div>
+                              <div className="flex justify-between text-gray-500">
+                                <span>Selling Price</span>
+                                <span>{formatOrderAmount(orderTotals.sellingPriceTotal)}</span>
+                              </div>
+                              <div className="flex justify-between text-gray-500">
+                                <span>Discount ({orderTotals.discountPercentage}%)</span>
+                                <span>- {formatOrderAmount(orderTotals.discount)}</span>
+                              </div>
+                              <div className="flex justify-between text-gray-500">
+                                <span>Taxable Amount</span>
+                                <span>{formatOrderAmount(orderTotals.taxableSubtotal)}</span>
+                              </div>
+                              {orderTotals.cgst > 0 ? (
+                                <div className="flex justify-between text-gray-500">
+                                  <span>CGST ({orderTotals.cgstPercentage}%)</span>
+                                  <span>{formatOrderAmount(orderTotals.cgst)}</span>
                                 </div>
                               ) : null}
+                              {orderTotals.sgst > 0 ? (
+                                <div className="flex justify-between text-gray-500">
+                                  <span>SGST ({orderTotals.sgstPercentage}%)</span>
+                                  <span>{formatOrderAmount(orderTotals.sgst)}</span>
+                                </div>
+                              ) : null}
+                              {orderTotals.igst > 0 ? (
+                                <div className="flex justify-between text-gray-500">
+                                  <span>IGST ({orderTotals.igstPercentage}%)</span>
+                                  <span>{formatOrderAmount(orderTotals.igst)}</span>
+                                </div>
+                              ) : null}
+                              <div className="flex justify-between text-gray-500">
+                                <span>GST</span>
+                                <span>{formatOrderAmount(orderTotals.gst)}</span>
+                              </div>
+                              {Math.abs(orderTotals.roundOff) > 0.001 ? (
+                                <div className="flex justify-between text-gray-500">
+                                  <span>Round Off</span>
+                                  <span>{formatOrderAmount(orderTotals.roundOff)}</span>
+                                </div>
+                              ) : null}
+                              <div className="border-t border-gray-200 pt-2 flex justify-between font-bold text-sm">
+                                <span className="text-gray-700">Grand Total</span>
+                                <span className="text-rose-600">{formatOrderAmount(orderTotals.grandTotal)}</span>
+                              </div>
                             </div>
-                          )}
-                        </div>
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
-                </motion.div>
-              ))}
+
+                            {order.customerAddress && (
+                              <div className="text-xs text-gray-400 space-y-1 bg-white rounded-xl p-3 border border-gray-100">
+                                <p className="font-semibold text-gray-600 mb-1">Delivery Address</p>
+                                <p>{order.customerAddress}</p>
+                                {order.customerNotes && <p className="text-gray-500 italic">Note: {order.customerNotes}</p>}
+                                {order.adminNotes ? (
+                                  <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800">
+                                    <p className="font-semibold mb-1">Admin Note</p>
+                                    <p>{order.adminNotes}</p>
+                                  </div>
+                                ) : null}
+                              </div>
+                            )}
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                );
+              })}
             </div>
             <Pagination currentPage={meta.page} totalPages={meta.totalPages} onPageChange={fetchOrders} />
           </>

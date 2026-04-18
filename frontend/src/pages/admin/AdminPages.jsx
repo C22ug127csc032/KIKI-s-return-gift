@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import { FiAlertTriangle, FiBox, FiChevronDown, FiDownload, FiFileText, FiGrid, FiPlus, FiSearch, FiTrash2, FiX } from 'react-icons/fi';
 import api from '../../api/api.js';
 import { EmptyState, Modal, PageLoader, Pagination } from '../../components/ui/index.jsx';
-import { getSellingPrice } from '../../utils/pricing.js';
+import { calculatePricing, getDiscountPercentage, getMrpPrice, getSellingPrice, getTaxRates } from '../../utils/pricing.js';
 import { isValidEmail, isValidPhone, normalizePhone } from '../../utils/validation.js';
 import { downloadInvoiceFile, showInvoiceDownloadError } from '../../utils/invoiceDownload.js';
 
@@ -764,14 +764,29 @@ export function AdminInventory() {
 }
 
 export function AdminOfflineSales() {
+  const createCartItem = (product = null) => {
+    const taxRates = product ? getTaxRates(product) : { cgstRate: 0, sgstRate: 0, igstRate: 0 };
+
+    return {
+      productId: product?._id || '',
+      quantity: 1,
+      mrp: product ? Number(getMrpPrice(product) || 0) : 0,
+      sellingPrice: product ? Number((product.sellingPrice ?? product.basePrice ?? getSellingPrice(product)) || 0) : 0,
+      discountPercentage: product ? Number(product.discountPercentage || getDiscountPercentage(product) || 0) : 0,
+      cgstRate: Number(taxRates.cgstRate || 0),
+      sgstRate: Number(taxRates.sgstRate || 0),
+      igstRate: Number(taxRates.igstRate || 0),
+    };
+  };
+
   const [sales, setSales] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ customerName: '', phone: '', address: '', notes: '' });
-  const [cartItems, setCartItems] = useState([{ productId: '', quantity: 1 }]);
+  const [form, setForm] = useState({ customerName: '', phone: '', address: '', notes: '', gstMode: 'with_gst' });
+  const [cartItems, setCartItems] = useState([createCartItem()]);
   const [saving, setSaving] = useState(false);
-  const [listFilters, setListFilters] = useState({ search: '', hasPhone: '', sortBy: 'date-desc', page: 1, pageSize: 10 });
+  const [listFilters, setListFilters] = useState({ search: '', hasPhone: '', gstMode: 'with_gst', sortBy: 'date-desc', page: 1, pageSize: 10 });
 
   useEffect(() => {
     document.title = 'Offline Sales - Admin';
@@ -784,11 +799,74 @@ export function AdminOfflineSales() {
     api.get('/offline-sales').then((r) => setSales(r.data.data)).finally(() => setLoading(false));
   };
 
-  const addItem = () => setCartItems([...cartItems, { productId: '', quantity: 1 }]);
+  const formatAmount = (value) => `Rs.${Math.round(Number(value || 0))}`;
+
+  const getItemPricingPreview = (item, product) => {
+    if (!product) return null;
+
+    const safeQuantity = Math.max(Number(item.quantity || 0), 0);
+    const { cgstRate, sgstRate, igstRate } = form.gstMode === 'with_gst'
+      ? {
+        cgstRate: Number(item.cgstRate || 0),
+        sgstRate: Number(item.sgstRate || 0),
+        igstRate: Number(item.igstRate || 0),
+      }
+      : { cgstRate: 0, sgstRate: 0, igstRate: 0, gstRate: 0 };
+    const gstRate = cgstRate + sgstRate + igstRate;
+
+    const pricing = calculatePricing({
+      basePrice: Number(item.sellingPrice || 0),
+      discountPercentage: Number(item.discountPercentage || 0),
+      cgstRate,
+      sgstRate,
+      igstRate,
+      quantity: safeQuantity,
+    });
+
+    return {
+      mrp: Number(item.mrp || getMrpPrice(product) || pricing.originalUnitPrice || 0),
+      sellingPrice: Number(item.sellingPrice || 0),
+      discountPercentage: Number(item.discountPercentage || 0),
+      discountAmount: Number(pricing.discountAmount || 0),
+      discountAmountPerUnit: Number(pricing.discountAmountPerUnit || 0),
+      gstRate: Number(gstRate || 0),
+      cgstRate: Number(cgstRate || 0),
+      sgstRate: Number(sgstRate || 0),
+      igstRate: Number(igstRate || 0),
+      gstAmount: Number(pricing.gstAmount || 0),
+      cgstAmountPerUnit: Number(pricing.cgstAmountPerUnit || 0),
+      sgstAmountPerUnit: Number(pricing.sgstAmountPerUnit || 0),
+      igstAmountPerUnit: Number(pricing.igstAmountPerUnit || 0),
+      taxableAmount: Number(pricing.taxableAmount || 0),
+      taxableUnitPrice: Number(pricing.taxableUnitPrice || 0),
+      totalUnitPrice: Number(pricing.totalUnitPrice || 0),
+      totalAmount: Number(pricing.totalAmount || 0),
+    };
+  };
+
+  const saleSummary = cartItems.reduce((summary, item) => {
+    const product = products.find((entry) => entry._id === item.productId);
+    const preview = getItemPricingPreview(item, product);
+    if (!preview) return summary;
+
+    return {
+      mrp: summary.mrp + (preview.mrp * Number(item.quantity || 0)),
+      discount: summary.discount + preview.discountAmount,
+      gst: summary.gst + preview.gstAmount,
+      total: summary.total + preview.totalAmount,
+    };
+  }, { mrp: 0, discount: 0, gst: 0, total: 0 });
+
+  const addItem = () => setCartItems([...cartItems, createCartItem()]);
   const removeItem = (index) => setCartItems(cartItems.filter((_, i) => i !== index));
   const updateItem = (index, key, value) => {
     const next = [...cartItems];
-    next[index][key] = value;
+    if (key === 'productId') {
+      const selectedProduct = products.find((product) => product._id === value);
+      next[index] = selectedProduct ? { ...createCartItem(selectedProduct), quantity: next[index].quantity || 1 } : createCartItem();
+    } else {
+      next[index][key] = value;
+    }
     setCartItems(next);
   };
 
@@ -801,7 +879,15 @@ export function AdminOfflineSales() {
       toast.error('Phone number must be exactly 10 digits');
       return;
     }
-    const items = cartItems.filter((item) => item.productId).map((item) => ({ product: item.productId, quantity: Number(item.quantity) }));
+    const items = cartItems.filter((item) => item.productId).map((item) => ({
+      product: item.productId,
+      quantity: Number(item.quantity),
+      sellingPrice: Number(item.sellingPrice || 0),
+      discountPercentage: Number(item.discountPercentage || 0),
+      cgstRate: Number(item.cgstRate || 0),
+      sgstRate: Number(item.sgstRate || 0),
+      igstRate: Number(item.igstRate || 0),
+    }));
     if (!items.length) {
       toast.error('Add at least one item');
       return;
@@ -815,6 +901,8 @@ export function AdminOfflineSales() {
       await api.post('/offline-sales', { ...form, customerName: form.customerName.trim(), items });
       toast.success('Offline sale recorded');
       setShowModal(false);
+      setForm({ customerName: '', phone: '', address: '', notes: '', gstMode: 'with_gst' });
+      setCartItems([createCartItem()]);
       fetchSales();
     } catch (err) {
       toast.error(err.response?.data?.message || 'Failed');
@@ -836,7 +924,8 @@ export function AdminOfflineSales() {
     const query = listFilters.search.toLowerCase();
     const matchesSearch = !query || [sale.invoiceNumber, sale.customerName, sale.phone, sale.address].some((value) => String(value || '').toLowerCase().includes(query));
     const matchesPhone = !listFilters.hasPhone || (listFilters.hasPhone === 'yes' ? Boolean(sale.phone) : !sale.phone);
-    return matchesSearch && matchesPhone;
+    const matchesGstMode = sale.gstMode === listFilters.gstMode;
+    return matchesSearch && matchesPhone && matchesGstMode;
   });
 
   const sortedSales = [...filteredSales].sort((a, b) => {
@@ -899,7 +988,17 @@ export function AdminOfflineSales() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
-                  {['#', 'Invoice', 'Customer', 'Phone', 'Total', 'Date', 'Invoice PDF'].map((head) => <th key={head} className="px-2 pb-3 font-medium">{head}</th>)}
+                  <th className="px-2 pb-3 font-medium">
+                    <label className="inline-flex items-center gap-2 text-gray-500">
+                      <input
+                        type="checkbox"
+                        checked={listFilters.gstMode === 'without_gst'}
+                        onChange={(e) => setListFilters({ ...listFilters, gstMode: e.target.checked ? 'without_gst' : 'with_gst', page: 1 })}
+                        className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-400"
+                      />
+                    </label>
+                  </th>
+                  {['Invoice', 'Customer', 'Phone', 'Total', 'Date', 'Invoice PDF'].map((head) => <th key={head} className="px-2 pb-3 font-medium">{head}</th>)}
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -909,7 +1008,7 @@ export function AdminOfflineSales() {
                     <td className="px-2 py-2.5 font-medium text-brand-600">{sale.invoiceNumber}</td>
                     <td className="px-2 py-2.5">{sale.customerName}</td>
                     <td className="px-2 py-2.5 text-gray-500">{sale.phone || '-'}</td>
-                    <td className="px-2 py-2.5 font-semibold">Rs.{sale.totalAmount}</td>
+                    <td className="px-2 py-2.5 font-semibold">{formatAmount(sale.totalAmount)}</td>
                     <td className="px-2 py-2.5 text-xs text-gray-400">{new Date(sale.createdAt).toLocaleDateString('en-IN')}</td>
                     <td className="px-2 py-2.5">
                       <button onClick={() => downloadInvoice(sale._id, sale.invoiceNumber)} className="rounded-lg p-1.5 text-gray-400 hover:text-brand-500"><FiDownload size={15} /></button>
@@ -938,6 +1037,16 @@ export function AdminOfflineSales() {
               <label className="mb-1.5 block text-sm font-medium">Address</label>
               <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="input-field" />
             </div>
+            <div className="sm:col-span-2">
+              <label className="inline-flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={form.gstMode === 'without_gst'}
+                  onChange={(e) => setForm({ ...form, gstMode: e.target.checked ? 'without_gst' : 'with_gst' })}
+                  className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-400"
+                />
+              </label>
+            </div>
           </div>
 
           <div>
@@ -946,19 +1055,137 @@ export function AdminOfflineSales() {
               <button onClick={addItem} className="text-xs text-brand-500 hover:underline">+ Add item</button>
             </div>
             {cartItems.map((item, index) => (
-              <div key={index} className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_96px_auto] sm:items-center">
-                <select value={item.productId} onChange={(e) => updateItem(index, 'productId', e.target.value)} className="input-field w-full text-sm">
-                  <option value="">Select product</option>
-                  {products.map((product) => <option key={product._id} value={product._id}>{product.name} (Rs.{Math.round(Number((product.discountedPrice ?? getSellingPrice(product)) || 0))})</option>)}
-                </select>
-                <input type="number" value={item.quantity} onChange={(e) => updateItem(index, 'quantity', e.target.value)} min="1" className="input-field w-full text-sm" />
-                {cartItems.length > 1 ? (
-                  <button onClick={() => removeItem(index)} className="inline-flex h-11 w-11 items-center justify-center justify-self-start rounded-xl border border-red-100 text-red-400 transition hover:bg-red-50 hover:text-red-600 sm:justify-self-auto">
-                    <FiTrash2 size={15} />
-                  </button>
-                ) : null}
+              <div key={index} className="mb-3 rounded-2xl border border-gray-100 bg-gray-50/70 p-3">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_96px_auto] sm:items-center">
+                  <select value={item.productId} onChange={(e) => updateItem(index, 'productId', e.target.value)} className="input-field w-full text-sm">
+                    <option value="">Select product</option>
+                    {products.map((product) => <option key={product._id} value={product._id}>{product.name}</option>)}
+                  </select>
+                  <input type="number" value={item.quantity} onChange={(e) => updateItem(index, 'quantity', e.target.value)} min="1" className="input-field w-full text-sm" />
+                  {cartItems.length > 1 ? (
+                    <button onClick={() => removeItem(index)} className="inline-flex h-11 w-11 items-center justify-center justify-self-start rounded-xl border border-red-100 text-red-400 transition hover:bg-red-50 hover:text-red-600 sm:justify-self-auto">
+                      <FiTrash2 size={15} />
+                    </button>
+                  ) : null}
+                </div>
+
+                {(() => {
+                  const product = products.find((entry) => entry._id === item.productId);
+                  const preview = getItemPricingPreview(item, product);
+                  if (!product || !preview) return null;
+
+                  return (
+                    <div className="mt-3 space-y-3 rounded-xl border border-rose-100 bg-white p-3 text-xs text-gray-600">
+                      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+                        <div>
+                          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">MRP</p>
+                          <input value={item.mrp} readOnly className="input-field h-10 bg-gray-100 text-sm text-gray-500" />
+                        </div>
+                        <div>
+                          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Selling Price</p>
+                          <input
+                            type="number"
+                            min="0"
+                            value={item.sellingPrice}
+                            onChange={(e) => updateItem(index, 'sellingPrice', e.target.value)}
+                            className="input-field h-10 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Discount %</p>
+                          <input
+                            type="number"
+                            min="0"
+                            max="100"
+                            value={item.discountPercentage}
+                            onChange={(e) => updateItem(index, 'discountPercentage', e.target.value)}
+                            className="input-field h-10 text-sm"
+                          />
+                        </div>
+                        <div>
+                          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">CGST %</p>
+                          <input
+                            type="number"
+                            min="0"
+                            value={item.cgstRate}
+                            onChange={(e) => updateItem(index, 'cgstRate', e.target.value)}
+                            disabled={form.gstMode !== 'with_gst'}
+                            className={`input-field h-10 text-sm ${form.gstMode !== 'with_gst' ? 'bg-gray-100 text-gray-400' : ''}`}
+                          />
+                        </div>
+                        <div>
+                          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">SGST %</p>
+                          <input
+                            type="number"
+                            min="0"
+                            value={item.sgstRate}
+                            onChange={(e) => updateItem(index, 'sgstRate', e.target.value)}
+                            disabled={form.gstMode !== 'with_gst'}
+                            className={`input-field h-10 text-sm ${form.gstMode !== 'with_gst' ? 'bg-gray-100 text-gray-400' : ''}`}
+                          />
+                        </div>
+                        <div>
+                          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">IGST %</p>
+                          <input
+                            type="number"
+                            min="0"
+                            value={item.igstRate}
+                            onChange={(e) => updateItem(index, 'igstRate', e.target.value)}
+                            disabled={form.gstMode !== 'with_gst'}
+                            className={`input-field h-10 text-sm ${form.gstMode !== 'with_gst' ? 'bg-gray-100 text-gray-400' : ''}`}
+                          />
+                        </div>
+                        <div>
+                          <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-gray-400">Final Price</p>
+                          <input
+                            value={Math.round(Number(preview.totalUnitPrice || 0))}
+                            readOnly
+                            className="input-field h-10 bg-gray-50 text-sm font-semibold text-gray-700"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+                        <div className="flex flex-wrap gap-x-5 gap-y-1">
+                          <span>MRP: {formatAmount(item.mrp)}</span>
+                          <span>Selling Price: {formatAmount(item.sellingPrice)}</span>
+                          <span>Discount: {formatAmount(preview.discountAmountPerUnit)}</span>
+                          <span>After Discount: {formatAmount(preview.taxableUnitPrice)}</span>
+                          <span>CGST: {formatAmount(preview.cgstAmountPerUnit)}</span>
+                          <span>SGST: {formatAmount(preview.sgstAmountPerUnit)}</span>
+                          {Number(preview.igstRate || 0) > 0 ? (
+                            <span>IGST: {formatAmount(preview.igstAmountPerUnit)}</span>
+                          ) : null}
+                          <span>Total Price: {formatAmount(preview.totalUnitPrice)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
             ))}
+          </div>
+
+          <div className="rounded-2xl border border-gray-100 bg-gray-50/80 p-4">
+            <p className="mb-3 text-sm font-semibold text-gray-700">Offline Sale Summary</p>
+            <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-400">MRP Total</p>
+                <p className="mt-1 font-semibold text-gray-800">{formatAmount(saleSummary.mrp)}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-400">Discount</p>
+                <p className="mt-1 font-semibold text-gray-800">- {formatAmount(saleSummary.discount)}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-400">GST Total</p>
+                <p className="mt-1 font-semibold text-gray-800">{formatAmount(saleSummary.gst)}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-gray-400">Grand Total</p>
+                <p className="mt-1 font-semibold text-rose-600">{formatAmount(saleSummary.total)}</p>
+              </div>
+            </div>
           </div>
 
           <div>

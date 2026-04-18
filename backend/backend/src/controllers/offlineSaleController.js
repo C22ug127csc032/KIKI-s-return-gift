@@ -18,6 +18,7 @@ import { isValidPhone, normalizePhone } from '../utils/validation.js';
 
 export const createOfflineSale = asyncHandler(async (req, res) => {
   const { customerName, address, items, notes } = req.body;
+  const gstMode = req.body.gstMode === 'without_gst' ? 'without_gst' : 'with_gst';
   const phone = normalizePhone(req.body.phone);
   if (phone && !isValidPhone(phone)) throw new ApiError(400, 'Phone number must be exactly 10 digits');
 
@@ -29,15 +30,32 @@ export const createOfflineSale = asyncHandler(async (req, res) => {
     const product = await Product.findById(item.product);
     if (!product) throw new ApiError(404, `Product not found: ${item.product}`);
     if (product.stock < item.quantity) throw new ApiError(400, `Insufficient stock for ${product.name}`);
-    const sellingPrice = getProductSellingPrice(product);
+    const productSellingPrice = getProductSellingPrice(product);
     const taxRates = getProductTaxRates(product);
-    const basePrice = Number(product.basePrice ?? getTaxableAmountFromInclusive(sellingPrice, getProductGstRate(product)));
+    const sellingPrice = item.sellingPrice === '' || item.sellingPrice === undefined
+      ? productSellingPrice
+      : Number(item.sellingPrice);
+    const discountPercentage = item.discountPercentage === '' || item.discountPercentage === undefined
+      ? Number(product.discountPercentage || 0)
+      : Number(item.discountPercentage);
+    const basePrice = Number.isFinite(sellingPrice)
+      ? Number(sellingPrice || 0)
+      : Number(product.basePrice ?? getTaxableAmountFromInclusive(productSellingPrice, getProductGstRate(product)));
+    const cgstRate = gstMode === 'with_gst'
+      ? Number(item.cgstRate ?? taxRates.cgstRate ?? 0)
+      : 0;
+    const sgstRate = gstMode === 'with_gst'
+      ? Number(item.sgstRate ?? taxRates.sgstRate ?? 0)
+      : 0;
+    const igstRate = gstMode === 'with_gst'
+      ? Number(item.igstRate ?? taxRates.igstRate ?? 0)
+      : 0;
     const pricing = calculateLinePricing({
       basePrice,
-      discountPercentage: product.discountPercentage || 0,
-      cgstRate: taxRates.cgstRate,
-      sgstRate: taxRates.sgstRate,
-      igstRate: taxRates.igstRate,
+      discountPercentage,
+      cgstRate,
+      sgstRate,
+      igstRate,
       quantity: item.quantity,
     });
     saleItems.push({
@@ -46,7 +64,7 @@ export const createOfflineSale = asyncHandler(async (req, res) => {
       basePrice: pricing.basePrice,
       discountPercentage: pricing.discountPercentage,
       discountAmount: pricing.discountAmount,
-      price: sellingPrice,
+      price: pricing.taxableAmount / Math.max(Number(item.quantity || 0), 1),
       originalPrice: getProductMrp(product),
       gstRate: pricing.gstRate,
       cgstRate: pricing.cgstRate,
@@ -67,6 +85,7 @@ export const createOfflineSale = asyncHandler(async (req, res) => {
 
   const sale = await OfflineSale.create({
     customerName, phone, address,
+    gstMode,
     items: saleItems,
     subtotal: Number(subtotal.toFixed(2)),
     tax: Number(tax.toFixed(2)),
