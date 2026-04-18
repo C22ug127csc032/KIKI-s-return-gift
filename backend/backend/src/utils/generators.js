@@ -1,27 +1,29 @@
-export const generateOrderNumber = () => {
-  const date = new Date();
-  const year = date.getFullYear().toString().slice(-2);
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  const random = Math.floor(1000 + Math.random() * 9000);
-  return `KKS-${year}${month}${day}-${random}`;
-};
-
 const escapeRegExp = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-export const generateInvoiceNumber = async (Model, prefix, options = {}) => {
-  const safePrefix = prefix || 'K-ON';
-  const prefixRegex = new RegExp(`^${escapeRegExp(safePrefix)}-`);
+const generateSequentialNumber = async (Model, fieldName, prefix, options = {}) => {
+  const safePrefix = prefix || 'K-ORDER NO';
+  const fieldRegex = new RegExp(`^${escapeRegExp(safePrefix)}-`);
   const { padLength = 4, filter = {} } = options;
-  const baseFilter = { ...filter, invoiceNumber: prefixRegex };
+  const baseFilter = { ...filter, [fieldName]: fieldRegex };
 
   let sequence = await Model.countDocuments(baseFilter) + 1;
-  let invoiceNumber = `${safePrefix}-${String(sequence).padStart(padLength, '0')}`;
+  let generatedNumber = `${safePrefix}-${String(sequence).padStart(padLength, '0')}`;
 
-  while (await Model.exists({ invoiceNumber })) {
+  while (await Model.exists({ [fieldName]: generatedNumber })) {
     sequence += 1;
-    invoiceNumber = `${safePrefix}-${String(sequence).padStart(padLength, '0')}`;
+    generatedNumber = `${safePrefix}-${String(sequence).padStart(padLength, '0')}`;
   }
 
-  return invoiceNumber;
+  return generatedNumber;
+};
+
+export const generateOrderNumber = async (Model, options = {}) => generateSequentialNumber(
+  Model,
+  'orderNumber',
+  'K-ORDER NO',
+  options
+);
+
+export const generateInvoiceNumber = async (Model, prefix, options = {}) => {
+  return generateSequentialNumber(Model, 'invoiceNumber', prefix || 'K-ON', options);
 };

@@ -8,6 +8,8 @@ import { isValidEmail, isValidPhone, normalizePhone } from '../../utils/validati
 import { downloadInvoiceFile, showInvoiceDownloadError } from '../../utils/invoiceDownload.js';
 import FloatingField from '../../components/forms/FloatingField.jsx';
 
+const getFieldLabel = (placeholder = '') => String(placeholder || '').replace(/\*/g, '').trim();
+
 const sortItems = (items, sortBy, accessors) => {
   const [field, direction] = sortBy.split('-');
   const accessor = accessors[field];
@@ -81,40 +83,42 @@ function SearchableSelectField({ options, value, onChange, placeholder = 'Search
 
   return (
     <div ref={fieldRef} className="relative">
-      <input
+      <FloatingField
         value={query}
         onChange={handleChange}
-        placeholder={placeholder}
+        label={getFieldLabel(placeholder)}
         disabled={disabled}
         onFocus={() => {
           if (!disabled) setOpen(true);
         }}
-        className={`input-field pr-20 ${disabled ? 'cursor-not-allowed bg-gray-100 text-gray-400' : ''}`}
+        className={disabled ? 'pr-20 cursor-not-allowed bg-gray-100 text-gray-400' : 'pr-20'}
+        trailing={
+          <div className="flex items-center gap-1">
+            {query ? (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="flex items-center justify-center px-1 text-gray-400 transition hover:text-rose-500"
+                aria-label="Clear selection"
+              >
+                <FiX size={15} />
+              </button>
+            ) : null}
+            <div className="h-5 border-l border-gray-200" />
+            <button
+              type="button"
+              onClick={() => {
+                if (!disabled) setOpen((current) => !current);
+              }}
+              className="flex items-center justify-center text-gray-500 transition hover:text-rose-600 disabled:cursor-not-allowed"
+              disabled={disabled}
+              aria-label="Toggle options"
+            >
+              <FiChevronDown size={16} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+        }
       />
-      <div className="pointer-events-none absolute inset-y-0 right-11 flex items-center text-gray-300">
-        <div className="h-5 border-l border-gray-200" />
-      </div>
-      {query ? (
-        <button
-          type="button"
-          onClick={handleClear}
-          className="absolute inset-y-0 right-10 flex items-center justify-center px-2 text-gray-400 transition hover:text-rose-500"
-          aria-label="Clear selection"
-        >
-          <FiX size={15} />
-        </button>
-      ) : null}
-      <button
-        type="button"
-        onClick={() => {
-          if (!disabled) setOpen((current) => !current);
-        }}
-        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-500 transition hover:text-rose-600 disabled:cursor-not-allowed"
-        disabled={disabled}
-        aria-label="Toggle options"
-      >
-        <FiChevronDown size={16} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
       {open && !disabled ? (
         <div className="absolute left-0 right-0 top-[calc(100%+0.45rem)] z-20 overflow-hidden rounded-2xl border border-rose-100 bg-white shadow-[0_18px_40px_rgba(225,29,72,0.16)]">
           <div className="border-b border-rose-50 bg-gradient-to-r from-rose-50 to-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-rose-400">
@@ -567,13 +571,13 @@ export function AdminInventory() {
           </div>
         </div>
         <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50/80 px-4 py-3">
-          <div className="relative w-full max-w-sm">
-            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-            <input
+          <div className="w-full max-w-sm">
+            <FloatingField
+              label="Search Movements"
+              icon={FiSearch}
               value={movementFilters.search}
               onChange={(e) => setMovementFilters({ ...movementFilters, search: e.target.value, page: 1 })}
-              placeholder="Search movements..."
-              className="input-field h-11 py-2 pl-10 text-sm"
+              className="text-sm"
             />
           </div>
           <select value={movementFilters.type} onChange={(e) => setMovementFilters({ ...movementFilters, type: e.target.value, page: 1 })} className="input-field h-11 w-full max-w-[160px] py-2 text-sm">
@@ -655,13 +659,13 @@ export function AdminInventory() {
             </div>
           </div>
           <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50/80 px-4 py-3">
-            <div className="relative w-full max-w-sm">
-              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-              <input
+            <div className="w-full max-w-sm">
+              <FloatingField
+                label="Search Raw Movements"
+                icon={FiSearch}
                 value={rawMovementFilters.search}
                 onChange={(e) => setRawMovementFilters({ ...rawMovementFilters, search: e.target.value, page: 1 })}
-                placeholder="Search raw movements..."
-                className="input-field h-11 py-2 pl-10 text-sm"
+                className="text-sm"
               />
             </div>
             <select value={rawMovementFilters.type} onChange={(e) => setRawMovementFilters({ ...rawMovementFilters, type: e.target.value, page: 1 })} className="input-field h-11 w-full max-w-[170px] py-2 text-sm">
@@ -747,14 +751,8 @@ export function AdminInventory() {
               <option value="ADJUST">ADJUST (Set exact value)</option>
             </select>
           </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">Quantity *</label>
-            <input type="number" value={adjForm.quantity} onChange={(e) => setAdjForm({ ...adjForm, quantity: e.target.value })} min="0" className="input-field" />
-          </div>
-          <div>
-            <label className="mb-1.5 block text-sm font-medium text-gray-700">Note</label>
-            <input value={adjForm.note} onChange={(e) => setAdjForm({ ...adjForm, note: e.target.value })} placeholder="Reason for adjustment" className="input-field" />
-          </div>
+          <FloatingField type="number" label="Quantity" value={adjForm.quantity} onChange={(e) => setAdjForm({ ...adjForm, quantity: e.target.value })} min="0" required />
+          <FloatingField label="Note" value={adjForm.note} onChange={(e) => setAdjForm({ ...adjForm, note: e.target.value })} />
           <div className="flex gap-3">
             <button onClick={() => setShowAdjust(false)} className="btn-outline flex-1">Cancel</button>
             <button onClick={handleAdjust} disabled={saving} className="btn-primary flex-1">{saving ? 'Saving...' : 'Adjust Stock'}</button>
@@ -1281,7 +1279,7 @@ export function AdminSettings() {
             <SettingsField label="Support Phone" name="supportPhone" value={form.supportPhone} onChange={updateField} />
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">Store Address</label>
-              <textarea value={form.storeAddress || ''} onChange={(e) => updateField('storeAddress', e.target.value)} rows={2} className="input-field resize-none" />
+              <FloatingField as="textarea" label="Store Address" value={form.storeAddress || ''} onChange={(e) => updateField('storeAddress', e.target.value)} rows={2} className="resize-none" />
             </div>
           </div>
         </div>
@@ -1305,7 +1303,7 @@ export function AdminSettings() {
           </div>
           <div>
             <label className="mb-1.5 block text-sm font-medium text-gray-700">Payment Instructions</label>
-            <textarea value={form.paymentInstructions || ''} onChange={(e) => updateField('paymentInstructions', e.target.value)} rows={3} className="input-field resize-none" />
+            <FloatingField as="textarea" label="Payment Instructions" value={form.paymentInstructions || ''} onChange={(e) => updateField('paymentInstructions', e.target.value)} rows={3} className="resize-none" />
           </div>
         </div>
 
@@ -1319,27 +1317,27 @@ export function AdminSettings() {
             <SettingsField label="Footer CTA Button Text" name="footerCtaButtonText" value={form.footerCtaButtonText} onChange={updateField} placeholder="Chat on WhatsApp" />
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">Footer CTA Subtitle</label>
-              <textarea value={form.footerCtaSubtitle || ''} onChange={(e) => updateField('footerCtaSubtitle', e.target.value)} rows={2} className="input-field resize-none" />
+              <FloatingField as="textarea" label="Footer CTA Subtitle" value={form.footerCtaSubtitle || ''} onChange={(e) => updateField('footerCtaSubtitle', e.target.value)} rows={2} className="resize-none" />
             </div>
             <SettingsField label="Footer Brand Title" name="footerBrandTitle" value={form.footerBrandTitle} onChange={updateField} placeholder="KIKI'S" />
             <SettingsField label="Footer Brand Subtitle" name="footerBrandSubtitle" value={form.footerBrandSubtitle} onChange={updateField} placeholder="Return Gift Store" />
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">Footer Description</label>
-              <textarea value={form.footerDescription || ''} onChange={(e) => updateField('footerDescription', e.target.value)} rows={3} className="input-field resize-none" />
+              <FloatingField as="textarea" label="Footer Description" value={form.footerDescription || ''} onChange={(e) => updateField('footerDescription', e.target.value)} rows={3} className="resize-none" />
             </div>
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">Footer Contact Address</label>
-              <textarea value={form.footerContactAddress || ''} onChange={(e) => updateField('footerContactAddress', e.target.value)} rows={2} className="input-field resize-none" />
+              <FloatingField as="textarea" label="Footer Contact Address" value={form.footerContactAddress || ''} onChange={(e) => updateField('footerContactAddress', e.target.value)} rows={2} className="resize-none" />
             </div>
             <SettingsField label="Instagram URL" name="footerInstagramUrl" type="url" value={form.footerInstagramUrl} onChange={updateField} placeholder="https://instagram.com/yourpage" />
             <SettingsField label="Facebook URL" name="footerFacebookUrl" type="url" value={form.footerFacebookUrl} onChange={updateField} placeholder="https://facebook.com/yourpage" />
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">Footer Copyright Text</label>
-              <textarea value={form.footerCopyrightText || ''} onChange={(e) => updateField('footerCopyrightText', e.target.value)} rows={2} className="input-field resize-none" />
+              <FloatingField as="textarea" label="Footer Copyright Text" value={form.footerCopyrightText || ''} onChange={(e) => updateField('footerCopyrightText', e.target.value)} rows={2} className="resize-none" />
             </div>
             <div className="sm:col-span-2">
               <label className="mb-1.5 block text-sm font-medium text-gray-700">Footer Bottom Text</label>
-              <input value={form.footerBottomText || ''} onChange={(e) => updateField('footerBottomText', e.target.value)} className="input-field" />
+              <FloatingField label="Footer Bottom Text" value={form.footerBottomText || ''} onChange={(e) => updateField('footerBottomText', e.target.value)} />
             </div>
           </div>
         </div>

@@ -104,6 +104,7 @@ export default function ProductCard({ product, index = 0 }) {
             {showStrikePrice ? (
               <span className="block sm:inline text-xs text-gray-400 line-through sm:ml-1.5">Rs.{Math.round(Number(mrpPrice || 0))}</span>
             ) : null}
+            <p className="mt-1 text-[11px] font-medium text-amber-700">GST not included</p>
           </div>
 
           <motion.button

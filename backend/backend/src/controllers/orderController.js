@@ -23,6 +23,12 @@ const formatDiscountPercentage = (value) => Number(value || 0)
   .toFixed(2)
   .replace(/\.?0+$/, '');
 
+const formatMultilineText = (value) => String(value || '')
+  .split(/\r?\n/)
+  .map((line) => line.trim())
+  .filter(Boolean)
+  .join(', ');
+
 const calculateOrderDiscountSummary = (order) => {
   const mrpTotal = order.items.reduce((sum, item) => {
     const quantity = Number(item.quantity || 0);
@@ -54,25 +60,40 @@ const calculateOrderDiscountSummary = (order) => {
 const buildWhatsAppMessage = (order, settings) => {
   const totals = calculateOrderDiscountSummary(order);
   const itemsText = order.items
-    .map((i) => {
+    .map((i, index) => {
+      const quantity = Number(i.quantity || 0);
+      const unitMrp = Number(i.originalPrice || i.price || 0);
+      const lineMrp = unitMrp * quantity;
       const lineTotal = Number(i.totalAmount || (Number(i.price || 0) * Number(i.quantity || 0)));
-      const calculationParts = [
-        `MRP Rs.${formatMessageAmount(i.originalPrice || i.price)}`,
-        `Discount Rs.${formatMessageAmount(i.discountAmount || 0)}`,
-        `CGST Rs.${formatMessageAmount(i.cgstAmount || 0)}`,
-        `SGST Rs.${formatMessageAmount(i.sgstAmount || 0)}`,
-        `IGST Rs.${formatMessageAmount(i.igstAmount || 0)}`,
+      const lines = [
+        `${index + 1}. ${i.name}`,
+        `Qty: ${quantity}`,
+        `Unit MRP: Rs.${formatMessageAmount(unitMrp)}`,
+        `Line MRP: Rs.${formatMessageAmount(lineMrp)}`,
+        `Discount: Rs.${formatMessageAmount(i.discountAmount || 0)}`,
+        `Taxable Amount: Rs.${formatMessageAmount(i.taxableAmount || 0)}`,
+        `CGST: Rs.${formatMessageAmount(i.cgstAmount || 0)}`,
+        `SGST: Rs.${formatMessageAmount(i.sgstAmount || 0)}`,
+        `IGST: Rs.${formatMessageAmount(i.igstAmount || 0)}`,
+        `Line Total: Rs.${formatMessageAmount(lineTotal)}`,
       ];
-      return `- ${i.name} x${i.quantity}: ${calculationParts.join(', ')} => Total Rs.${formatMessageAmount(lineTotal)}`;
+
+      if (i.hasStockIssue && i.stockIssueMessage) {
+        lines.push(`Stock Note: ${i.stockIssueMessage}`);
+      }
+
+      return lines.join('\n');
     })
-    .join('\n');
+    .join('\n\n');
 
   return `*New Order - ${settings?.storeName || "KIKI'S RETURN GIFT STORE"}*\n\n` +
     `Order No: ${order.orderNumber}\n` +
+    (order.invoiceNumber ? `Invoice No: ${order.invoiceNumber}\n` : '') +
     `Name: ${order.customerName}\n` +
     `Phone: ${order.customerPhone}\n` +
-    `Address: ${order.customerAddress}\n\n` +
+    `Address: ${formatMultilineText(order.customerAddress)}\n\n` +
     `*Items:*\n${itemsText}\n\n` +
+    `*Summary:*\n` +
     `MRP Total: Rs.${formatMessageAmount(totals.mrpTotal)}\n` +
     `Discount (${totals.discountPercentage}%): - Rs.${formatMessageAmount(totals.discount)}\n` +
     `Taxable Amount: Rs.${formatMessageAmount(totals.taxableSubtotal)}\n` +
@@ -81,7 +102,7 @@ const buildWhatsAppMessage = (order, settings) => {
     `IGST: Rs.${formatMessageAmount(totals.igst)}\n` +
     `GST: Rs.${formatMessageAmount(totals.gst)}\n` +
     `*Grand Total: Rs.${formatMessageAmount(totals.grandTotal)}*\n\n` +
-    (order.customerNotes ? `Notes: ${order.customerNotes}\n\n` : '') +
+    (order.customerNotes ? `Notes: ${formatMultilineText(order.customerNotes)}\n\n` : '') +
     `Please confirm this order. Thank you!`;
 };
 
@@ -167,7 +188,7 @@ export const createOrder = asyncHandler(async (req, res) => {
   const settings = await AppSetting.findOne();
 
   const order = await Order.create({
-    orderNumber: generateOrderNumber(),
+    orderNumber: await generateOrderNumber(Order),
     invoiceNumber: await generateInvoiceNumber(Order, 'K-ON'),
     user: req.user?._id || null,
     customerName,

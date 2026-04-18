@@ -142,18 +142,23 @@ export default function ProductDetailPage() {
               </div>
             ) : null}
 
-            <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mb-5 pb-5 border-b border-gray-100 w-full">
-              <span className="text-3xl font-bold text-gray-900">Rs.{Number(sellingPrice || 0).toFixed(2)}</span>
-              {showStrikePrice ? (
-                <>
-                  <span className="text-base text-gray-300 line-through">Rs.{Number(mrpPrice || 0).toFixed(2)}</span>
-                  {showDiscountBadge ? (
-                    <span className="product-discount-badge bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-full border border-emerald-200">
-                    {discountPercentage}% OFF
-                    </span>
-                  ) : null}
-                </>
-              ) : null}
+            <div className="mb-5 w-full border-b border-gray-100 pb-5">
+              <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
+                <span className="text-3xl font-bold text-gray-900">Rs.{Number(sellingPrice || 0).toFixed(2)}</span>
+                {showStrikePrice ? (
+                  <>
+                    <span className="text-base text-gray-300 line-through">Rs.{Number(mrpPrice || 0).toFixed(2)}</span>
+                    {showDiscountBadge ? (
+                      <span className="product-discount-badge bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-full border border-emerald-200">
+                        {discountPercentage}% OFF
+                      </span>
+                    ) : null}
+                  </>
+                ) : null}
+              </div>
+              <p className="mt-2 text-sm font-medium text-amber-700 lg:text-left">
+                GST is not included in this product price.
+              </p>
             </div>
 
             <p className="text-gray-500 leading-relaxed mb-5 text-sm max-w-xl">{product.description}</p>

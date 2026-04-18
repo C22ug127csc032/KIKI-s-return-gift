@@ -8,12 +8,18 @@ import { sendResponse } from '../utils/apiResponse.js';
 export const getDashboardStats = asyncHandler(async (req, res) => {
   const now = new Date();
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  const orderRevenueFilter = { orderStatus: { $ne: 'Cancelled' } };
+  const monthlyOrderRevenueFilter = {
+    ...orderRevenueFilter,
+    createdAt: { $gte: startOfMonth },
+  };
 
   const [
     totalOrders, pendingOrders, completedOrders, paidOrders,
     totalProducts, lowStockProducts, totalUsers,
     monthlyOrders, recentOrders, topProducts,
-    totalRevenue, monthlyRevenue, offlineSalesCount
+    orderRevenue, monthlyOrderRevenue, offlineSalesCount,
+    offlineRevenue, monthlyOfflineRevenue
   ] = await Promise.all([
     Order.countDocuments(),
     Order.countDocuments({ orderStatus: 'Pending' }),
@@ -30,9 +36,20 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
       { $sort: { totalSold: -1 } },
       { $limit: 5 },
     ]),
-    Order.aggregate([{ $group: { _id: null, total: { $sum: '$totalAmount' } } }]),
-    Order.aggregate([{ $match: { createdAt: { $gte: startOfMonth } } }, { $group: { _id: null, total: { $sum: '$totalAmount' } } }]),
+    Order.aggregate([
+      { $match: orderRevenueFilter },
+      { $group: { _id: null, total: { $sum: '$totalAmount' } } },
+    ]),
+    Order.aggregate([
+      { $match: monthlyOrderRevenueFilter },
+      { $group: { _id: null, total: { $sum: '$totalAmount' } } },
+    ]),
     OfflineSale.countDocuments(),
+    OfflineSale.aggregate([{ $group: { _id: null, total: { $sum: '$totalAmount' } } }]),
+    OfflineSale.aggregate([
+      { $match: { createdAt: { $gte: startOfMonth } } },
+      { $group: { _id: null, total: { $sum: '$totalAmount' } } },
+    ]),
   ]);
 
   // Revenue by day (last 7 days)
@@ -47,21 +64,34 @@ export const getDashboardStats = asyncHandler(async (req, res) => {
     last7Days.map(async (day) => {
       const nextDay = new Date(day);
       nextDay.setDate(nextDay.getDate() + 1);
-      const result = await Order.aggregate([
-        { $match: { createdAt: { $gte: day, $lt: nextDay } } },
-        { $group: { _id: null, total: { $sum: '$totalAmount' }, count: { $sum: 1 } } },
+      const [orderResult, offlineResult] = await Promise.all([
+        Order.aggregate([
+          { $match: { ...orderRevenueFilter, createdAt: { $gte: day, $lt: nextDay } } },
+          { $group: { _id: null, total: { $sum: '$totalAmount' }, count: { $sum: 1 } } },
+        ]),
+        OfflineSale.aggregate([
+          { $match: { createdAt: { $gte: day, $lt: nextDay } } },
+          { $group: { _id: null, total: { $sum: '$totalAmount' }, count: { $sum: 1 } } },
+        ]),
       ]);
-      return { date: day.toISOString().split('T')[0], revenue: result[0]?.total || 0, orders: result[0]?.count || 0 };
+      return {
+        date: day.toISOString().split('T')[0],
+        revenue: (orderResult[0]?.total || 0) + (offlineResult[0]?.total || 0),
+        orders: (orderResult[0]?.count || 0) + (offlineResult[0]?.count || 0),
+      };
     })
   );
+
+  const totalRevenue = (orderRevenue[0]?.total || 0) + (offlineRevenue[0]?.total || 0);
+  const monthlyRevenue = (monthlyOrderRevenue[0]?.total || 0) + (monthlyOfflineRevenue[0]?.total || 0);
 
   sendResponse(res, 200, 'Dashboard stats fetched', {
     overview: {
       totalOrders, pendingOrders, completedOrders, paidOrders,
       totalProducts, lowStockProducts, totalUsers,
       monthlyOrders, offlineSalesCount,
-      totalRevenue: totalRevenue[0]?.total || 0,
-      monthlyRevenue: monthlyRevenue[0]?.total || 0,
+      totalRevenue,
+      monthlyRevenue,
     },
     recentOrders,
     topProducts,

@@ -9,7 +9,7 @@ import { Badge, PageLoader } from '../../components/ui/index.jsx';
 
 const formatCurrency = (value) => `Rs.${Number(value || 0).toLocaleString('en-IN')}`;
 
-const StatCard = ({ icon: Icon, label, value, sub, color, delay }) => (
+const StatCard = ({ icon: Icon, label, value, sub, color, delay, valueClassName = '' }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
@@ -19,8 +19,8 @@ const StatCard = ({ icon: Icon, label, value, sub, color, delay }) => (
     <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ${color} sm:h-12 sm:w-12`}>
       <Icon size={20} className="text-white sm:text-[22px]" />
     </div>
-    <div className="min-w-0">
-      <p className="break-words text-xl font-bold text-gray-900 sm:text-2xl">{value}</p>
+    <div className="min-w-0 flex-1">
+      <p className={`text-xl font-bold leading-tight text-gray-900 sm:text-2xl ${valueClassName}`}>{value}</p>
       <p className="text-sm font-medium text-gray-600">{label}</p>
       {sub ? <p className="mt-0.5 text-xs text-gray-400">{sub}</p> : null}
     </div>
@@ -62,6 +62,7 @@ export default function AdminDashboard() {
           label="Total Revenue"
           value={formatCurrency(overview.totalRevenue)}
           sub={`${formatCurrency(overview.monthlyRevenue)} this month`}
+          valueClassName="break-words text-lg sm:text-xl"
           color="bg-green-500"
           delay={0.05}
         />

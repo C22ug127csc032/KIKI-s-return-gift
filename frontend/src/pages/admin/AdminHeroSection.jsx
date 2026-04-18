@@ -3,6 +3,7 @@ import toast from 'react-hot-toast';
 import { FiImage, FiSave, FiTrash2 } from 'react-icons/fi';
 import api from '../../api/api.js';
 import { PageLoader } from '../../components/ui/index.jsx';
+import FloatingField from '../../components/forms/FloatingField.jsx';
 import heroImage1 from '../../assets/hero-1.jpg';
 import heroImage2 from '../../assets/hero-2.jpg';
 import heroImage3 from '../../assets/hero-3.jpg';
@@ -216,15 +217,14 @@ export default function AdminHeroSection() {
                   <Field label="Title Line 2" value={slide.titleLineTwo} onChange={(value) => updateSlide(index, 'titleLineTwo', value)} />
                   <Field label="Title Line 3" value={slide.titleLineThree} onChange={(value) => updateSlide(index, 'titleLineThree', value)} />
                 </div>
-                <div>
-                  <label className="mb-1.5 block text-sm font-medium text-gray-700">Subtitle</label>
-                  <textarea
-                    value={slide.subtitle}
-                    onChange={(e) => updateSlide(index, 'subtitle', e.target.value)}
-                    rows={4}
-                    className="input-field resize-none"
-                  />
-                </div>
+                <FloatingField
+                  as="textarea"
+                  label="Subtitle"
+                  value={slide.subtitle}
+                  onChange={(e) => updateSlide(index, 'subtitle', e.target.value)}
+                  rows={4}
+                  className="resize-none"
+                />
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   <Field label="Badge 1 Label" value={slide.badgeOneLabel} onChange={(value) => updateSlide(index, 'badgeOneLabel', value)} />
                   <Field label="Badge 1 Value" value={slide.badgeOneValue} onChange={(value) => updateSlide(index, 'badgeOneValue', value)} />
@@ -254,9 +254,6 @@ export default function AdminHeroSection() {
 
 function Field({ label, value, onChange }) {
   return (
-    <div>
-      <label className="mb-1.5 block text-sm font-medium text-gray-700">{label}</label>
-      <input value={value || ''} onChange={(e) => onChange(e.target.value)} className="input-field" />
-    </div>
+    <FloatingField label={label} value={value || ''} onChange={(e) => onChange(e.target.value)} />
   );
 }

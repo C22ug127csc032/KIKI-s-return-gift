@@ -323,7 +323,7 @@ export default function AdminOrders() {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">Admin Notes</label>
-            <textarea value={editForm.adminNotes} onChange={(e) => setEditForm({ ...editForm, adminNotes: e.target.value })} className="input-field resize-none" rows={3} />
+            <FloatingField as="textarea" label="Admin Notes" value={editForm.adminNotes} onChange={(e) => setEditForm({ ...editForm, adminNotes: e.target.value })} className="resize-none" rows={3} />
           </div>
           <div className="flex gap-3 pt-2">
             <button onClick={() => setEditOrder(null)} className="btn-outline flex-1">Cancel</button>
