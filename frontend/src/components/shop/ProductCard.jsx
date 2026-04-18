@@ -1,13 +1,12 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiShoppingCart, FiStar, FiGift, FiBell } from 'react-icons/fi';
+import { FiShoppingCart, FiStar, FiGift } from 'react-icons/fi';
 import { RiHeartLine, RiHeartFill } from 'react-icons/ri';
 import { useCart } from '../../context/CartContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useWishlist } from '../../context/WishlistContext.jsx';
-import { getDiscountPercentage, getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
+import { getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
 import { getDisplayProductName } from '../../utils/productName.js';
-import { buildProductNotifyUrl, useStoreWhatsappNumber } from '../../hooks/useStoreWhatsappNumber.js';
 
 export default function ProductCard({ product, index = 0 }) {
   const { addItem } = useCart();
@@ -20,13 +19,10 @@ export default function ProductCard({ product, index = 0 }) {
   const displayName = getDisplayProductName(product);
   const sellingPrice = product.discountedPrice ?? getSellingPrice(product);
   const mrpPrice = getMrpPrice(product);
-  const discountPercentage = getDiscountPercentage(product);
-  const hasDiscount = discountPercentage > 0 && sellingPrice < mrpPrice;
-  const isLowStock = product.stock <= product.lowStockThreshold && product.stock > 0;
-  const isOutOfStock = product.stock === 0;
+  const discountPercentage = Number(product.discountPercentage || 0);
+  const showStrikePrice = Number(mrpPrice || 0) > Number(sellingPrice || 0);
+  const showDiscountBadge = discountPercentage > 0;
   const wished = wishlistIds.has(product._id);
-  const whatsapp = useStoreWhatsappNumber();
-  const notifyHref = buildProductNotifyUrl(whatsapp, product, productPath);
 
   const handleAddToCart = () => {
     if (!user) {
@@ -69,18 +65,12 @@ export default function ProductCard({ product, index = 0 }) {
         )}
 
         <div className="absolute top-2.5 left-2.5 flex flex-col gap-1">
-          {hasDiscount ? (
+          {showDiscountBadge ? (
             <span className="product-discount-badge bg-rose-600 text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
               {discountPercentage}% OFF
             </span>
           ) : null}
-          {isOutOfStock ? (
-            <span className="bg-gray-700 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">Out of Stock</span>
-          ) : null}
-          {isLowStock && !isOutOfStock ? (
-            <span className="bg-amber-500 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold">Low Stock</span>
-          ) : null}
-          {product.featured && !hasDiscount ? (
+          {product.featured && !showDiscountBadge ? (
             <span className="bg-amber-400 text-white text-[10px] px-2 py-0.5 rounded-full font-semibold flex items-center gap-0.5">
               <FiStar size={9} /> Top Pick
             </span>
@@ -110,30 +100,19 @@ export default function ProductCard({ product, index = 0 }) {
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <span className="text-lg sm:text-base font-bold text-gray-900">Rs.{sellingPrice}</span>
-            {hasDiscount ? (
-              <span className="block sm:inline text-xs text-gray-400 line-through sm:ml-1.5">Rs.{mrpPrice}</span>
+            <span className="text-lg sm:text-base font-bold text-gray-900">Rs.{Math.round(Number(sellingPrice || 0))}</span>
+            {showStrikePrice ? (
+              <span className="block sm:inline text-xs text-gray-400 line-through sm:ml-1.5">Rs.{Math.round(Number(mrpPrice || 0))}</span>
             ) : null}
           </div>
 
-          {isOutOfStock ? (
-            <a
-              href={notifyHref}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex w-full sm:w-auto items-center justify-center gap-1 text-[11px] font-semibold px-2.5 py-1.5 rounded-lg bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors"
-            >
-              <FiBell size={12} /> Notify Me
-            </a>
-          ) : (
-            <motion.button
-              whileTap={{ scale: 0.9 }}
-              onClick={handleAddToCart}
-              className="flex w-full sm:w-auto items-center justify-center gap-1 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 transition-colors shadow-sm"
-            >
-              <FiShoppingCart size={12} /> Add
-            </motion.button>
-          )}
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={handleAddToCart}
+            className="flex w-full sm:w-auto items-center justify-center gap-1 text-[11px] font-bold px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:bg-rose-700 transition-colors shadow-sm"
+          >
+            <FiShoppingCart size={12} /> Add
+          </motion.button>
         </div>
       </div>
     </motion.div>

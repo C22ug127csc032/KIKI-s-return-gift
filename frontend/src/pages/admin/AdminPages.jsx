@@ -949,7 +949,7 @@ export function AdminOfflineSales() {
               <div key={index} className="mb-3 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_96px_auto] sm:items-center">
                 <select value={item.productId} onChange={(e) => updateItem(index, 'productId', e.target.value)} className="input-field w-full text-sm">
                   <option value="">Select product</option>
-                  {products.map((product) => <option key={product._id} value={product._id}>{product.name} (Rs.{product.discountedPrice ?? getSellingPrice(product)})</option>)}
+                  {products.map((product) => <option key={product._id} value={product._id}>{product.name} (Rs.{Math.round(Number((product.discountedPrice ?? getSellingPrice(product)) || 0))})</option>)}
                 </select>
                 <input type="number" value={item.quantity} onChange={(e) => updateItem(index, 'quantity', e.target.value)} min="1" className="input-field w-full text-sm" />
                 {cartItems.length > 1 ? (

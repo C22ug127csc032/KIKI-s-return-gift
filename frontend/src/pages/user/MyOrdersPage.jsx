@@ -9,6 +9,7 @@ import { downloadInvoiceFile, showInvoiceDownloadError } from '../../utils/invoi
 
 const INVOICE_READY_STATUSES = ['Shipped', 'Completed'];
 const isInvoiceReady = (order) => INVOICE_READY_STATUSES.includes(order?.orderStatus);
+const orderHasStockIssue = (order) => order.hasStockIssue || order.items?.some((item) => item.hasStockIssue || Number(item.backorderQuantity || 0) > 0);
 
 export default function MyOrdersPage() {
   const [orders, setOrders] = useState([]);
@@ -16,13 +17,13 @@ export default function MyOrdersPage() {
   const [meta, setMeta] = useState({ page: 1, totalPages: 1 });
   const [expandedId, setExpandedId] = useState(null);
 
-  useEffect(() => { document.title = "My Orders – KIKI'S Store"; }, []);
+  useEffect(() => { document.title = "My Orders - KIKI'S Store"; }, []);
 
   const fetchOrders = (page = 1) => {
     setLoading(true);
-    api.get(`/orders/my?page=${page}&limit=10`).then((r) => {
-      setOrders(r.data.data);
-      setMeta(r.data.meta);
+    api.get(`/orders/my?page=${page}&limit=10`).then((response) => {
+      setOrders(response.data.data);
+      setMeta(response.data.meta);
     }).finally(() => setLoading(false));
   };
 
@@ -47,15 +48,21 @@ export default function MyOrdersPage() {
         <h1 className="font-display text-3xl font-bold text-gray-900 mb-8">My Orders</h1>
 
         {orders.length === 0 ? (
-          <EmptyState icon={<FiPackage size={48} />} title="No orders yet"
+          <EmptyState
+            icon={<FiPackage size={48} />}
+            title="No orders yet"
             message="Place your first order and it will appear here."
-            action={<Link to="/shop" className="btn-primary">Start Shopping</Link>} />
+            action={<Link to="/shop" className="btn-primary">Start Shopping</Link>}
+          />
         ) : (
           <>
             <div className="space-y-3">
               {orders.map((order) => (
-                <motion.div key={order._id} layout
-                  className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+                <motion.div
+                  key={order._id}
+                  layout
+                  className={`bg-white rounded-2xl border shadow-sm overflow-hidden hover:shadow-md transition-shadow ${orderHasStockIssue(order) ? 'border-amber-200 bg-amber-50/30' : 'border-gray-100'}`}
+                >
                   <div className="p-5 flex flex-col sm:flex-row sm:items-center gap-4 justify-between">
                     <div>
                       <div className="flex items-center gap-2 mb-1.5">
@@ -76,6 +83,7 @@ export default function MyOrdersPage() {
                     <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
                       <Badge status={order.orderStatus} label="Order" />
                       <Badge status={order.paymentStatus} type="payment" label="Payment" />
+                      {orderHasStockIssue(order) ? <span className="badge badge-red">Stock Update Pending</span> : null}
                       <button
                         onClick={() => downloadInvoice(order._id)}
                         disabled={!isInvoiceReady(order)}
@@ -89,8 +97,10 @@ export default function MyOrdersPage() {
                       >
                         <FiDownload size={15} />
                       </button>
-                      <button onClick={() => setExpandedId(expandedId === order._id ? null : order._id)}
-                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                      <button
+                        onClick={() => setExpandedId(expandedId === order._id ? null : order._id)}
+                        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                      >
                         {expandedId === order._id ? <FiChevronUp size={15} /> : <FiChevronDown size={15} />}
                       </button>
                     </div>
@@ -98,20 +108,26 @@ export default function MyOrdersPage() {
 
                   <AnimatePresence>
                     {expandedId === order._id && (
-                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                        className="border-t border-gray-100 overflow-hidden">
+                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="border-t border-gray-100 overflow-hidden">
                         <div className="p-5 bg-gray-50/50">
                           <div className="space-y-2.5 mb-4">
-                            {order.items.map((item, i) => (
-                              <div key={i} className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-2">
+                            {order.items.map((item, index) => (
+                              <div key={index} className="flex items-center justify-between text-sm gap-3">
+                                <div className="flex items-center gap-2 min-w-0">
                                   <div className="w-8 h-8 bg-white rounded-lg border border-gray-100 flex items-center justify-center flex-shrink-0">
                                     <RiGiftLine size={14} className="text-rose-300" />
                                   </div>
-                                  <span className="text-gray-700 font-medium">{item.name}</span>
-                                  <span className="text-gray-400 text-xs">×{item.quantity}</span>
+                                  <div className="min-w-0">
+                                    <p className="text-gray-700 font-medium">{item.name}</p>
+                                    {item.hasStockIssue || Number(item.backorderQuantity || 0) > 0 ? (
+                                      <p className="text-[11px] font-semibold text-amber-700">
+                                        Awaiting admin stock confirmation for {item.backorderQuantity || item.quantity} item(s)
+                                      </p>
+                                    ) : null}
+                                  </div>
+                                  <span className="text-gray-400 text-xs flex-shrink-0">x{item.quantity}</span>
                                 </div>
-                                <span className="font-bold text-gray-800">₹{item.price * item.quantity}</span>
+                                <span className="font-bold text-gray-800 flex-shrink-0">₹{item.price * item.quantity}</span>
                               </div>
                             ))}
                             <div className="border-t border-gray-200 pt-2.5 flex justify-between font-bold text-sm">
@@ -124,7 +140,12 @@ export default function MyOrdersPage() {
                               <p className="font-semibold text-gray-600 mb-1">Delivery Address</p>
                               <p>{order.customerAddress}</p>
                               {order.customerNotes && <p className="text-gray-500 italic">Note: {order.customerNotes}</p>}
-                              {order.adminNotes && <p className="text-rose-500 font-medium">Store: {order.adminNotes}</p>}
+                              {order.adminNotes ? (
+                                <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800">
+                                  <p className="font-semibold mb-1">Admin Note</p>
+                                  <p>{order.adminNotes}</p>
+                                </div>
+                              ) : null}
                             </div>
                           )}
                         </div>

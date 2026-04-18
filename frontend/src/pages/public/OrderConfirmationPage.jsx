@@ -20,7 +20,7 @@ const buildFallbackPaymentInfo = (settings) => ({
   paymentInstructions: settings?.paymentInstructions || '',
 });
 
-const formatOrderAmount = (value) => `Rs.${Number(value || 0).toFixed(2)}`;
+const formatOrderAmount = (value) => `Rs.${Math.round(Number(value || 0))}`;
 const formatDiscountPercentage = (value) => Number(value || 0)
   .toFixed(2)
   .replace(/\.?0+$/, '');
@@ -51,17 +51,30 @@ export default function OrderConfirmationPage() {
       const originalPrice = Number(item.originalPrice || item.price || 0);
       return sum + (originalPrice * quantity);
     }, 0);
-    const grandTotal = Number(order?.totalAmount || 0);
-    const taxableSubtotal = Number(order?.subtotal || Math.max(grandTotal - Number(order?.tax || 0), 0));
-    const gst = Number(order?.tax || Math.max(grandTotal - taxableSubtotal, 0));
+    const sellingPriceTotal = items.reduce((sum, item) => {
+      const quantity = Number(item.quantity || 0);
+      const sellingPrice = Number(item.basePrice || item.price || 0);
+      return sum + (sellingPrice * quantity);
+    }, 0);
+    const discount = items.reduce((sum, item) => sum + Number(item.discountAmount || 0), 0);
+    const taxableSubtotal = items.reduce((sum, item) => {
+      const quantity = Number(item.quantity || 0);
+      return sum + Number(item.taxableAmount || ((item.price || 0) * quantity));
+    }, 0);
     const cgst = items.reduce((sum, item) => sum + Number(item.cgstAmount || 0), 0);
     const sgst = items.reduce((sum, item) => sum + Number(item.sgstAmount || 0), 0);
     const igst = items.reduce((sum, item) => sum + Number(item.igstAmount || 0), 0);
-    const discount = Math.max(mrpTotal - grandTotal, 0);
-    const discountPercentage = mrpTotal > 0 ? (discount / mrpTotal) * 100 : 0;
+    const gst = Number(cgst + sgst + igst);
+    const grandTotal = Number(order?.totalAmount || (taxableSubtotal + gst));
+    const roundOff = grandTotal - (taxableSubtotal + gst);
+    const discountPercentage = sellingPriceTotal > 0 ? (discount / sellingPriceTotal) * 100 : 0;
+    const cgstPercentage = taxableSubtotal > 0 ? (cgst / taxableSubtotal) * 100 : 0;
+    const sgstPercentage = taxableSubtotal > 0 ? (sgst / taxableSubtotal) * 100 : 0;
+    const igstPercentage = taxableSubtotal > 0 ? (igst / taxableSubtotal) * 100 : 0;
 
     return {
-      mrpTotal: mrpTotal || grandTotal,
+      mrpTotal: mrpTotal || sellingPriceTotal || grandTotal,
+      sellingPriceTotal,
       discount,
       discountPercentage: formatDiscountPercentage(discountPercentage),
       taxableSubtotal,
@@ -69,6 +82,10 @@ export default function OrderConfirmationPage() {
       cgst,
       sgst,
       igst,
+      cgstPercentage: formatDiscountPercentage(cgstPercentage),
+      sgstPercentage: formatDiscountPercentage(sgstPercentage),
+      igstPercentage: formatDiscountPercentage(igstPercentage),
+      roundOff,
       grandTotal,
     };
   }, [order]);
@@ -194,19 +211,28 @@ export default function OrderConfirmationPage() {
                           <p className="text-sm font-semibold text-gray-700 leading-snug break-words">{item.name || item.product?.name || 'Product'}</p>
                           <div className="text-xs text-gray-400 flex flex-wrap gap-x-1.5">
                             <span>Qty: {item.quantity} x </span>
-                            <span className="font-semibold text-gray-700">Rs.{Number(item.price).toFixed(2)}</span>
+                            <span className="font-semibold text-gray-700">Rs.{Math.round(Number(item.price || 0))}</span>
                             {hasDiscount ? (
-                              <span className="ml-1.5 line-through">Rs.{Number(item.originalPrice).toFixed(2)}</span>
+                              <span className="ml-1.5 line-through">Rs.{Math.round(Number(item.originalPrice || 0))}</span>
                             ) : null}
                           </div>
+                          {item.hasStockIssue || Number(item.backorderQuantity || 0) > 0 ? (
+                            <p className="mt-1 text-[11px] font-semibold text-amber-700">
+                              This item needs stock confirmation from admin.
+                            </p>
+                          ) : null}
                         </div>
-                        <p className="text-sm font-bold text-gray-800 flex-shrink-0 self-start">Rs.{Number(item.totalAmount || (item.price * item.quantity)).toFixed(2)}</p>
+                        <p className="text-sm font-bold text-gray-800 flex-shrink-0 self-start">Rs.{Math.round(Number(item.totalAmount || (item.price * item.quantity) || 0))}</p>
                       </div>
                     )})}
                     <div className="border-t border-gray-100 pt-3 space-y-2">
                       <div className="flex justify-between text-sm text-gray-500">
                         <span>MRP Total</span>
                         <span>{formatOrderAmount(orderTotals.mrpTotal)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-gray-500">
+                        <span>Selling Price</span>
+                        <span>{formatOrderAmount(orderTotals.sellingPriceTotal)}</span>
                       </div>
                       <div className="flex justify-between text-sm text-gray-500">
                         <span>Discount ({orderTotals.discountPercentage}%)</span>
@@ -218,19 +244,19 @@ export default function OrderConfirmationPage() {
                       </div>
                       {orderTotals.cgst > 0 ? (
                         <div className="flex justify-between text-sm text-gray-500">
-                          <span>CGST</span>
+                          <span>CGST ({orderTotals.cgstPercentage}%)</span>
                           <span>{formatOrderAmount(orderTotals.cgst)}</span>
                         </div>
                       ) : null}
                       {orderTotals.sgst > 0 ? (
                         <div className="flex justify-between text-sm text-gray-500">
-                          <span>SGST</span>
+                          <span>SGST ({orderTotals.sgstPercentage}%)</span>
                           <span>{formatOrderAmount(orderTotals.sgst)}</span>
                         </div>
                       ) : null}
                       {orderTotals.igst > 0 ? (
                         <div className="flex justify-between text-sm text-gray-500">
-                          <span>IGST</span>
+                          <span>IGST ({orderTotals.igstPercentage}%)</span>
                           <span>{formatOrderAmount(orderTotals.igst)}</span>
                         </div>
                       ) : null}
@@ -238,6 +264,12 @@ export default function OrderConfirmationPage() {
                         <span>GST</span>
                         <span>{formatOrderAmount(orderTotals.gst)}</span>
                       </div>
+                      {Math.abs(orderTotals.roundOff) > 0.001 ? (
+                        <div className="flex justify-between text-sm text-gray-500">
+                          <span>Round Off</span>
+                          <span>{formatOrderAmount(orderTotals.roundOff)}</span>
+                        </div>
+                      ) : null}
                       <div className="flex justify-between font-bold text-gray-800 text-sm">
                         <span>Grand Total</span>
                         <span className="text-rose-600">{formatOrderAmount(orderTotals.grandTotal)}</span>
@@ -253,6 +285,12 @@ export default function OrderConfirmationPage() {
                 <p className="text-sm text-gray-500">{order.customerAddress}</p>
                 <p className="text-sm text-gray-500">{order.customerPhone}</p>
                 {order.customerNotes ? <p className="text-sm text-gray-500 mt-2">Note: {order.customerNotes}</p> : null}
+                {order.adminNotes ? (
+                  <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    <p className="font-semibold mb-1">Admin Note</p>
+                    <p>{order.adminNotes}</p>
+                  </div>
+                ) : null}
               </div>
 
               <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">

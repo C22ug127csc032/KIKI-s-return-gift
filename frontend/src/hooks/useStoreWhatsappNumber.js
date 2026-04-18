@@ -3,16 +3,26 @@ import api from '../api/api.js';
 
 const fallbackWhatsapp = import.meta.env.VITE_WHATSAPP_NUMBER || '919876543210';
 let cachedWhatsapp = null;
+let settingsRequest = null;
 const normalizeWhatsappNumber = (value) => String(value || '').replace(/\D/g, '') || fallbackWhatsapp;
 
 const fetchStoreWhatsapp = async () => {
+  if (cachedWhatsapp) return cachedWhatsapp;
+  if (settingsRequest) return settingsRequest;
+
+  settingsRequest = (async () => {
   try {
     const response = await api.get('/settings');
     cachedWhatsapp = normalizeWhatsappNumber(response.data.data?.whatsappNumber);
     return cachedWhatsapp;
   } catch {
     return cachedWhatsapp || fallbackWhatsapp;
+  } finally {
+    settingsRequest = null;
   }
+  })();
+
+  return settingsRequest;
 };
 
 export const useStoreWhatsappNumber = () => {

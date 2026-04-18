@@ -104,17 +104,21 @@ export const createOrder = asyncHandler(async (req, res) => {
   const customerPhone = normalizePhone(req.body.customerPhone);
   if (!isValidPhone(customerPhone)) throw new ApiError(400, 'Phone number must be exactly 10 digits');
   if (customerEmail && !isValidEmail(customerEmail)) throw new ApiError(400, 'Enter a valid email address');
+  if (!Array.isArray(items) || items.length === 0) throw new ApiError(400, 'Please add at least one item to place an order');
 
   const orderItems = [];
   let subtotal = 0;
   let tax = 0;
   let totalAmount = 0;
+  let hasStockIssue = false;
   for (const item of items) {
     const product = await Product.findById(item.product);
     if (!product || !product.isActive) throw new ApiError(400, `Product not found: ${item.product}`);
-    if (product.stock < item.quantity) {
-      throw new ApiError(400, `Insufficient stock for ${product.name}. Available: ${product.stock}`);
-    }
+    const requestedQuantity = Math.max(Number(item.quantity) || 0, 1);
+    const availableStockAtOrder = Math.max(Number(product.stock || 0), 0);
+    const fulfilledQuantity = Math.min(availableStockAtOrder, requestedQuantity);
+    const backorderQuantity = Math.max(requestedQuantity - fulfilledQuantity, 0);
+    const hasItemStockIssue = backorderQuantity > 0;
     const sellingPrice = getProductSellingPrice(product);
     const taxRates = getProductTaxRates(product);
     const basePrice = Number(product.basePrice ?? getTaxableAmountFromInclusive(sellingPrice, getProductGstRate(product)));
@@ -124,8 +128,9 @@ export const createOrder = asyncHandler(async (req, res) => {
       cgstRate: taxRates.cgstRate,
       sgstRate: taxRates.sgstRate,
       igstRate: taxRates.igstRate,
-      quantity: item.quantity,
+      quantity: requestedQuantity,
     });
+    hasStockIssue ||= hasItemStockIssue;
     orderItems.push({
       product: product._id,
       name: product.name,
@@ -144,8 +149,15 @@ export const createOrder = asyncHandler(async (req, res) => {
       sgstAmount: pricing.sgstAmount,
       igstAmount: pricing.igstAmount,
       totalAmount: pricing.totalAmount,
-      quantity: item.quantity,
+      quantity: requestedQuantity,
       image: product.images?.[0]?.url || '',
+      availableStockAtOrder,
+      fulfilledQuantity,
+      backorderQuantity,
+      hasStockIssue: hasItemStockIssue,
+      stockIssueMessage: hasItemStockIssue
+        ? `${backorderQuantity} item(s) need manual confirmation because only ${availableStockAtOrder} were in stock when this order was placed.`
+        : '',
     });
     subtotal += pricing.taxableAmount;
     tax += pricing.gstAmount;
@@ -168,20 +180,23 @@ export const createOrder = asyncHandler(async (req, res) => {
     totalAmount: Number(totalAmount.toFixed(2)),
     source: 'whatsapp',
     customerNotes,
+    hasStockIssue,
   });
 
   for (const item of orderItems) {
+    if (!item.fulfilledQuantity) continue;
     const product = await Product.findById(item.product);
+    if (!product) continue;
     const previousStock = product.stock;
-    product.stock -= item.quantity;
+    product.stock = Math.max(Number(product.stock || 0) - Number(item.fulfilledQuantity || 0), 0);
     await product.save();
     await InventoryMovement.create({
       product: product._id,
       type: 'OUT',
-      quantity: item.quantity,
+      quantity: item.fulfilledQuantity,
       previousStock,
       newStock: product.stock,
-      reason: 'Order placed',
+      reason: item.hasStockIssue ? 'Order placed with stock issue' : 'Order placed',
       referenceModel: 'Order',
       referenceId: order._id,
       createdBy: req.user?._id,
@@ -206,7 +221,11 @@ export const createOrder = asyncHandler(async (req, res) => {
 export const getMyOrders = asyncHandler(async (req, res) => {
   const { page, limit, skip } = getPagination(req.query);
   const [orders, total] = await Promise.all([
-    Order.find({ user: req.user._id }).sort({ createdAt: -1 }).skip(skip).limit(limit),
+    Order.find({ user: req.user._id })
+      .populate('items.product', 'name images stock lowStockThreshold')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit),
     Order.countDocuments({ user: req.user._id }),
   ]);
   sendPaginatedResponse(res, 'Orders fetched', orders, page, limit, total);
@@ -247,7 +266,11 @@ export const getAllOrders = asyncHandler(async (req, res) => {
     'customer-desc': { customerName: -1 },
   });
   const [orders, total] = await Promise.all([
-    Order.find(filter).sort(sort).skip(skip).limit(limit),
+    Order.find(filter)
+      .populate('items.product', 'name stock lowStockThreshold')
+      .sort(sort)
+      .skip(skip)
+      .limit(limit),
     Order.countDocuments(filter),
   ]);
   sendPaginatedResponse(res, 'Orders fetched', orders, page, limit, total);
@@ -261,14 +284,15 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
   if (orderStatus === 'Cancelled' && order.orderStatus !== 'Cancelled') {
     for (const item of order.items) {
       const product = await Product.findById(item.product);
-      if (product) {
+      const quantityToRestore = Number(item.fulfilledQuantity ?? item.quantity ?? 0);
+      if (product && quantityToRestore > 0) {
         const previousStock = product.stock;
-        product.stock += item.quantity;
+        product.stock += quantityToRestore;
         await product.save();
         await InventoryMovement.create({
           product: product._id,
           type: 'IN',
-          quantity: item.quantity,
+          quantity: quantityToRestore,
           previousStock,
           newStock: product.stock,
           reason: 'Order cancelled - stock restored',
@@ -285,7 +309,7 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
     order.orderStatus = orderStatus;
   }
   if (paymentStatus) order.paymentStatus = paymentStatus;
-  if (adminNotes) order.adminNotes = adminNotes;
+  if (adminNotes !== undefined) order.adminNotes = adminNotes;
   await order.save();
   sendResponse(res, 200, 'Order updated', order);
 });

@@ -89,7 +89,7 @@ export const getProductPurchases = asyncHandler(async (req, res) => {
 
   if (req.query.supplier) filter.supplier = req.query.supplier;
   if (req.query.linkedProduct) filter.linkedProduct = req.query.linkedProduct;
-  if (req.query.unlinked === 'true') filter.linkedProduct = null;
+  if (req.query.unlinked === 'true') filter.quantity = { $gt: 0 };
   if (req.query.search) {
     const regex = new RegExp(req.query.search, 'i');
     const supplierMatches = await Supplier.find({ name: regex }).select('_id');

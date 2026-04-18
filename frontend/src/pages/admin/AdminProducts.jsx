@@ -11,6 +11,7 @@ const emptyForm = {
   name: '',
   description: '',
   mrp: '',
+  sellingPrice: '',
   price: '',
   discountPercentage: '',
   cgstRate: '',
@@ -209,7 +210,8 @@ export default function AdminProducts() {
       sourceType: product.sourcePurchase?._id ? 'purchase' : 'manual',
       name: product.name,
       description: product.description,
-      mrp: product.mrp ?? product.price,
+      mrp: product.mrp ?? getMrpPrice(product),
+      sellingPrice: product.sellingPrice ?? product.basePrice ?? '',
       price: product.price,
       discountPercentage: product.discountPercentage ?? '',
       cgstRate: product.cgstRate ?? '',
@@ -233,16 +235,18 @@ export default function AdminProducts() {
 
   const handleSave = async () => {
     const mrp = Number(form.mrp || 0);
+    const sellingPriceInput = Number(form.sellingPrice || 0);
     const stock = Number(form.stock);
     const isManualEntry = !editProduct && form.sourceType === 'manual';
+    const pricingBase = sellingPriceInput;
     const pricing = calculatePricing({
-      basePrice: mrp,
+      basePrice: pricingBase,
       discountPercentage: form.discountPercentage,
       cgstRate: form.cgstRate,
       sgstRate: form.sgstRate,
       igstRate: form.igstRate,
     });
-    const sellingPrice = Math.round(pricing.taxableUnitPrice);
+    const finalPrice = Number(pricing.totalUnitPrice.toFixed(2));
 
     if (!editProduct && !isManualEntry && !form.sourcePurchase) {
       toast.error('Please select a bought product first');
@@ -269,8 +273,23 @@ export default function AdminProducts() {
       return;
     }
 
+    if (!editProduct && form.sourceType === 'purchase' && selectedBoughtProduct && stock > Number(selectedBoughtProduct.quantity || 0)) {
+      toast.error(`Stock cannot be more than available quantity (${selectedBoughtProduct.quantity})`);
+      return;
+    }
+
     if (!mrp || mrp < 0) {
-      toast.error('Enter a valid MRP');
+      toast.error('Enter a valid MRP price');
+      return;
+    }
+
+    if (!sellingPriceInput || sellingPriceInput < 0) {
+      toast.error('Enter a valid selling price');
+      return;
+    }
+
+    if (sellingPriceInput > mrp) {
+      toast.error('Selling price cannot be more than MRP');
       return;
     }
 
@@ -285,7 +304,10 @@ export default function AdminProducts() {
       const payload = {
         ...form,
         sourcePurchase: isManualEntry ? '' : form.sourcePurchase,
-        price: sellingPrice,
+        basePrice: pricingBase,
+        mrp,
+        sellingPrice: sellingPriceInput,
+        price: finalPrice,
         gstRate: pricing.gstRate,
         name: form.name.trim(),
         description: form.description.trim(),
@@ -341,13 +363,12 @@ export default function AdminProducts() {
   };
 
   const pricingPreview = calculatePricing({
-    basePrice: form.mrp,
+    basePrice: form.sellingPrice || 0,
     discountPercentage: form.discountPercentage,
     cgstRate: form.cgstRate,
     sgstRate: form.sgstRate,
     igstRate: form.igstRate,
   });
-  const roundedCurrentPrice = Math.round(pricingPreview.totalUnitPrice || 0);
   const selectedBoughtProduct = boughtProducts.find((purchase) => purchase._id === form.sourcePurchase);
   const existingOccasionOptions = Array.from(new Set(
     products.flatMap((product) => product.occasions?.length ? product.occasions : (product.occasion ? [product.occasion] : []))
@@ -448,7 +469,7 @@ export default function AdminProducts() {
                     sourcePurchase,
                     sourceType: 'purchase',
                     name: selected?.productName || '',
-                    stock: selected?.quantity ?? '',
+                    stock: selected?.quantity ? '1' : '',
                   });
                 }}
                 placeholder={boughtProductOptions.length ? 'Search bought product *' : 'No bought products available'}
@@ -464,19 +485,20 @@ export default function AdminProducts() {
             </>
           )}
           <input type="number" value={form.mrp} onChange={setField('mrp')} min="0" placeholder="MRP Price *" className="input-field max-w-full xl:max-w-[240px]" />
+          <input type="number" value={form.sellingPrice} onChange={setField('sellingPrice')} min="0" placeholder="Selling Price *" className="input-field max-w-full xl:max-w-[240px]" />
           <input type="number" value={form.discountPercentage} onChange={setField('discountPercentage')} min="0" max="100" step="0.01" placeholder="Discount %" className="input-field max-w-full xl:max-w-[240px]" />
           <input type="number" value={form.cgstRate} onChange={setField('cgstRate')} min="0" max="100" step="0.01" placeholder="CGST %" className="input-field" />
           <input type="number" value={form.sgstRate} onChange={setField('sgstRate')} min="0" max="100" step="0.01" placeholder="SGST %" className="input-field" />
           <input type="number" value={form.igstRate} onChange={setField('igstRate')} min="0" max="100" step="0.01" placeholder="IGST %" className="input-field" />
-          <input type="number" value={form.mrp === '' ? '' : roundedCurrentPrice} readOnly placeholder="Current Price" className="input-field bg-gray-50 font-semibold text-gray-700" />
+          <input type="number" value={form.sellingPrice === '' ? '' : Number(pricingPreview.totalUnitPrice || 0).toFixed(2)} readOnly placeholder="Final Price" className="input-field bg-gray-50 font-semibold text-gray-700" />
           <input
             type="number"
             value={form.stock}
             onChange={setField('stock')}
             min="0"
             placeholder="Stock *"
-            disabled={!editProduct && form.sourceType !== 'manual'}
-            className={`input-field ${!editProduct && form.sourceType !== 'manual' ? 'cursor-not-allowed bg-gray-100 text-gray-400' : ''}`}
+            max={!editProduct && form.sourceType === 'purchase' && selectedBoughtProduct ? selectedBoughtProduct.quantity : undefined}
+            className="input-field"
           />
           <input type="number" value={form.lowStockThreshold} onChange={setField('lowStockThreshold')} min="0" placeholder="Stock Alert Level" className="input-field" />
           <SearchableSelectField
@@ -488,7 +510,16 @@ export default function AdminProducts() {
           <input value={form.sku} onChange={setField('sku')} placeholder="SKU" className="input-field self-start" />
           <textarea value={form.description} onChange={setField('description')} rows={3} placeholder="Description *" className="input-field resize-none xl:col-span-3" />
           <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 xl:col-span-4">
-            Calculation: MRP Rs.{Number(form.mrp || 0).toFixed(2)} - Discount Rs.{pricingPreview.discountAmountPerUnit.toFixed(2)} + GST Rs.{pricingPreview.gstAmountPerUnit.toFixed(2)} = Current Price Rs.{roundedCurrentPrice}
+            <div className="flex flex-wrap gap-x-5 gap-y-1">
+              <span>MRP: Rs.{Number(form.mrp || 0).toFixed(2)}</span>
+              <span>Selling Price: Rs.{Number(form.sellingPrice || 0).toFixed(2)}</span>
+              <span>Discount: Rs.{Number(pricingPreview.discountAmountPerUnit || 0).toFixed(2)}</span>
+              <span>After Discount: Rs.{Number(pricingPreview.taxableUnitPrice || 0).toFixed(2)}</span>
+              <span>CGST: Rs.{Number(pricingPreview.cgstAmountPerUnit || 0).toFixed(2)}</span>
+              <span>SGST: Rs.{Number(pricingPreview.sgstAmountPerUnit || 0).toFixed(2)}</span>
+              {Number(pricingPreview.igstAmountPerUnit || 0) > 0 ? <span>IGST: Rs.{Number(pricingPreview.igstAmountPerUnit || 0).toFixed(2)}</span> : null}
+              <span>Total Price: Rs.{Number(pricingPreview.totalUnitPrice || 0).toFixed(2)}</span>
+            </div>
           </div>
           <div className="xl:col-span-1 self-start">
             <label className="mb-1.5 block text-sm font-medium text-gray-700">Images</label>
@@ -550,7 +581,7 @@ export default function AdminProducts() {
           <div className="mt-4 flex flex-wrap items-center gap-6">
           {!editProduct && selectedBoughtProduct ? (
             <div className="rounded-xl border border-blue-100 bg-blue-50 px-4 py-2.5 text-sm font-semibold text-blue-700">
-              Bought Qty: {selectedBoughtProduct.quantity} | Buy Rate: Rs.{Number(selectedBoughtProduct.purchasePrice || 0).toFixed(2)}
+              Available Qty: {selectedBoughtProduct.quantity} | Buy Rate: Rs.{Math.round(Number(selectedBoughtProduct.purchasePrice || 0))}
             </div>
           ) : null}
           <label className="flex items-center gap-2 text-sm text-gray-700">
@@ -683,10 +714,10 @@ export default function AdminProducts() {
                       <td className="px-4 py-3 text-gray-600">{product.category?.name || '-'}</td>
                       <td className="px-4 py-3 text-gray-600">{product.sourcePurchase?.productName || '-'}</td>
                       <td className="px-4 py-3 text-gray-600">{product.supplier?.name || '-'}</td>
-                      <td className="px-4 py-3">
-                        <div className="font-semibold text-gray-800">Rs.{product.discountedPrice ?? getSellingPrice(product)}</div>
-                        {getDiscountPercentage(product) > 0 ? <div className="text-xs text-gray-400 line-through">Rs.{getMrpPrice(product)}</div> : null}
-                      </td>
+	                      <td className="px-4 py-3">
+	                        <div className="font-semibold text-gray-800">Rs.{Math.round(Number((product.discountedPrice ?? getSellingPrice(product)) || 0))}</div>
+	                        {Number(getMrpPrice(product) || 0) > Number(getSellingPrice(product) || 0) ? <div className="text-xs text-gray-400 line-through">Rs.{Math.round(Number(getMrpPrice(product) || 0))}</div> : null}
+	                      </td>
                       <td className="px-4 py-3">
                         <span className={`font-semibold ${product.stock <= product.lowStockThreshold ? 'text-red-500' : 'text-gray-800'}`}>{product.stock}</span>
                       </td>

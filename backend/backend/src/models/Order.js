@@ -21,6 +21,11 @@ const orderItemSchema = new mongoose.Schema({
   totalAmount: { type: Number, default: 0 },
   quantity: { type: Number, required: true, min: 1 },
   image: { type: String },
+  availableStockAtOrder: { type: Number, default: 0, min: 0 },
+  fulfilledQuantity: { type: Number, default: 0, min: 0 },
+  backorderQuantity: { type: Number, default: 0, min: 0 },
+  hasStockIssue: { type: Boolean, default: false },
+  stockIssueMessage: { type: String, default: '' },
 });
 
 const orderSchema = new mongoose.Schema(
@@ -62,6 +67,7 @@ const orderSchema = new mongoose.Schema(
     paymentScreenshotPublicId: { type: String },
     customerNotes: { type: String },
     adminNotes: { type: String },
+    hasStockIssue: { type: Boolean, default: false },
     whatsappMessage: { type: String },
     whatsappRedirectedAt: { type: Date },
     source: { type: String, enum: ['website', 'whatsapp', 'offline'], default: 'website' },

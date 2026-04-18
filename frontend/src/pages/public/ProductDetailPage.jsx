@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiMinus, FiPlus, FiShoppingCart, FiStar, FiBell, FiTruck, FiShield, FiRefreshCw } from 'react-icons/fi';
+import { FiMinus, FiPlus, FiShoppingCart, FiStar, FiTruck, FiShield, FiRefreshCw } from 'react-icons/fi';
 import { RiGiftLine } from 'react-icons/ri';
 import { FaWhatsapp } from 'react-icons/fa';
 import api from '../../api/api.js';
@@ -9,9 +9,9 @@ import { useCart } from '../../context/CartContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import ProductCard from '../../components/shop/ProductCard.jsx';
 import { PageLoader } from '../../components/ui/index.jsx';
-import { getDiscountPercentage, getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
+import { getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
 import { getDisplayProductName } from '../../utils/productName.js';
-import { buildProductNotifyUrl, useStoreWhatsappNumber } from '../../hooks/useStoreWhatsappNumber.js';
+import { useStoreWhatsappNumber } from '../../hooks/useStoreWhatsappNumber.js';
 
 export default function ProductDetailPage() {
   const { slug } = useParams();
@@ -52,13 +52,11 @@ export default function ProductDetailPage() {
   const image = product.images?.[selectedImg]?.url;
   const sellingPrice = product.discountedPrice ?? getSellingPrice(product);
   const mrpPrice = getMrpPrice(product);
-  const discountPercentage = getDiscountPercentage(product);
-  const hasDiscount = discountPercentage > 0 && sellingPrice < mrpPrice;
-  const isOutOfStock = product.stock === 0;
-  const isLowStock = product.stock <= product.lowStockThreshold && product.stock > 0;
+  const discountPercentage = Number(product.discountPercentage || 0);
+  const showStrikePrice = Number(mrpPrice || 0) > Number(sellingPrice || 0);
+  const showDiscountBadge = discountPercentage > 0;
   const productOccasions = product.occasions?.length ? product.occasions : (product.occasion ? [product.occasion] : []);
-  const notifyHref = buildProductNotifyUrl(whatsapp, product, `/product/${product.slug || product._id}`);
-  const enquireHref = `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hi! I'm interested in "${displayName}" (Rs.${sellingPrice}). Can I get more details?`)}`;
+  const enquireHref = `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hi! I'm interested in "${displayName}" (Rs.${Math.round(Number(sellingPrice || 0))}). Can I get more details?`)}`;
 
   const guarantees = [
     { icon: FiTruck, label: 'Fast Delivery' },
@@ -145,66 +143,49 @@ export default function ProductDetailPage() {
             ) : null}
 
             <div className="flex flex-wrap items-center justify-center lg:justify-start gap-3 mb-5 pb-5 border-b border-gray-100 w-full">
-              <span className="text-3xl font-bold text-gray-900">Rs.{sellingPrice}</span>
-              {hasDiscount ? (
+              <span className="text-3xl font-bold text-gray-900">Rs.{Number(sellingPrice || 0).toFixed(2)}</span>
+              {showStrikePrice ? (
                 <>
-                  <span className="text-base text-gray-300 line-through">Rs.{mrpPrice}</span>
-                  <span className="product-discount-badge bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-full border border-emerald-200">
+                  <span className="text-base text-gray-300 line-through">Rs.{Number(mrpPrice || 0).toFixed(2)}</span>
+                  {showDiscountBadge ? (
+                    <span className="product-discount-badge bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-full border border-emerald-200">
                     {discountPercentage}% OFF
-                  </span>
+                    </span>
+                  ) : null}
                 </>
               ) : null}
             </div>
 
             <p className="text-gray-500 leading-relaxed mb-5 text-sm max-w-xl">{product.description}</p>
 
-            <div className="flex items-center justify-center lg:justify-start gap-2 mb-5">
-              <div className={`w-2 h-2 rounded-full flex-shrink-0 ${isOutOfStock ? 'bg-red-500' : isLowStock ? 'bg-amber-500' : 'bg-emerald-500'}`} />
-              <span className={`text-sm font-semibold ${isOutOfStock ? 'text-red-600' : isLowStock ? 'text-amber-600' : 'text-emerald-600'}`}>
-                {isOutOfStock ? 'Out of Stock' : isLowStock ? `Only ${product.stock} left!` : `${product.stock} in stock`}
-              </span>
+            <div className="flex items-center justify-center lg:justify-start gap-4 mb-5">
+              <span className="text-sm font-semibold text-gray-600">Qty:</span>
+              <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden bg-white">
+                <button
+                  onClick={() => setQty(Math.max(1, qty - 1))}
+                  className="px-4 py-2.5 hover:bg-rose-50 hover:text-rose-600 transition-colors text-gray-600"
+                >
+                  <FiMinus size={15} />
+                </button>
+                <span className="px-5 py-2.5 font-bold text-gray-800 min-w-[44px] text-center border-x border-gray-200 text-sm">{qty}</span>
+                <button
+                  onClick={() => setQty(qty + 1)}
+                  className="px-4 py-2.5 hover:bg-rose-50 hover:text-rose-600 transition-colors text-gray-600"
+                >
+                  <FiPlus size={15} />
+                </button>
+              </div>
             </div>
 
-            {!isOutOfStock ? (
-              <div className="flex items-center justify-center lg:justify-start gap-4 mb-5">
-                <span className="text-sm font-semibold text-gray-600">Qty:</span>
-                <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden bg-white">
-                  <button
-                    onClick={() => setQty(Math.max(1, qty - 1))}
-                    className="px-4 py-2.5 hover:bg-rose-50 hover:text-rose-600 transition-colors text-gray-600"
-                  >
-                    <FiMinus size={15} />
-                  </button>
-                  <span className="px-5 py-2.5 font-bold text-gray-800 min-w-[44px] text-center border-x border-gray-200 text-sm">{qty}</span>
-                  <button
-                    onClick={() => setQty(Math.min(product.stock, qty + 1))}
-                    className="px-4 py-2.5 hover:bg-rose-50 hover:text-rose-600 transition-colors text-gray-600"
-                  >
-                    <FiPlus size={15} />
-                  </button>
-                </div>
-              </div>
-            ) : null}
-
             <div className="mb-6 flex w-full max-w-md flex-col gap-3">
-              {isOutOfStock ? (
-                <a
-                  href={notifyHref}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="group flex min-h-[52px] items-center justify-center gap-2 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-700 shadow-[0_10px_24px_rgba(251,191,36,0.12)] transition-all hover:-translate-y-0.5 hover:border-amber-300 hover:bg-amber-100 hover:shadow-[0_14px_28px_rgba(251,191,36,0.18)]"
-                >
-                  <FiBell size={16} className="transition-transform group-hover:scale-110" /> Notify Me When Available
-                </a>
-              ) : (
-                <motion.button
-                  whileTap={{ scale: 0.98 }}
-                  onClick={handleAddToCart}
-                  className="group flex min-h-[54px] items-center justify-center gap-2 rounded-2xl bg-rose-600 px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(225,29,72,0.22)] transition-all hover:-translate-y-0.5 hover:bg-rose-700 hover:shadow-[0_18px_36px_rgba(225,29,72,0.28)]"
-                >
-                  <FiShoppingCart size={17} className="transition-transform group-hover:-rotate-6 group-hover:scale-110" /> Add to Cart
-                </motion.button>
-              )}
+              <motion.button
+                whileTap={{ scale: 0.98 }}
+                onClick={handleAddToCart}
+                className="group flex min-h-[54px] items-center justify-center gap-2 rounded-2xl bg-rose-600 px-6 py-3 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(225,29,72,0.22)] transition-all hover:-translate-y-0.5 hover:bg-rose-700 hover:shadow-[0_18px_36px_rgba(225,29,72,0.28)]"
+              >
+                <FiShoppingCart size={17} className="transition-transform group-hover:-rotate-6 group-hover:scale-110" />
+                Add to Cart
+              </motion.button>
 
               <a
                 href={enquireHref}

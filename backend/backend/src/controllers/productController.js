@@ -10,7 +10,7 @@ import { cloudinary } from '../config/cloudinary.js';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { calculateLinePricing, getProductDiscountPercentage } from '../utils/pricing.js';
+import { calculateLinePricing, getProductDiscountPercentage, getTaxableAmountFromInclusive } from '../utils/pricing.js';
 import { buildLocalUploadPath, getLocalUploadFileName } from '../utils/uploadPaths.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -191,14 +191,16 @@ export const getProductBySlug = asyncHandler(async (req, res) => {
   }
   if (product && product.isVisibleToUsers === false) product = null;
   if (!product) throw new ApiError(404, 'Product not found');
-  const related = await Product.find({
-    category: product.category._id,
-    _id: { $ne: product._id },
-    isActive: true,
-    isVisibleToUsers: { $ne: false },
-  }).limit(4)
-    .populate('category', 'name slug')
-    .populate('supplier', 'name');
+  const related = product.category?._id
+    ? await Product.find({
+      category: product.category._id,
+      _id: { $ne: product._id },
+      isActive: true,
+      isVisibleToUsers: { $ne: false },
+    }).limit(4)
+      .populate('category', 'name slug')
+      .populate('supplier', 'name')
+    : [];
   sendResponse(res, 200, 'Product fetched', { product, related });
 });
 
@@ -213,7 +215,7 @@ export const getProductById = asyncHandler(async (req, res) => {
 
 export const createProduct = asyncHandler(async (req, res) => {
   const {
-    name, description, mrp, price, basePrice, discountPercentage, cgstRate, sgstRate, igstRate, gstRate, stock, category, supplier, occasion, sku, featured, lowStockThreshold, isActive, sourcePurchase,
+    name, description, mrp, sellingPrice, price, basePrice, discountPercentage, cgstRate, sgstRate, igstRate, gstRate, stock, category, supplier, occasion, sku, featured, lowStockThreshold, isActive, sourcePurchase,
   } = req.body;
   const images = req.files?.map((file) => buildProductImage(req, file)).filter(Boolean) || [];
   const bom = parseBom(req.body.bom);
@@ -224,8 +226,11 @@ export const createProduct = asyncHandler(async (req, res) => {
   const normalizedSgstRate = sgstRate === undefined || sgstRate === '' ? 0 : Number(sgstRate);
   const normalizedIgstRate = igstRate === undefined || igstRate === '' ? 0 : Number(igstRate);
   const normalizedMrp = mrp === undefined || mrp === '' ? null : Number(mrp);
+  const normalizedSellingPrice = sellingPrice === undefined || sellingPrice === '' ? null : Number(sellingPrice);
   const normalizedGstRate = gstRate === undefined || gstRate === '' ? (normalizedCgstRate + normalizedSgstRate + normalizedIgstRate) : Number(gstRate);
-  const pricingBase = normalizedMrp !== null ? normalizedMrp : normalizedBasePrice;
+  const pricingBase = normalizedBasePrice !== null
+    ? normalizedBasePrice
+    : normalizedSellingPrice;
   const derivedPricing = pricingBase !== null
     ? calculateLinePricing({
       basePrice: pricingBase,
@@ -235,16 +240,17 @@ export const createProduct = asyncHandler(async (req, res) => {
       igstRate: normalizedIgstRate,
     })
     : null;
-  const sellingPrice = derivedPricing ? Math.round(derivedPricing.taxableUnitPrice) : Math.round(Number(price));
-  const resolvedMrp = normalizedMrp === null
-    ? (derivedPricing ? calculateLinePricing({
+  const finalPrice = derivedPricing ? Number(derivedPricing.totalUnitPrice.toFixed(2)) : Number(Number(price || 0).toFixed(2));
+  const resolvedMrp = normalizedMrp;
+  const resolvedSellingPrice = normalizedSellingPrice === null
+    ? (derivedPricing ? Number(calculateLinePricing({
       basePrice: pricingBase,
       discountPercentage: 0,
       cgstRate: normalizedCgstRate,
       sgstRate: normalizedSgstRate,
       igstRate: normalizedIgstRate,
-    }).totalUnitPrice : null)
-    : normalizedMrp;
+    }).taxableUnitPrice.toFixed(2)) : null)
+    : normalizedSellingPrice;
   let resolvedName = name;
   let resolvedStock = stock;
   let resolvedSupplier = supplier || null;
@@ -253,9 +259,8 @@ export const createProduct = asyncHandler(async (req, res) => {
   if (sourcePurchase) {
     purchaseRecord = await ProductPurchase.findById(sourcePurchase).populate('supplier', '_id');
     if (!purchaseRecord) throw new ApiError(404, 'Selected bought product was not found');
-    if (purchaseRecord.linkedProduct) throw new ApiError(409, 'This bought product is already linked to a catalog product');
     resolvedName = stripSupplierFromProductName(purchaseRecord.productName, purchaseRecord.supplier?.name);
-    resolvedStock = purchaseRecord.quantity;
+    resolvedStock = stock;
     resolvedSupplier = purchaseRecord.supplier?._id || null;
   }
 
@@ -264,22 +269,28 @@ export const createProduct = asyncHandler(async (req, res) => {
   if (resolvedStock === undefined || resolvedStock === '' || Number.isNaN(Number(resolvedStock)) || Number(resolvedStock) < 0) {
     throw new ApiError(400, 'Stock must be a valid number');
   }
-  if (Number.isNaN(sellingPrice) || sellingPrice < 0) throw new ApiError(400, 'Selling price must be a valid number');
-  if (pricingBase !== null && (Number.isNaN(pricingBase) || pricingBase < 0)) throw new ApiError(400, 'MRP must be a valid number');
+  if (sourcePurchase && Number(resolvedStock) > Number(purchaseRecord.quantity || 0)) {
+    throw new ApiError(400, `Stock cannot be more than available purchase quantity (${purchaseRecord.quantity})`);
+  }
+  if (resolvedSellingPrice === null || Number.isNaN(resolvedSellingPrice) || resolvedSellingPrice < 0) throw new ApiError(400, 'Selling price must be a valid number');
+  if (Number.isNaN(finalPrice) || finalPrice < 0) throw new ApiError(400, 'Final price must be a valid number');
+  if (pricingBase !== null && (Number.isNaN(pricingBase) || pricingBase < 0)) throw new ApiError(400, 'Base price must be a valid number');
   if (resolvedMrp !== null && (Number.isNaN(resolvedMrp) || resolvedMrp < 0)) throw new ApiError(400, 'MRP must be a valid number');
+  if (resolvedMrp !== null && resolvedSellingPrice > resolvedMrp) throw new ApiError(400, 'Selling price cannot be more than MRP');
   if (!Number.isFinite(normalizedGstRate) || normalizedGstRate < 0 || normalizedGstRate > 100) throw new ApiError(400, 'GST rate must be between 0 and 100');
 
   const product = await Product.create({
     name: resolvedName,
     description,
     mrp: resolvedMrp,
+    sellingPrice: resolvedSellingPrice,
     basePrice: pricingBase,
-    price: sellingPrice,
+    price: finalPrice,
     gstRate: normalizedGstRate,
     cgstRate: derivedPricing ? derivedPricing.cgstRate : 0,
     sgstRate: derivedPricing ? derivedPricing.sgstRate : 0,
     igstRate: derivedPricing ? derivedPricing.igstRate : 0,
-    discountPercentage: derivedPricing ? derivedPricing.discountPercentage : (normalizedMrp ? getProductDiscountPercentage({ mrp: normalizedMrp, price: sellingPrice }) : 0),
+    discountPercentage: derivedPricing ? derivedPricing.discountPercentage : (normalizedMrp ? getProductDiscountPercentage({ mrp: normalizedMrp, price: finalPrice }) : 0),
     stock: Number(resolvedStock),
     category,
     supplier: resolvedSupplier,
@@ -296,7 +307,8 @@ export const createProduct = asyncHandler(async (req, res) => {
   });
 
   if (purchaseRecord) {
-    purchaseRecord.linkedProduct = product._id;
+    purchaseRecord.quantity = Math.max(Number(purchaseRecord.quantity || 0) - Number(product.stock || 0), 0);
+    purchaseRecord.linkedProduct = purchaseRecord.quantity === 0 ? product._id : null;
     await purchaseRecord.save();
     await InventoryMovement.create({
       product: product._id,
@@ -350,18 +362,21 @@ export const updateProduct = asyncHandler(async (req, res) => {
     product.occasions = occasions;
     product.occasion = occasions?.[0] || '';
   }
-  const hasStructuredPricing = ['mrp', 'basePrice', 'discountPercentage', 'cgstRate', 'sgstRate', 'igstRate'].some((field) => req.body[field] !== undefined);
+  const hasStructuredPricing = ['mrp', 'sellingPrice', 'basePrice', 'discountPercentage', 'cgstRate', 'sgstRate', 'igstRate'].some((field) => req.body[field] !== undefined);
   if (hasStructuredPricing) {
     const normalizedBasePrice = req.body.basePrice === '' || req.body.basePrice === undefined ? null : Number(req.body.basePrice);
     const normalizedMrp = req.body.mrp === '' || req.body.mrp === undefined ? (product.mrp ?? null) : Number(req.body.mrp);
+    const normalizedSellingPrice = req.body.sellingPrice === '' || req.body.sellingPrice === undefined ? (product.sellingPrice ?? null) : Number(req.body.sellingPrice);
     const normalizedDiscountPercentage = req.body.discountPercentage === '' || req.body.discountPercentage === undefined ? 0 : Number(req.body.discountPercentage);
     const normalizedCgstRate = req.body.cgstRate === '' || req.body.cgstRate === undefined ? 0 : Number(req.body.cgstRate);
     const normalizedSgstRate = req.body.sgstRate === '' || req.body.sgstRate === undefined ? 0 : Number(req.body.sgstRate);
     const normalizedIgstRate = req.body.igstRate === '' || req.body.igstRate === undefined ? 0 : Number(req.body.igstRate);
     const normalizedGstRate = normalizedCgstRate + normalizedSgstRate + normalizedIgstRate;
-    const pricingBase = normalizedMrp !== null ? normalizedMrp : normalizedBasePrice;
+    const pricingBase = normalizedBasePrice !== null
+      ? normalizedBasePrice
+      : normalizedSellingPrice;
     if (pricingBase === null || Number.isNaN(pricingBase) || pricingBase < 0) {
-      throw new ApiError(400, 'MRP must be a valid number');
+      throw new ApiError(400, 'Base price must be a valid number');
     }
     const derivedPricing = calculateLinePricing({
       basePrice: pricingBase,
@@ -370,23 +385,26 @@ export const updateProduct = asyncHandler(async (req, res) => {
       sgstRate: normalizedSgstRate,
       igstRate: normalizedIgstRate,
     });
+    if (normalizedSellingPrice !== null && normalizedMrp !== null && normalizedSellingPrice > normalizedMrp) {
+      throw new ApiError(400, 'Selling price cannot be more than MRP');
+    }
+    product.sellingPrice = normalizedSellingPrice === null
+      ? Number(calculateLinePricing({
+        basePrice: pricingBase,
+        discountPercentage: 0,
+        cgstRate: normalizedCgstRate,
+        sgstRate: normalizedSgstRate,
+        igstRate: normalizedIgstRate,
+      }).taxableUnitPrice.toFixed(2))
+      : normalizedSellingPrice;
     product.basePrice = pricingBase;
     product.discountPercentage = derivedPricing.discountPercentage;
     product.cgstRate = derivedPricing.cgstRate;
     product.sgstRate = derivedPricing.sgstRate;
     product.igstRate = derivedPricing.igstRate;
     product.gstRate = derivedPricing.gstRate;
-    product.price = Math.round(derivedPricing.taxableUnitPrice);
+    product.price = Number(derivedPricing.totalUnitPrice.toFixed(2));
     if (req.body.mrp !== undefined) product.mrp = req.body.mrp === '' ? null : Number(req.body.mrp);
-    else if (product.mrp === null || product.mrp === undefined) {
-      product.mrp = calculateLinePricing({
-        basePrice: pricingBase,
-        discountPercentage: 0,
-        cgstRate: normalizedCgstRate,
-        sgstRate: normalizedSgstRate,
-        igstRate: normalizedIgstRate,
-      }).totalUnitPrice;
-    }
   } else {
     if (req.body.gstRate !== undefined) {
       const normalizedGstRate = req.body.gstRate === '' ? 0 : Number(req.body.gstRate);
@@ -443,7 +461,12 @@ export const deleteProduct = asyncHandler(async (req, res) => {
     else removeLocalProductImage(img.url);
   }
   if (product.sourcePurchase) {
-    await ProductPurchase.findByIdAndUpdate(product.sourcePurchase, { linkedProduct: null });
+    const purchaseRecord = await ProductPurchase.findById(product.sourcePurchase);
+    if (purchaseRecord) {
+      purchaseRecord.quantity = Number(purchaseRecord.quantity || 0) + Number(product.stock || 0);
+      purchaseRecord.linkedProduct = null;
+      await purchaseRecord.save();
+    }
   }
   await product.deleteOne();
   sendResponse(res, 200, 'Product deleted');

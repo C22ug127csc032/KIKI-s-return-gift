@@ -32,6 +32,8 @@ export default function CheckoutPage() {
     sgstTotal,
     igstTotal,
     grandTotal,
+    roundedGrandTotal,
+    roundOffTotal,
     actualTotal,
     discountTotal,
     discountPercentage,
@@ -216,17 +218,20 @@ export default function CheckoutPage() {
                         <p className="text-xs font-semibold text-gray-700 line-clamp-2 leading-snug pr-2">{item.name}</p>
                         <div className="text-xs text-gray-400 mt-0.5">
                           <span>x{item.quantity}</span>
-                          <span className="ml-1.5 font-semibold text-gray-700">Rs.{Number(item.price).toFixed(2)}</span>
-                          {hasDiscount ? (
-                            <span className="ml-1.5 line-through">Rs.{Number(item.originalPrice).toFixed(2)}</span>
+                          <span className="ml-1.5 font-semibold text-gray-700">Rs.{Number(item.sellingPrice || 0).toFixed(2)}</span>
+                          {Number(item.originalPrice || 0) > Number(item.price || 0) ? (
+                            <span className="ml-1.5 line-through">Rs.{Number(item.originalPrice || 0).toFixed(2)}</span>
                           ) : null}
                         </div>
+                        <p className="mt-1 text-[11px] text-gray-400">
+                          After Discount: Rs.{Number(item.price || 0).toFixed(2)} | GST: Rs.{Number((item.gstAmount || 0) / Number(item.quantity || 1)).toFixed(2)}
+                        </p>
                         <p className="text-sm font-bold text-gray-800 mt-1 sm:hidden">
-                          Rs.{(item.price * item.quantity).toFixed(2)}
+                          Rs.{Number(item.roundedTotalAmount || item.totalAmount || 0).toFixed(2)}
                         </p>
                       </div>
                       <p className="hidden sm:block text-xs font-bold text-gray-800 flex-shrink-0 pt-0.5">
-                        Rs.{(item.price * item.quantity).toFixed(2)}
+                        Rs.{Number(item.roundedTotalAmount || item.totalAmount || 0).toFixed(2)}
                       </p>
                     </div>
                   )})}
@@ -238,7 +243,7 @@ export default function CheckoutPage() {
                   {discountTotal > 0 ? (
                     <>
                       <div className="flex justify-between text-sm text-gray-500">
-                        <span>MRP Total</span><span className="font-semibold text-gray-800">Rs.{actualTotal.toFixed(2)}</span>
+                        <span>Selling Price</span><span className="font-semibold text-gray-800">Rs.{actualTotal.toFixed(2)}</span>
                       </div>
                       <div className="flex justify-between text-sm text-gray-500">
                         <span>Discount ({discountPercentage.toFixed(2).replace(/\.?0+$/, '')}%)</span><span className="font-semibold text-emerald-600">- Rs.{discountTotal.toFixed(2)}</span>
@@ -246,7 +251,7 @@ export default function CheckoutPage() {
                     </>
                   ) : null}
                   <div className="flex justify-between text-sm text-gray-500">
-                    <span>Taxable Amount</span><span className="font-semibold text-gray-800">Rs.{taxableSubtotal.toFixed(2)}</span>
+                    <span>After Discount</span><span className="font-semibold text-gray-800">Rs.{taxableSubtotal.toFixed(2)}</span>
                   </div>
                   {cgstTotal > 0 ? (
                     <div className="flex justify-between text-sm text-gray-500">
@@ -269,10 +274,13 @@ export default function CheckoutPage() {
                     </div>
                   ) : null}
                   <div className="flex justify-between text-sm text-gray-500">
+                    <span>Round Off</span><span className="font-semibold text-gray-800">Rs.{roundOffTotal.toFixed(2)}</span>
+                    </div>
+                  <div className="flex justify-between text-sm text-gray-500">
                     <span>Shipping</span><span className="text-emerald-600 font-semibold text-xs">To be confirmed</span>
                   </div>
                   <div className="flex justify-between font-bold text-gray-900 text-base pt-2 border-t border-gray-100">
-                    <span>Grand Total</span><span className="text-rose-600">Rs.{grandTotal.toFixed(2)}</span>
+                    <span>Grand Total</span><span className="text-rose-600">Rs.{roundedGrandTotal.toFixed(2)}</span>
                   </div>
                 </div>
                 <motion.button

@@ -135,7 +135,7 @@ export default function AdminProductPurchases() {
     fetchPurchases(filters);
   }, [filters.search, filters.page, filters.limit]);
 
-  const totalAmount = (Number(form.quantity || 0) * Number(form.purchasePrice || 0)).toFixed(2);
+  const totalAmount = Math.round(Number(form.quantity || 0) * Number(form.purchasePrice || 0));
 
   const handleSave = async () => {
     if (!form.supplierId || !form.productName.trim()) {
@@ -220,7 +220,7 @@ export default function AdminProductPurchases() {
             <div className="mb-5 flex items-center justify-between">
               <div>
                 <h2 className="text-2xl font-semibold text-gray-900">Purchase History</h2>
-                <p className="mt-1 text-sm text-gray-500">These are bought products that can later be linked from the product module.</p>
+                <p className="mt-1 text-sm text-gray-500">These bought products show the remaining quantity available to move into the product module.</p>
               </div>
               <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
                 Total: {meta.total || purchases.length}
@@ -246,7 +246,7 @@ export default function AdminProductPurchases() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50/80 text-left text-xs text-gray-500">
-                    {['#', 'Date', 'Supplier', 'Bought Product', 'Qty', 'Rate', 'Total', 'Invoice', 'Status', 'By'].map((head) => (
+                    {['#', 'Date', 'Supplier', 'Bought Product', 'Remaining Qty', 'Rate', 'Total', 'Invoice', 'Status', 'By'].map((head) => (
                       <th key={head} className="px-4 py-3 font-medium">{head}</th>
                     ))}
                   </tr>
@@ -262,12 +262,12 @@ export default function AdminProductPurchases() {
                         {purchase.linkedProduct?.sku ? <div className="text-xs text-gray-400">{purchase.linkedProduct.sku}</div> : null}
                       </td>
                       <td className="px-4 py-3 font-semibold text-gray-800">{purchase.quantity}</td>
-                      <td className="px-4 py-3 text-gray-700">Rs.{Number(purchase.purchasePrice || 0).toFixed(2)}</td>
-                      <td className="px-4 py-3 font-semibold text-gray-800">Rs.{Number(purchase.totalAmount || 0).toFixed(2)}</td>
+                      <td className="px-4 py-3 text-gray-700">Rs.{Math.round(Number(purchase.purchasePrice || 0))}</td>
+                      <td className="px-4 py-3 font-semibold text-gray-800">Rs.{Math.round(Number(purchase.totalAmount || 0))}</td>
                       <td className="px-4 py-3 text-gray-700">{purchase.invoiceNumber || '-'}</td>
                       <td className="px-4 py-3">
-                        <span className={purchase.linkedProduct ? 'badge badge-green' : 'badge badge-yellow'}>
-                          {purchase.linkedProduct ? 'Added to Products' : 'Waiting'}
+                        <span className={purchase.quantity > 0 ? 'badge badge-yellow' : 'badge badge-green'}>
+                          {purchase.quantity > 0 ? 'Available' : 'Used'}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-gray-700">{purchase.createdBy?.name || '-'}</td>

@@ -17,6 +17,9 @@ export default function CartPage() {
     sgstTotal,
     igstTotal,
     grandTotal,
+    roundedGrandTotal,
+    roundOffTotal,
+    actualTotal,
     discountTotal,
     discountPercentage,
     totalItems,
@@ -62,10 +65,10 @@ export default function CartPage() {
                         {item.name}
                       </Link>
                       <div className="mt-0.5">
-                        <span className="text-xs text-gray-400">Rs.{item.price} each</span>
-                        {item.originalPrice > item.price && (
-                          <span className="ml-2 text-xs text-gray-300 line-through">Rs.{item.originalPrice}</span>
-                        )}
+                        <span className="text-xs text-gray-400">Rs.{Math.round(Number(item.finalPrice || item.price || 0))} each</span>
+                        {Number(item.originalPrice || 0) > Number(item.finalPrice || item.price || 0) ? (
+                          <span className="ml-2 text-xs text-gray-300 line-through">Rs.{Math.round(Number(item.originalPrice || 0))}</span>
+                        ) : null}
                       </div>
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-3">
                         <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50 w-fit">
@@ -80,7 +83,7 @@ export default function CartPage() {
                           </button>
                         </div>
                         <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
-                          <span className="font-bold text-gray-900 text-sm">Rs.{(item.price * item.quantity).toFixed(2)}</span>
+                          <span className="font-bold text-gray-900 text-sm">Rs.{Math.round(Number(item.roundedTotalAmount || item.totalAmount || 0))}</span>
                           <button onClick={() => removeItem(item._id)}
                             className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                             <FiTrash2 size={15} />
@@ -97,40 +100,48 @@ export default function CartPage() {
               <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 shadow-sm lg:sticky lg:top-24">
                 <h2 className="font-display text-xl font-bold text-gray-900 mb-5 text-center sm:text-left">Order Summary</h2>
                 <div className="space-y-3 mb-5">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Selling Price ({totalItems} {totalItems === 1 ? 'item' : 'items'})</span>
+                    <span className="font-semibold text-gray-800">Rs.{Math.round(actualTotal)}</span>
+                  </div>
                   {discountTotal > 0 ? (
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">Discount ({discountPercentage.toFixed(2).replace(/\.?0+$/, '')}%)</span>
-                      <span className="font-semibold text-emerald-600">- Rs.{discountTotal.toFixed(2)}</span>
+                      <span className="font-semibold text-emerald-600">- Rs.{Math.round(discountTotal)}</span>
                     </div>
                   ) : null}
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-500">Taxable Amount ({totalItems} {totalItems === 1 ? 'item' : 'items'})</span>
-                    <span className="font-semibold text-gray-800">Rs.{taxableSubtotal.toFixed(2)}</span>
+                    <span className="text-gray-500">After Discount</span>
+                    <span className="font-semibold text-gray-800">Rs.{Math.round(taxableSubtotal)}</span>
                   </div>
                   {cgstTotal > 0 ? (
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">CGST</span>
-                      <span className="font-semibold text-gray-800">Rs.{cgstTotal.toFixed(2)}</span>
+                      <span className="font-semibold text-gray-800">Rs.{Math.round(cgstTotal)}</span>
                     </div>
                   ) : null}
                   {sgstTotal > 0 ? (
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">SGST</span>
-                      <span className="font-semibold text-gray-800">Rs.{sgstTotal.toFixed(2)}</span>
+                      <span className="font-semibold text-gray-800">Rs.{Math.round(sgstTotal)}</span>
                     </div>
                   ) : null}
                   {igstTotal > 0 ? (
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">IGST</span>
-                      <span className="font-semibold text-gray-800">Rs.{igstTotal.toFixed(2)}</span>
+                      <span className="font-semibold text-gray-800">Rs.{Math.round(igstTotal)}</span>
                     </div>
                   ) : null}
                   {gstTotal > 0 ? (
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-500">GST</span>
-                      <span className="font-semibold text-gray-800">Rs.{gstTotal.toFixed(2)}</span>
+                      <span className="font-semibold text-gray-800">Rs.{Math.round(gstTotal)}</span>
                     </div>
                   ) : null}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-500">Round Off</span>
+                    <span className="font-semibold text-gray-800">Rs.{Math.round(roundOffTotal)}</span>
+                  </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-gray-500">Shipping</span>
                     <span className="text-emerald-600 font-semibold text-xs">To be confirmed</span>
@@ -142,7 +153,7 @@ export default function CartPage() {
                   )}
                   <div className="border-t border-gray-100 pt-3 flex justify-between">
                     <span className="font-bold text-gray-900">Total</span>
-                    <span className="font-bold text-rose-600 text-lg">Rs.{grandTotal.toFixed(2)}</span>
+                    <span className="font-bold text-rose-600 text-lg">Rs.{Math.round(roundedGrandTotal)}</span>
                   </div>
                 </div>
                 <button onClick={() => navigate('/checkout')}

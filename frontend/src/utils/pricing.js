@@ -35,23 +35,33 @@ export const calculatePricing = ({
   const safeSgstRate = getSafeRate(sgstRate);
   const safeIgstRate = getSafeRate(igstRate);
 
+  const baseCgstAmountPerUnit = roundCurrency((safeBasePrice * safeCgstRate) / 100);
+  const baseSgstAmountPerUnit = roundCurrency((safeBasePrice * safeSgstRate) / 100);
+  const baseIgstAmountPerUnit = roundCurrency((safeBasePrice * safeIgstRate) / 100);
+  const originalGstAmountPerUnit = roundCurrency(baseCgstAmountPerUnit + baseSgstAmountPerUnit + baseIgstAmountPerUnit);
+  const originalUnitPrice = roundCurrency(safeBasePrice + originalGstAmountPerUnit);
   const discountAmountPerUnit = roundCurrency((safeBasePrice * safeDiscountPercentage) / 100);
+  const totalGstRate = roundCurrency(safeCgstRate + safeSgstRate + safeIgstRate);
   const taxableUnitPrice = roundCurrency(safeBasePrice - discountAmountPerUnit);
   const cgstAmountPerUnit = roundCurrency((taxableUnitPrice * safeCgstRate) / 100);
   const sgstAmountPerUnit = roundCurrency((taxableUnitPrice * safeSgstRate) / 100);
   const igstAmountPerUnit = roundCurrency((taxableUnitPrice * safeIgstRate) / 100);
   const gstAmountPerUnit = roundCurrency(cgstAmountPerUnit + sgstAmountPerUnit + igstAmountPerUnit);
   const totalUnitPrice = roundCurrency(taxableUnitPrice + gstAmountPerUnit);
+  const totalAmount = roundCurrency(totalUnitPrice * safeQty);
+  const roundedTotalAmount = Math.round(totalAmount);
+  const roundOffAmount = roundCurrency(roundedTotalAmount - totalAmount);
 
   return {
     basePrice: safeBasePrice,
+    originalUnitPrice,
     discountPercentage: safeDiscountPercentage,
     discountAmountPerUnit,
     taxableUnitPrice,
     cgstRate: safeCgstRate,
     sgstRate: safeSgstRate,
     igstRate: safeIgstRate,
-    gstRate: roundCurrency(safeCgstRate + safeSgstRate + safeIgstRate),
+    gstRate: totalGstRate,
     cgstAmountPerUnit,
     sgstAmountPerUnit,
     igstAmountPerUnit,
@@ -63,7 +73,9 @@ export const calculatePricing = ({
     sgstAmount: roundCurrency(sgstAmountPerUnit * safeQty),
     igstAmount: roundCurrency(igstAmountPerUnit * safeQty),
     gstAmount: roundCurrency(gstAmountPerUnit * safeQty),
-    totalAmount: roundCurrency(totalUnitPrice * safeQty),
+    totalAmount,
+    roundedTotalAmount,
+    roundOffAmount,
   };
 };
 
@@ -72,18 +84,37 @@ export const getMrpPrice = (productOrMrp, fallbackPrice = 0) => {
     if (productOrMrp.mrp !== undefined && productOrMrp.mrp !== null && productOrMrp.mrp !== '') {
       return roundCurrency(productOrMrp.mrp || 0);
     }
-    if (productOrMrp.basePrice !== undefined && productOrMrp.basePrice !== null && productOrMrp.basePrice !== '') {
+    if (
+      (productOrMrp.sellingPrice !== undefined && productOrMrp.sellingPrice !== null && productOrMrp.sellingPrice !== '')
+      || (productOrMrp.basePrice !== undefined && productOrMrp.basePrice !== null && productOrMrp.basePrice !== '')
+    ) {
       return calculatePricing({
-        basePrice: productOrMrp.basePrice,
+        basePrice: productOrMrp.sellingPrice ?? productOrMrp.basePrice,
         discountPercentage: 0,
         cgstRate: productOrMrp.cgstRate,
         sgstRate: productOrMrp.sgstRate,
         igstRate: productOrMrp.igstRate,
-      }).totalUnitPrice;
+      }).originalUnitPrice;
     }
     return roundCurrency(productOrMrp.mrp || productOrMrp.price || 0);
   }
   return roundCurrency(productOrMrp || fallbackPrice || 0);
+};
+
+const resolveBasePrice = (product = {}) => {
+  if (product.basePrice !== undefined && product.basePrice !== null && product.basePrice !== '') {
+    return roundCurrency(product.basePrice || 0);
+  }
+
+  if (product.mrp !== undefined && product.mrp !== null && product.mrp !== '') {
+    const gstRate = getTaxRates(product).gstRate;
+    if (gstRate > 0) {
+      return roundCurrency(Number(product.mrp || 0) / (1 + gstRate / 100));
+    }
+    return roundCurrency(product.mrp || 0);
+  }
+
+  return roundCurrency(product.price || 0);
 };
 
 export const getGstRate = (productOrRate) => {
@@ -99,26 +130,20 @@ export const getGstRate = (productOrRate) => {
 
 export const getSellingPrice = (productOrPrice, discountPercentage = 0) => {
   if (typeof productOrPrice === 'object' && productOrPrice !== null) {
-    if (productOrPrice.mrp !== undefined && productOrPrice.mrp !== null && productOrPrice.mrp !== '') {
+    if (
+      (productOrPrice.sellingPrice !== undefined && productOrPrice.sellingPrice !== null && productOrPrice.sellingPrice !== '')
+      || (productOrPrice.basePrice !== undefined && productOrPrice.basePrice !== null && productOrPrice.basePrice !== '')
+    ) {
       return calculatePricing({
-        basePrice: productOrPrice.mrp,
+        basePrice: productOrPrice.sellingPrice ?? productOrPrice.basePrice,
         discountPercentage: productOrPrice.discountPercentage,
-        cgstRate: 0,
-        sgstRate: 0,
-        igstRate: 0,
+        cgstRate: productOrPrice.cgstRate,
+        sgstRate: productOrPrice.sgstRate,
+        igstRate: productOrPrice.igstRate,
       }).taxableUnitPrice;
     }
     if (productOrPrice.price !== undefined && productOrPrice.price !== null && productOrPrice.price !== '') {
       return roundCurrency(productOrPrice.price || 0);
-    }
-    if (productOrPrice.basePrice !== undefined && productOrPrice.basePrice !== null && productOrPrice.basePrice !== '') {
-      return calculatePricing({
-        basePrice: productOrPrice.basePrice,
-        discountPercentage: productOrPrice.discountPercentage,
-        cgstRate: 0,
-        sgstRate: 0,
-        igstRate: 0,
-      }).taxableUnitPrice;
     }
 
     const basePrice = Number(productOrPrice.price || 0);

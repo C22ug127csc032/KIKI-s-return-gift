@@ -8,6 +8,7 @@ const productSchema = new mongoose.Schema(
     slug: { type: String, unique: true },
     description: { type: String, required: true },
     mrp: { type: Number, min: 0, default: null },
+    sellingPrice: { type: Number, min: 0, default: null },
     basePrice: { type: Number, min: 0, default: null },
     price: { type: Number, required: true, min: 0 },
     gstRate: { type: Number, min: 0, max: 100, default: 0 },

@@ -15,18 +15,28 @@ const getCartStorageKey = (user) => {
 export const CartProvider = ({ children }) => {
   const { user } = useAuth();
   const [items, setItems] = useState(() => {
-    try { return normalizeAssetUrls(JSON.parse(localStorage.getItem(getCartStorageKey(null))) || []); } catch { return []; }
+    try { return normalizeAssetUrls(JSON.parse(localStorage.getItem(getCartStorageKey(user))) || []); } catch { return []; }
   });
   const cartStorageKey = getCartStorageKey(user);
 
   useEffect(() => {
     try {
       localStorage.removeItem('kiki_cart');
-      setItems(normalizeAssetUrls(JSON.parse(localStorage.getItem(cartStorageKey)) || []));
+      const storedUserCart = normalizeAssetUrls(JSON.parse(localStorage.getItem(cartStorageKey)) || []);
+      const guestCart = normalizeAssetUrls(JSON.parse(localStorage.getItem(getCartStorageKey(null))) || []);
+
+      if (user?._id && storedUserCart.length === 0 && guestCart.length > 0) {
+        localStorage.setItem(cartStorageKey, JSON.stringify(guestCart));
+        localStorage.removeItem(getCartStorageKey(null));
+        setItems(guestCart);
+        return;
+      }
+
+      setItems(storedUserCart);
     } catch {
       setItems([]);
     }
-  }, [cartStorageKey]);
+  }, [cartStorageKey, user?._id]);
 
   useEffect(() => {
     localStorage.setItem(cartStorageKey, JSON.stringify(items));
@@ -35,10 +45,12 @@ export const CartProvider = ({ children }) => {
   const normalizeCartItem = (product, quantity) => {
     const normalizedProduct = normalizeAssetUrls(product);
     const displayName = getDisplayProductName(product);
-    const sellingPrice = product.discountedPrice ?? getSellingPrice(product);
+    const availableStock = Math.max(Number(product.stock || 0), 0);
+    const discountedSellingPrice = product.discountedPrice ?? getSellingPrice(product);
+    const sellingPrice = Number(product.sellingPrice ?? product.basePrice ?? discountedSellingPrice);
     const taxRates = getTaxRates(product);
     const pricing = calculatePricing({
-      basePrice: product.basePrice ?? getTaxableAmount(sellingPrice, taxRates.gstRate),
+      basePrice: sellingPrice,
       discountPercentage: product.discountPercentage || 0,
       cgstRate: taxRates.cgstRate,
       sgstRate: taxRates.sgstRate,
@@ -50,10 +62,13 @@ export const CartProvider = ({ children }) => {
       name: displayName,
       quantity,
       basePrice: pricing.basePrice,
+      sellingPrice,
+      discountedSellingPrice: pricing.taxableUnitPrice,
       discountPercentage: pricing.discountPercentage,
       discountAmount: pricing.discountAmount,
       originalPrice: getMrpPrice(product),
-      price: sellingPrice,
+      price: pricing.taxableUnitPrice,
+      finalPrice: pricing.totalUnitPrice,
       gstRate: pricing.gstRate || getGstRate(product),
       cgstRate: pricing.cgstRate,
       sgstRate: pricing.sgstRate,
@@ -64,6 +79,11 @@ export const CartProvider = ({ children }) => {
       igstAmount: pricing.igstAmount,
       gstAmount: pricing.gstAmount,
       totalAmount: pricing.totalAmount,
+      roundedTotalAmount: pricing.roundedTotalAmount,
+      roundOffAmount: pricing.roundOffAmount,
+      availableStock,
+      hasStockIssue: quantity > availableStock,
+      backorderQuantity: Math.max(quantity - availableStock, 0),
     };
   };
 
@@ -72,20 +92,16 @@ export const CartProvider = ({ children }) => {
       const exists = prev.find((i) => i._id === product._id);
       if (exists) {
         const newQty = exists.quantity + quantity;
-        if (newQty > product.stock) {
-          toast.error(`Only ${product.stock} items available`);
-          return prev;
-        }
         const normalizedItem = normalizeCartItem(product, newQty);
-        toast.success('Cart updated');
+        toast.success(normalizedItem.hasStockIssue ? 'Cart updated. This item will need stock confirmation.' : 'Cart updated');
         return prev.map((i) => i._id === product._id ? { ...i, ...normalizedItem, quantity: newQty } : i);
       }
-      if (quantity > product.stock) {
-        toast.error(`Only ${product.stock} items available`);
-        return prev;
-      }
       const normalizedItem = normalizeCartItem(product, quantity);
-      toast.success(`${getDisplayProductName(product)} added to cart!`);
+      toast.success(
+        normalizedItem.hasStockIssue
+          ? `${getDisplayProductName(product)} added. We will confirm stock after order.`
+          : `${getDisplayProductName(product)} added to cart!`
+      );
       return [...prev, normalizedItem];
     });
   };
@@ -97,28 +113,32 @@ export const CartProvider = ({ children }) => {
 
   const updateQuantity = (id, quantity) => {
     if (quantity < 1) { removeItem(id); return; }
-    setItems((prev) =>
-      prev.map((i) => {
-        if (i._id !== id) return i;
-        if (quantity > i.stock) { toast.error(`Only ${i.stock} items available`); return i; }
-        return normalizeCartItem(i, quantity);
-      })
-    );
+    const currentItem = items.find((item) => item._id === id);
+    if (!currentItem) return;
+
+    const nextItem = normalizeCartItem(currentItem, quantity);
+    setItems((prev) => prev.map((item) => (item._id === id ? nextItem : item)));
+
+    if (nextItem.hasStockIssue && quantity > currentItem.quantity) {
+      toast.success('Quantity updated. This item will need stock confirmation.');
+    }
   };
 
   const clearCart = () => setItems([]);
 
-  const subtotal = items.reduce((sum, i) => sum + Number(i.totalAmount || (i.price * i.quantity)), 0);
-  const taxableSubtotal = items.reduce((sum, i) => sum + Number(i.taxableAmount || (getTaxableAmount(i.price, i.gstRate) * i.quantity)), 0);
-  const gstTotal = items.reduce((sum, i) => sum + Number(i.gstAmount || (getGstAmount(i.price, i.gstRate) * i.quantity)), 0);
+  const subtotal = items.reduce((sum, i) => sum + Number(i.totalAmount || (i.finalPrice * i.quantity)), 0);
+  const taxableSubtotal = items.reduce((sum, i) => sum + Number(i.taxableAmount || (Number(i.price || 0) * Number(i.quantity || 0))), 0);
+  const gstTotal = items.reduce((sum, i) => sum + Number(i.gstAmount || 0), 0);
   const cgstTotal = items.reduce((sum, i) => sum + Number(i.cgstAmount || 0), 0);
   const sgstTotal = items.reduce((sum, i) => sum + Number(i.sgstAmount || 0), 0);
   const igstTotal = items.reduce((sum, i) => sum + Number(i.igstAmount || 0), 0);
-  const actualTotal = items.reduce((sum, i) => sum + (Number(i.originalPrice || i.price || 0) * i.quantity), 0);
-  const discountTotal = Math.max(actualTotal - subtotal, 0);
+  const actualTotal = items.reduce((sum, i) => sum + (Number(i.sellingPrice || i.price || 0) * i.quantity), 0);
+  const discountTotal = items.reduce((sum, i) => sum + Number(i.discountAmount || 0), 0);
   const discountPercentage = actualTotal > 0 ? Math.round((discountTotal / actualTotal) * 10000) / 100 : 0;
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
   const cartCount = items.length;
+  const roundedGrandTotal = Math.round(subtotal);
+  const roundOffTotal = Math.round((roundedGrandTotal - subtotal) * 100) / 100;
 
   return (
     <CartContext.Provider value={{
@@ -134,6 +154,8 @@ export const CartProvider = ({ children }) => {
       sgstTotal,
       igstTotal,
       grandTotal: subtotal,
+      roundedGrandTotal,
+      roundOffTotal,
       actualTotal,
       discountTotal,
       discountPercentage,
