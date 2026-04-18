@@ -15,6 +15,9 @@ import {
 import api from '../../api/api.js';
 import { EmptyState, Modal, PageLoader, Pagination } from '../../components/ui/index.jsx';
 import { isValidEmail, isValidPhone, normalizePhone } from '../../utils/validation.js';
+import FloatingField from '../../components/forms/FloatingField.jsx';
+
+const getFieldLabel = (placeholder = '') => String(placeholder || '').replace(/\*/g, '').trim();
 
 const supplierFormDefaults = {
   name: '',
@@ -120,40 +123,42 @@ function SearchableSelectField({ options, value, onChange, placeholder = 'Search
 
   return (
     <div ref={fieldRef} className="relative">
-      <input
+      <FloatingField
         value={query}
         onChange={handleChange}
-        placeholder={placeholder}
+        label={getFieldLabel(placeholder)}
         disabled={disabled}
         onFocus={() => {
           if (!disabled) setOpen(true);
         }}
-        className={`input-field pr-20 ${disabled ? 'cursor-not-allowed bg-gray-100 text-gray-400' : ''}`}
+        className={disabled ? 'pr-20 cursor-not-allowed bg-gray-100 text-gray-400' : 'pr-20'}
+        trailing={
+          <div className="flex items-center gap-1">
+            {query ? (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="flex items-center justify-center px-1 text-gray-400 transition hover:text-rose-500"
+                aria-label="Clear selection"
+              >
+                <FiX size={15} />
+              </button>
+            ) : null}
+            <div className="h-5 border-l border-gray-200" />
+            <button
+              type="button"
+              onClick={() => {
+                if (!disabled) setOpen((current) => !current);
+              }}
+              className="flex items-center justify-center text-gray-500 transition hover:text-rose-600 disabled:cursor-not-allowed"
+              disabled={disabled}
+              aria-label="Toggle options"
+            >
+              <FiChevronDown size={16} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+        }
       />
-      <div className="pointer-events-none absolute inset-y-0 right-11 flex items-center text-gray-300">
-        <div className="h-5 border-l border-gray-200" />
-      </div>
-      {query ? (
-        <button
-          type="button"
-          onClick={handleClear}
-          className="absolute inset-y-0 right-10 flex items-center justify-center px-2 text-gray-400 transition hover:text-rose-500"
-          aria-label="Clear selection"
-        >
-          <FiX size={15} />
-        </button>
-      ) : null}
-      <button
-        type="button"
-        onClick={() => {
-          if (!disabled) setOpen((current) => !current);
-        }}
-        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-500 transition hover:text-rose-600 disabled:cursor-not-allowed"
-        disabled={disabled}
-        aria-label="Toggle options"
-      >
-        <FiChevronDown size={16} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
       {open && !disabled ? (
         <div className="absolute left-0 right-0 top-[calc(100%+0.45rem)] z-20 overflow-hidden rounded-2xl border border-rose-100 bg-white shadow-[0_18px_40px_rgba(225,29,72,0.16)]">
           <div className="border-b border-rose-50 bg-gradient-to-r from-rose-50 to-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-rose-400">
@@ -337,12 +342,12 @@ export function AdminSuppliers() {
         </div>
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
-          <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Supplier Name *" className="input-field" />
-          <input value={form.phone} onChange={(e) => setForm({ ...form, phone: normalizePhone(e.target.value) })} placeholder="Mobile Number" className="input-field" />
-          <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email" className="input-field" />
-          <input value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} placeholder="Contact Person" className="input-field" />
-          <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Address" className="input-field xl:col-span-2" />
-          <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Notes" className="input-field xl:col-span-2" />
+          <FloatingField label="Supplier Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
+          <FloatingField label="Mobile Number" value={form.phone} onChange={(e) => setForm({ ...form, phone: normalizePhone(e.target.value) })} />
+          <FloatingField label="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+          <FloatingField label="Contact Person" value={form.contactPerson} onChange={(e) => setForm({ ...form, contactPerson: e.target.value })} />
+          <FloatingField label="Address" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} wrapperClassName="xl:col-span-2" className="xl:col-span-2" />
+          <FloatingField label="Notes" value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} wrapperClassName="xl:col-span-2" className="xl:col-span-2" />
           <div className="xl:col-span-4 flex flex-wrap items-center justify-end gap-4 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3">
             <button onClick={handleSave} disabled={saving} className="btn-primary min-w-[160px]">
               {saving ? 'Saving...' : editSupplier ? 'Update Supplier' : 'Add Supplier'}
@@ -717,13 +722,13 @@ export function AdminRawMaterials() {
           {editMaterial ? (
             <>
               <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
-                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Raw material name" className="input-field xl:col-span-2" />
+                <FloatingField label="Raw Material Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} wrapperClassName="xl:col-span-2" className="xl:col-span-2" />
                 <select value={form.unit} onChange={(e) => setForm({ ...form, unit: e.target.value })} className="input-field">
                   {['pcs', 'kg', 'g', 'ltr', 'ml', 'box', 'pack', 'set', 'roll'].map((unit) => <option key={unit} value={unit}>{unit}</option>)}
                 </select>
-                <input type="number" min="0" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} placeholder="Opening stock" className="input-field" />
-                <input type="number" min="0" value={form.purchasePrice} onChange={(e) => setForm({ ...form, purchasePrice: e.target.value })} placeholder="Purchase price per unit" className="input-field" />
-                <input type="number" min="0" value={form.lowStockThreshold} onChange={(e) => setForm({ ...form, lowStockThreshold: e.target.value })} placeholder="Low stock alert level" className="input-field" />
+                <FloatingField type="number" label="Opening Stock" min="0" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
+                <FloatingField type="number" label="Purchase Price Per Unit" min="0" value={form.purchasePrice} onChange={(e) => setForm({ ...form, purchasePrice: e.target.value })} />
+                <FloatingField type="number" label="Low Stock Alert Level" min="0" value={form.lowStockThreshold} onChange={(e) => setForm({ ...form, lowStockThreshold: e.target.value })} />
               </div>
               <p className="text-xs text-gray-500">Tip: for consumables like milk, oil, sugar, or powder, prefer smaller units like `ml` or `g` so BOM quantities stay simple. Example: use `100 ml` instead of `0.1 ltr`.</p>
             </>
@@ -981,8 +986,8 @@ export function AdminRawMaterials() {
                     onChange={(selectedId) => updatePurchaseItem(index, 'rawMaterialId', selectedId)}
                     placeholder="Search raw material"
                   />
-                  <input type="number" min="0" value={item.quantity} onChange={(e) => updatePurchaseItem(index, 'quantity', e.target.value)} placeholder="Qty" className="input-field" />
-                  <input type="number" min="0" value={item.purchasePrice} onChange={(e) => updatePurchaseItem(index, 'purchasePrice', e.target.value)} placeholder="Price" className="input-field" />
+                  <FloatingField type="number" label="Qty" min="0" value={item.quantity} onChange={(e) => updatePurchaseItem(index, 'quantity', e.target.value)} />
+                  <FloatingField type="number" label="Price" min="0" value={item.purchasePrice} onChange={(e) => updatePurchaseItem(index, 'purchasePrice', e.target.value)} />
                   <button
                     type="button"
                     onClick={() => removePurchaseItem(index)}
@@ -1000,7 +1005,7 @@ export function AdminRawMaterials() {
               </div>
             </div>
           </div>
-          <input value={purchaseForm.note} onChange={(e) => setPurchaseForm({ ...purchaseForm, note: e.target.value })} placeholder="Purchase note" className="input-field" />
+          <FloatingField label="Purchase Note" value={purchaseForm.note} onChange={(e) => setPurchaseForm({ ...purchaseForm, note: e.target.value })} />
           <div className="flex gap-3">
             <button onClick={() => setShowPurchase(false)} className="btn-outline flex-1">Cancel</button>
             <button onClick={handlePurchase} disabled={saving} className="btn-primary flex-1">{saving ? 'Saving...' : 'Save Purchase'}</button>
@@ -1513,8 +1518,8 @@ export function AdminProduction() {
             onChange={(productId) => setForm({ ...form, productId })}
             placeholder="Search product"
           />
-          <input type="number" min="1" value={form.quantityProduced} onChange={(e) => setForm({ ...form, quantityProduced: e.target.value })} placeholder="Quantity to produce" className="input-field" />
-          <textarea value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} rows={3} placeholder="Production note" className="input-field resize-none" />
+          <FloatingField type="number" label="Quantity To Produce" min="1" value={form.quantityProduced} onChange={(e) => setForm({ ...form, quantityProduced: e.target.value })} />
+          <FloatingField as="textarea" label="Production Note" value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} rows={3} className="resize-none" />
           {selectedProductionProduct ? (
             <div className="space-y-3 rounded-2xl bg-brand-50 px-4 py-3 text-sm text-brand-700">
               <p>Record Production means you are adding finished product stock after making the item. The system will automatically deduct the linked BOM raw materials at the same time.</p>

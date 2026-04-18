@@ -5,6 +5,7 @@ import { FiArrowLeft, FiLock, FiMail } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import api from '../../api/api.js';
 import { isValidEmail } from '../../utils/validation.js';
+import FloatingField from '../../components/forms/FloatingField.jsx';
 
 export default function ForgotPasswordPage({ role = 'user' }) {
   const [email, setEmail] = useState('');
@@ -63,20 +64,15 @@ export default function ForgotPasswordPage({ role = 'user' }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-600">Email</label>
-            <div className="relative">
-              <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300" size={15} />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={isAdmin ? 'admin@kikisstore.com' : 'your@email.com'}
-                className="input-field pl-10"
-                required
-              />
-            </div>
-          </div>
+          <FloatingField
+            type="email"
+            label="Email"
+            icon={FiMail}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder={isAdmin ? 'admin@kikisstore.com' : 'your@email.com'}
+            required
+          />
 
           <button type="submit" disabled={submitting} className={buttonClass}>
             {submitting ? 'Sending reset link...' : 'Send Reset Link'}

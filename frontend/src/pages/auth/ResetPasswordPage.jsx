@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { FiArrowLeft, FiEye, FiEyeOff, FiLock } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 import api from '../../api/api.js';
+import FloatingField from '../../components/forms/FloatingField.jsx';
 
 export default function ResetPasswordPage({ role = 'user' }) {
   const { token = '' } = useParams();
@@ -70,41 +71,35 @@ export default function ResetPasswordPage({ role = 'user' }) {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-600">New Password</label>
-            <div className="relative">
-              <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300" size={15} />
-              <input
-                type={showPassword ? 'text' : 'password'}
-                value={form.password}
-                onChange={(e) => setForm((current) => ({ ...current, password: e.target.value }))}
-                placeholder="Enter new password"
-                className="input-field pl-10 pr-10"
-                required
-              />
-              <button type="button" onClick={() => setShowPassword((current) => !current)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400">
+          <FloatingField
+            type={showPassword ? 'text' : 'password'}
+            label="New Password"
+            icon={FiLock}
+            value={form.password}
+            onChange={(e) => setForm((current) => ({ ...current, password: e.target.value }))}
+            placeholder="Enter new password"
+            required
+            trailing={
+              <button type="button" onClick={() => setShowPassword((current) => !current)} className="text-gray-400">
                 {showPassword ? <FiEyeOff size={15} /> : <FiEye size={15} />}
               </button>
-            </div>
-          </div>
+            }
+          />
 
-          <div>
-            <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-gray-600">Confirm Password</label>
-            <div className="relative">
-              <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300" size={15} />
-              <input
-                type={showConfirmPassword ? 'text' : 'password'}
-                value={form.confirmPassword}
-                onChange={(e) => setForm((current) => ({ ...current, confirmPassword: e.target.value }))}
-                placeholder="Confirm new password"
-                className="input-field pl-10 pr-10"
-                required
-              />
-              <button type="button" onClick={() => setShowConfirmPassword((current) => !current)} className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400">
+          <FloatingField
+            type={showConfirmPassword ? 'text' : 'password'}
+            label="Confirm Password"
+            icon={FiLock}
+            value={form.confirmPassword}
+            onChange={(e) => setForm((current) => ({ ...current, confirmPassword: e.target.value }))}
+            placeholder="Confirm new password"
+            required
+            trailing={
+              <button type="button" onClick={() => setShowConfirmPassword((current) => !current)} className="text-gray-400">
                 {showConfirmPassword ? <FiEyeOff size={15} /> : <FiEye size={15} />}
               </button>
-            </div>
-          </div>
+            }
+          />
 
           <button type="submit" disabled={submitting} className={buttonClass}>
             {submitting ? 'Updating password...' : 'Reset Password'}

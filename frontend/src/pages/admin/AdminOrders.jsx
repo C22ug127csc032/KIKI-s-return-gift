@@ -5,6 +5,7 @@ import { FiSearch, FiDownload, FiChevronDown, FiChevronUp, FiEdit, FiClipboard }
 import api from '../../api/api.js';
 import { Badge, Pagination, PageLoader, EmptyState, Modal } from '../../components/ui/index.jsx';
 import { downloadInvoiceFile, showInvoiceDownloadError } from '../../utils/invoiceDownload.js';
+import FloatingField from '../../components/forms/FloatingField.jsx';
 
 const STATUS_OPTIONS = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Completed', 'Cancelled'];
 const PAYMENT_OPTIONS = ['Pending', 'Paid', 'Refunded'];
@@ -117,13 +118,13 @@ export default function AdminOrders() {
           <div className="text-sm text-gray-500">Total: {meta.total || orders.length}</div>
         </div>
         <div className="flex flex-wrap gap-3">
-          <div className="relative min-w-48 flex-1">
-            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-            <input
-              placeholder="Search by order #, name, phone..."
+          <div className="min-w-48 flex-1">
+            <FloatingField
+              label="Search Orders"
+              icon={FiSearch}
               value={filters.search}
               onChange={(e) => setFilters({ ...filters, search: e.target.value, page: 1 })}
-              className="input-field pl-10 text-sm py-2.5"
+              className="text-sm"
             />
           </div>
           <select value={filters.orderStatus} onChange={(e) => setFilters({ ...filters, orderStatus: e.target.value, page: 1 })} className="input-field text-sm py-2.5 w-auto">

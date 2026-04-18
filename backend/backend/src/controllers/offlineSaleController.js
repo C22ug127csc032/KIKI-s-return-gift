@@ -90,7 +90,10 @@ export const createOfflineSale = asyncHandler(async (req, res) => {
     subtotal: Number(subtotal.toFixed(2)),
     tax: Number(tax.toFixed(2)),
     totalAmount: Number(totalAmount.toFixed(2)),
-    invoiceNumber: await generateInvoiceNumber(OfflineSale, 'K-OF'),
+    invoiceNumber: await generateInvoiceNumber(OfflineSale, 'K-OF', {
+      padLength: gstMode === 'without_gst' ? 3 : 4,
+      filter: { gstMode },
+    }),
     notes,
     createdBy: req.user._id,
   });

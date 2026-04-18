@@ -8,17 +8,12 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import api from '../../api/api.js';
 import toast from 'react-hot-toast';
 import { isValidPhone, normalizePhone } from '../../utils/validation.js';
+import FloatingField from '../../components/forms/FloatingField.jsx';
 
 function InputWrap({ icon: Icon, label, required, children }) {
   return (
     <div>
-      <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">
-        {label} {required && <span className="text-rose-500">*</span>}
-      </label>
-      <div className="relative">
-        {Icon ? <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300" size={15} /> : null}
-        {children}
-      </div>
+      {children({ icon: Icon, label, required })}
     </div>
   );
 }
@@ -123,73 +118,93 @@ export default function CheckoutPage() {
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <InputWrap icon={FiUser} label="Full Name" required>
-                    <input
-                      value={form.name}
-                      onChange={(e) => updateField('name', e.target.value)}
-                      className="input-field pl-9"
-                      placeholder="Your full name"
-                      required
-                    />
+                    {({ icon, label, required }) => (
+                      <FloatingField
+                        label={label}
+                        icon={icon}
+                        value={form.name}
+                        onChange={(e) => updateField('name', e.target.value)}
+                        placeholder="Your full name"
+                        required={required}
+                      />
+                    )}
                   </InputWrap>
                   <InputWrap icon={FiPhone} label="Phone Number" required>
-                    <input
-                      value={form.phone}
-                      onChange={(e) => updateField('phone', normalizePhone(e.target.value))}
-                      className="input-field pl-9"
-                      placeholder="+91 XXXXXXXXXX"
-                      required
-                    />
+                    {({ icon, label, required }) => (
+                      <FloatingField
+                        label={label}
+                        icon={icon}
+                        value={form.phone}
+                        onChange={(e) => updateField('phone', normalizePhone(e.target.value))}
+                        placeholder="+91 XXXXXXXXXX"
+                        required={required}
+                      />
+                    )}
                   </InputWrap>
                   <div className="sm:col-span-2">
                     <InputWrap icon={FiMapPin} label="Address" required>
-                      <input
-                        value={form.address}
-                        onChange={(e) => updateField('address', e.target.value)}
-                        className="input-field pl-9"
-                        placeholder="House/Flat No., Street, Area"
-                        required
-                      />
+                      {({ icon, label, required }) => (
+                        <FloatingField
+                          label={label}
+                          icon={icon}
+                          value={form.address}
+                          onChange={(e) => updateField('address', e.target.value)}
+                          placeholder="House/Flat No., Street, Area"
+                          required={required}
+                        />
+                      )}
                     </InputWrap>
                   </div>
                   <InputWrap label="City" required>
-                    <input
-                      value={form.city}
-                      onChange={(e) => updateField('city', e.target.value)}
-                      className="input-field"
-                      placeholder="City"
-                      required
-                    />
+                    {({ label, required }) => (
+                      <FloatingField
+                        label={label}
+                        value={form.city}
+                        onChange={(e) => updateField('city', e.target.value)}
+                        placeholder="City"
+                        required={required}
+                      />
+                    )}
                   </InputWrap>
                   <InputWrap label="State">
-                    <input
-                      value={form.state}
-                      onChange={(e) => updateField('state', e.target.value)}
-                      className="input-field"
-                      placeholder="State"
-                    />
+                    {({ label }) => (
+                      <FloatingField
+                        label={label}
+                        value={form.state}
+                        onChange={(e) => updateField('state', e.target.value)}
+                        placeholder="State"
+                      />
+                    )}
                   </InputWrap>
                   <InputWrap label="Pincode" required>
-                    <input
-                      type="number"
-                      value={form.pincode}
-                      onChange={(e) => updateField('pincode', e.target.value)}
-                      className="input-field"
-                      placeholder="6-digit pincode"
-                      required
-                    />
+                    {({ label, required }) => (
+                      <FloatingField
+                        type="number"
+                        label={label}
+                        value={form.pincode}
+                        onChange={(e) => updateField('pincode', e.target.value)}
+                        placeholder="6-digit pincode"
+                        required={required}
+                      />
+                    )}
                   </InputWrap>
                 </div>
               </div>
 
               <div className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm">
                 <InputWrap icon={FiFileText} label="Order Notes (optional)">
-                  <textarea
-                    value={form.notes}
-                    onChange={(e) => updateField('notes', e.target.value)}
-                    rows={3}
-                    className="input-field pl-9 resize-none"
-                    placeholder="Any special requests or instructions?"
-                  />
+                  {({ icon, label }) => (
+                    <FloatingField
+                      as="textarea"
+                      label={label}
+                      icon={icon}
+                      value={form.notes}
+                      onChange={(e) => updateField('notes', e.target.value)}
+                      rows={3}
+                      className="resize-none"
+                      placeholder="Any special requests or instructions?"
+                    />
+                  )}
                 </InputWrap>
               </div>
             </div>

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { FiMail, FiLock, FiEye, FiEyeOff } from 'react-icons/fi';
 import { RiGiftLine } from 'react-icons/ri';
 import { useAuth } from '../../context/AuthContext.jsx';
+import FloatingField from '../../components/forms/FloatingField.jsx';
 
 export default function LoginPage() {
   const [form, setForm] = useState({ email: '', password: '' });
@@ -38,26 +39,29 @@ export default function LoginPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          <FloatingField
+            type="email"
+            label="Email"
+            icon={FiMail}
+            value={form.email}
+            onChange={(e) => setForm({ ...form, email: e.target.value })}
+            required
+          />
           <div>
-            <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">Email</label>
-            <div className="relative">
-              <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300" size={15} />
-              <input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })}
-                placeholder="your@email.com" className="input-field pl-10" required />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">Password</label>
-            <div className="relative">
-              <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300" size={15} />
-              <input type={showPass ? 'text' : 'password'} value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder="Your password" className="input-field pl-10 pr-10" required />
-              <button type="button" onClick={() => setShowPass(!showPass)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                {showPass ? <FiEyeOff size={15} /> : <FiEye size={15} />}
-              </button>
-            </div>
+            <FloatingField
+              type={showPass ? 'text' : 'password'}
+              label="Password"
+              icon={FiLock}
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+              required
+              trailing={
+                <button type="button" onClick={() => setShowPass(!showPass)}
+                  className="text-gray-400 hover:text-gray-600">
+                  {showPass ? <FiEyeOff size={15} /> : <FiEye size={15} />}
+                </button>
+              }
+            />
             <div className="mt-2 text-right">
               <Link to="/forgot-password" className="text-xs font-semibold text-rose-600 hover:text-rose-700">
                 Forgot Password?

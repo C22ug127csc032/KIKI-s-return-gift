@@ -6,6 +6,7 @@ import { EmptyState, Modal, PageLoader, Pagination } from '../../components/ui/i
 import { calculatePricing, getDiscountPercentage, getMrpPrice, getSellingPrice, getTaxRates } from '../../utils/pricing.js';
 import { isValidEmail, isValidPhone, normalizePhone } from '../../utils/validation.js';
 import { downloadInvoiceFile, showInvoiceDownloadError } from '../../utils/invoiceDownload.js';
+import FloatingField from '../../components/forms/FloatingField.jsx';
 
 const sortItems = (items, sortBy, accessors) => {
   const [field, direction] = sortBy.split('-');
@@ -258,17 +259,18 @@ export function AdminCategories() {
         </div>
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
-          <input
+          <FloatingField
+            label="Category Name"
             value={form.name}
             onChange={(e) => setForm({ ...form, name: e.target.value })}
-            placeholder="Category name *"
-            className="input-field"
+            required
           />
-          <input
+          <FloatingField
+            label="Description"
             value={form.description}
             onChange={(e) => setForm({ ...form, description: e.target.value })}
-            placeholder="Description"
-            className="input-field xl:col-span-2"
+            wrapperClassName="xl:col-span-2"
+            className="xl:col-span-2"
           />
           <div className="xl:col-span-1">
             <label className="mb-1.5 block text-sm font-medium text-gray-700">Category Image</label>
@@ -1025,17 +1027,23 @@ export function AdminOfflineSales() {
       <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Record Offline Sale" size="lg">
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Customer Name *</label>
-              <input value={form.customerName} onChange={(e) => setForm({ ...form, customerName: e.target.value })} className="input-field" />
-            </div>
-            <div>
-              <label className="mb-1.5 block text-sm font-medium">Phone</label>
-              <input value={form.phone} onChange={(e) => setForm({ ...form, phone: normalizePhone(e.target.value) })} className="input-field" />
-            </div>
+            <FloatingField
+              label="Customer Name"
+              value={form.customerName}
+              onChange={(e) => setForm({ ...form, customerName: e.target.value })}
+              required
+            />
+            <FloatingField
+              label="Phone"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: normalizePhone(e.target.value) })}
+            />
             <div className="sm:col-span-2">
-              <label className="mb-1.5 block text-sm font-medium">Address</label>
-              <input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} className="input-field" />
+              <FloatingField
+                label="Address"
+                value={form.address}
+                onChange={(e) => setForm({ ...form, address: e.target.value })}
+              />
             </div>
             <div className="sm:col-span-2">
               <label className="inline-flex items-center gap-2">
@@ -1188,10 +1196,11 @@ export function AdminOfflineSales() {
             </div>
           </div>
 
-          <div>
-            <label className="mb-1.5 block text-sm font-medium">Notes</label>
-            <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="input-field" />
-          </div>
+          <FloatingField
+            label="Notes"
+            value={form.notes}
+            onChange={(e) => setForm({ ...form, notes: e.target.value })}
+          />
           <div className="flex flex-col gap-3 sm:flex-row">
             <button onClick={() => setShowModal(false)} className="btn-outline flex-1">Cancel</button>
             <button onClick={handleCreate} disabled={saving} className="btn-primary flex-1">{saving ? 'Saving...' : 'Record Sale'}</button>
@@ -1204,16 +1213,13 @@ export function AdminOfflineSales() {
 
 function SettingsField({ label, name, type = 'text', placeholder, value, onChange }) {
   return (
-    <div>
-      <label className="mb-1.5 block text-sm font-medium text-gray-700">{label}</label>
-      <input
-        type={type}
-        value={value ?? ''}
-        onChange={(e) => onChange(name, e.target.value)}
-        placeholder={placeholder}
-        className="input-field"
-      />
-    </div>
+    <FloatingField
+      type={type}
+      label={label}
+      value={value ?? ''}
+      onChange={(e) => onChange(name, e.target.value)}
+      placeholder={placeholder}
+    />
   );
 }
 

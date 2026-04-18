@@ -9,16 +9,18 @@ export const generateOrderNumber = () => {
 
 const escapeRegExp = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-export const generateInvoiceNumber = async (Model, prefix) => {
+export const generateInvoiceNumber = async (Model, prefix, options = {}) => {
   const safePrefix = prefix || 'K-ON';
   const prefixRegex = new RegExp(`^${escapeRegExp(safePrefix)}-`);
+  const { padLength = 4, filter = {} } = options;
+  const baseFilter = { ...filter, invoiceNumber: prefixRegex };
 
-  let sequence = await Model.countDocuments({ invoiceNumber: prefixRegex }) + 1;
-  let invoiceNumber = `${safePrefix}-${String(sequence).padStart(4, '0')}`;
+  let sequence = await Model.countDocuments(baseFilter) + 1;
+  let invoiceNumber = `${safePrefix}-${String(sequence).padStart(padLength, '0')}`;
 
   while (await Model.exists({ invoiceNumber })) {
     sequence += 1;
-    invoiceNumber = `${safePrefix}-${String(sequence).padStart(4, '0')}`;
+    invoiceNumber = `${safePrefix}-${String(sequence).padStart(padLength, '0')}`;
   }
 
   return invoiceNumber;

@@ -5,6 +5,7 @@ import { FiUser, FiPhone, FiMail, FiSave, FiLock, FiShield } from 'react-icons/f
 import api from '../../api/api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { isValidPhone, normalizePhone } from '../../utils/validation.js';
+import FloatingField from '../../components/forms/FloatingField.jsx';
 
 export default function ProfilePage() {
   const { user, updateUser } = useAuth();
@@ -71,22 +72,23 @@ export default function ProfilePage() {
               { key: 'name', label: 'Full Name', icon: FiUser, type: 'text' },
               { key: 'phone', label: 'Phone Number', icon: FiPhone, type: 'tel' },
             ].map(({ key, label, icon: Icon, type }) => (
-              <div key={key}>
-                <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">{label}</label>
-                <div className="relative">
-                  <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300" size={14} />
-                  <input type={type} value={form[key]} onChange={(e) => setForm({ ...form, [key]: key === 'phone' ? normalizePhone(e.target.value) : e.target.value })}
-                    className="input-field pl-9" required={key === 'name'} />
-                </div>
-              </div>
+              <FloatingField
+                key={key}
+                type={type}
+                label={label}
+                icon={Icon}
+                value={form[key]}
+                onChange={(e) => setForm({ ...form, [key]: key === 'phone' ? normalizePhone(e.target.value) : e.target.value })}
+                required={key === 'name'}
+              />
             ))}
-            <div>
-              <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">Email</label>
-              <div className="relative">
-                <FiMail className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300" size={14} />
-                <input value={user?.email} disabled className="input-field pl-9 bg-gray-50 text-gray-300 cursor-not-allowed" />
-              </div>
-            </div>
+            <FloatingField
+              label="Email"
+              icon={FiMail}
+              value={user?.email}
+              disabled
+              className="bg-gray-50 text-gray-300 cursor-not-allowed"
+            />
             <button type="submit" disabled={saving} className="btn-primary flex items-center gap-2 py-2.5 px-6">
               {saving
                 ? <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -107,14 +109,15 @@ export default function ProfilePage() {
               { key: 'newPassword', label: 'New Password' },
               { key: 'confirm', label: 'Confirm New Password' },
             ].map(({ key, label }) => (
-              <div key={key}>
-                <label className="block text-xs font-bold text-gray-500 mb-1.5 uppercase tracking-wide">{label}</label>
-                <div className="relative">
-                  <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300" size={14} />
-                  <input type="password" value={passForm[key]} onChange={(e) => setPassForm({ ...passForm, [key]: e.target.value })}
-                    className="input-field pl-9" required />
-                </div>
-              </div>
+              <FloatingField
+                key={key}
+                type="password"
+                label={label}
+                icon={FiLock}
+                value={passForm[key]}
+                onChange={(e) => setPassForm({ ...passForm, [key]: e.target.value })}
+                required
+              />
             ))}
             <button type="submit" disabled={savingPass} className="btn-outline flex items-center gap-2 py-2.5 px-6">
               {savingPass && <div className="w-4 h-4 border-2 border-rose-600 border-t-transparent rounded-full animate-spin" />}

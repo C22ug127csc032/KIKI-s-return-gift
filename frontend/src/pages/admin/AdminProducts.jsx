@@ -4,6 +4,9 @@ import { FiChevronDown, FiGift, FiSearch, FiShoppingBag, FiStar, FiX } from 'rea
 import api from '../../api/api.js';
 import { EmptyState, PageLoader, Pagination } from '../../components/ui/index.jsx';
 import { calculatePricing, getDiscountPercentage, getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
+import FloatingField from '../../components/forms/FloatingField.jsx';
+
+const getFieldLabel = (placeholder = '') => String(placeholder || '').replace(/\*/g, '').trim();
 
 const emptyForm = {
   sourceType: 'purchase',
@@ -92,40 +95,42 @@ function SearchableSelectField({ options, value, onChange, placeholder = 'Search
 
   return (
     <div ref={fieldRef} className="relative">
-      <input
+      <FloatingField
         value={query}
         onChange={handleChange}
-        placeholder={placeholder}
+        label={getFieldLabel(placeholder)}
         disabled={disabled}
         onFocus={() => {
           if (!disabled) setOpen(true);
         }}
-        className={`input-field pr-20 ${disabled ? 'cursor-not-allowed bg-gray-100 text-gray-400' : ''}`}
+        className={disabled ? 'pr-20 cursor-not-allowed bg-gray-100 text-gray-400' : 'pr-20'}
+        trailing={
+          <div className="flex items-center gap-1">
+            {query ? (
+              <button
+                type="button"
+                onClick={handleClear}
+                className="flex items-center justify-center px-1 text-gray-400 transition hover:text-rose-500"
+                aria-label="Clear selection"
+              >
+                <FiX size={15} />
+              </button>
+            ) : null}
+            <div className="h-5 border-l border-gray-200" />
+            <button
+              type="button"
+              onClick={() => {
+                if (!disabled) setOpen((current) => !current);
+              }}
+              className="flex items-center justify-center text-gray-500 transition hover:text-rose-600 disabled:cursor-not-allowed"
+              disabled={disabled}
+              aria-label="Toggle options"
+            >
+              <FiChevronDown size={16} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
+            </button>
+          </div>
+        }
       />
-      <div className="pointer-events-none absolute inset-y-0 right-11 flex items-center text-gray-300">
-        <div className="h-5 border-l border-gray-200" />
-      </div>
-      {query ? (
-        <button
-          type="button"
-          onClick={handleClear}
-          className="absolute inset-y-0 right-10 flex items-center justify-center px-2 text-gray-400 transition hover:text-rose-500"
-          aria-label="Clear selection"
-        >
-          <FiX size={15} />
-        </button>
-      ) : null}
-      <button
-        type="button"
-        onClick={() => {
-          if (!disabled) setOpen((current) => !current);
-        }}
-        className="absolute inset-y-0 right-0 flex w-10 items-center justify-center text-gray-500 transition hover:text-rose-600 disabled:cursor-not-allowed"
-        disabled={disabled}
-        aria-label="Toggle options"
-      >
-        <FiChevronDown size={16} className={`transition-transform ${open ? 'rotate-180' : ''}`} />
-      </button>
       {open && !disabled ? (
         <div className="absolute left-0 right-0 top-[calc(100%+0.45rem)] z-20 overflow-hidden rounded-2xl border border-rose-100 bg-white shadow-[0_18px_40px_rgba(225,29,72,0.16)]">
           <div className="border-b border-rose-50 bg-gradient-to-r from-rose-50 to-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-rose-400">
@@ -423,7 +428,7 @@ export default function AdminProducts() {
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-4">
           {editProduct ? (
-            <input value={form.name} onChange={setField('name')} placeholder="Product Name *" className="input-field xl:col-span-2" />
+            <FloatingField label="Product Name" value={form.name} onChange={setField('name')} className="xl:col-span-2" wrapperClassName="xl:col-span-2" required />
           ) : (
             <>
               <div className="xl:col-span-4">
@@ -480,35 +485,27 @@ export default function AdminProducts() {
               </p>
             </div>
               ) : (
-                <input value={form.name} onChange={setField('name')} placeholder="Product Name *" className="input-field xl:col-span-2" />
+                <FloatingField label="Product Name" value={form.name} onChange={setField('name')} className="xl:col-span-2" wrapperClassName="xl:col-span-2" required />
               )}
             </>
           )}
-          <input type="number" value={form.mrp} onChange={setField('mrp')} min="0" placeholder="MRP Price *" className="input-field max-w-full xl:max-w-[240px]" />
-          <input type="number" value={form.sellingPrice} onChange={setField('sellingPrice')} min="0" placeholder="Selling Price *" className="input-field max-w-full xl:max-w-[240px]" />
-          <input type="number" value={form.discountPercentage} onChange={setField('discountPercentage')} min="0" max="100" step="0.01" placeholder="Discount %" className="input-field max-w-full xl:max-w-[240px]" />
-          <input type="number" value={form.cgstRate} onChange={setField('cgstRate')} min="0" max="100" step="0.01" placeholder="CGST %" className="input-field" />
-          <input type="number" value={form.sgstRate} onChange={setField('sgstRate')} min="0" max="100" step="0.01" placeholder="SGST %" className="input-field" />
-          <input type="number" value={form.igstRate} onChange={setField('igstRate')} min="0" max="100" step="0.01" placeholder="IGST %" className="input-field" />
-          <input type="number" value={form.sellingPrice === '' ? '' : Number(pricingPreview.totalUnitPrice || 0).toFixed(2)} readOnly placeholder="Final Price" className="input-field bg-gray-50 font-semibold text-gray-700" />
-          <input
-            type="number"
-            value={form.stock}
-            onChange={setField('stock')}
-            min="0"
-            placeholder="Stock *"
-            max={!editProduct && form.sourceType === 'purchase' && selectedBoughtProduct ? selectedBoughtProduct.quantity : undefined}
-            className="input-field"
-          />
-          <input type="number" value={form.lowStockThreshold} onChange={setField('lowStockThreshold')} min="0" placeholder="Stock Alert Level" className="input-field" />
+          <FloatingField type="number" label="MRP Price" value={form.mrp} onChange={setField('mrp')} min="0" className="max-w-full xl:max-w-[240px]" required />
+          <FloatingField type="number" label="Selling Price" value={form.sellingPrice} onChange={setField('sellingPrice')} min="0" className="max-w-full xl:max-w-[240px]" required />
+          <FloatingField type="number" label="Discount %" value={form.discountPercentage} onChange={setField('discountPercentage')} min="0" max="100" step="0.01" className="max-w-full xl:max-w-[240px]" />
+          <FloatingField type="number" label="CGST %" value={form.cgstRate} onChange={setField('cgstRate')} min="0" max="100" step="0.01" />
+          <FloatingField type="number" label="SGST %" value={form.sgstRate} onChange={setField('sgstRate')} min="0" max="100" step="0.01" />
+          <FloatingField type="number" label="IGST %" value={form.igstRate} onChange={setField('igstRate')} min="0" max="100" step="0.01" />
+          <FloatingField type="number" label="Final Price" value={form.sellingPrice === '' ? '' : Number(pricingPreview.totalUnitPrice || 0).toFixed(2)} readOnly className="bg-gray-50 font-semibold text-gray-700" />
+          <FloatingField type="number" label="Stock" value={form.stock} onChange={setField('stock')} min="0" max={!editProduct && form.sourceType === 'purchase' && selectedBoughtProduct ? selectedBoughtProduct.quantity : undefined} required />
+          <FloatingField type="number" label="Stock Alert Level" value={form.lowStockThreshold} onChange={setField('lowStockThreshold')} min="0" />
           <SearchableSelectField
             options={categoryOptions}
             value={form.category}
             onChange={(categoryId) => setForm({ ...form, category: categoryId })}
             placeholder="Search category *"
           />
-          <input value={form.sku} onChange={setField('sku')} placeholder="SKU" className="input-field self-start" />
-          <textarea value={form.description} onChange={setField('description')} rows={3} placeholder="Description *" className="input-field resize-none xl:col-span-3" />
+          <FloatingField label="SKU" value={form.sku} onChange={setField('sku')} className="self-start" />
+          <FloatingField as="textarea" label="Description" value={form.description} onChange={setField('description')} rows={3} className="resize-none xl:col-span-3" wrapperClassName="xl:col-span-3" required />
           <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 xl:col-span-4">
             <div className="flex flex-wrap gap-x-5 gap-y-1">
               <span>MRP: Rs.{Number(form.mrp || 0).toFixed(2)}</span>

@@ -5,6 +5,7 @@ import { FiUser, FiMail, FiLock, FiPhone, FiEye, FiEyeOff } from 'react-icons/fi
 import { RiGiftLine } from 'react-icons/ri';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { isValidEmail, isValidPhone, normalizePhone } from '../../utils/validation.js';
+import FloatingField from '../../components/forms/FloatingField.jsx';
 
 export default function RegisterPage() {
   const [form, setForm] = useState({ name: '', email: '', phone: '', password: '', confirm: '' });
@@ -46,39 +47,44 @@ export default function RegisterPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {fields.map(({ key, label, icon: Icon, type, placeholder }) => (
-            <div key={key}>
-              <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">{label}</label>
-              <div className="relative">
-                <Icon className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300" size={15} />
-                <input type={type} value={form[key]} onChange={(e) => setForm({ ...form, [key]: key === 'phone' ? normalizePhone(e.target.value) : e.target.value })}
-                  placeholder={placeholder} className="input-field pl-10" required={key !== 'phone'} />
-              </div>
-            </div>
+            <FloatingField
+              key={key}
+              type={type}
+              label={label}
+              icon={Icon}
+              value={form[key]}
+              onChange={(e) => setForm({ ...form, [key]: key === 'phone' ? normalizePhone(e.target.value) : e.target.value })}
+              required={key !== 'phone'}
+              placeholder={placeholder}
+            />
           ))}
 
-          <div>
-            <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">Password</label>
-            <div className="relative">
-              <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300" size={15} />
-              <input type={showPass ? 'text' : 'password'} value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                placeholder="Minimum 6 characters" className="input-field pl-10 pr-10" required minLength={6} />
+          <FloatingField
+            type={showPass ? 'text' : 'password'}
+            label="Password"
+            icon={FiLock}
+            value={form.password}
+            onChange={(e) => setForm({ ...form, password: e.target.value })}
+            placeholder="Minimum 6 characters"
+            required
+            minLength={6}
+            trailing={
               <button type="button" onClick={() => setShowPass(!showPass)}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                className="text-gray-400 hover:text-gray-600">
                 {showPass ? <FiEyeOff size={15} /> : <FiEye size={15} />}
               </button>
-            </div>
-          </div>
+            }
+          />
 
-          <div>
-            <label className="block text-xs font-bold text-gray-600 mb-1.5 uppercase tracking-wide">Confirm Password</label>
-            <div className="relative">
-              <FiLock className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-300" size={15} />
-              <input type="password" value={form.confirm}
-                onChange={(e) => setForm({ ...form, confirm: e.target.value })}
-                placeholder="Re-enter password" className="input-field pl-10" required />
-            </div>
-          </div>
+          <FloatingField
+            type="password"
+            label="Confirm Password"
+            icon={FiLock}
+            value={form.confirm}
+            onChange={(e) => setForm({ ...form, confirm: e.target.value })}
+            placeholder="Re-enter password"
+            required
+          />
 
           <button type="submit" disabled={loading}
             className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 disabled:opacity-60">

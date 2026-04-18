@@ -6,6 +6,7 @@ import { RiGiftLine } from 'react-icons/ri';
 import api from '../../api/api.js';
 import ProductCard from '../../components/shop/ProductCard.jsx';
 import { SkeletonCard, Pagination, EmptyState } from '../../components/ui/index.jsx';
+import FloatingField from '../../components/forms/FloatingField.jsx';
 
 const occasions = ['Wedding', 'Birthday', 'Diwali', 'Pooja', 'Baby Shower', 'Anniversary', 'Housewarming', 'Corporate'];
 
@@ -384,12 +385,12 @@ export default function ShopPage() {
                     </span>
                   ) : null}
                   <div className="relative min-w-0 flex-1 sm:min-w-[320px]">
-                    <FiSearch className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-                    <input
-                      placeholder="Search gifts, occasions..."
+                    <FloatingField
+                      label="Search Gifts"
+                      icon={FiSearch}
                       value={searchInput}
                       onChange={(e) => handleSearchInputChange(e.target.value)}
-                      className="input-field py-2.5 pl-10 pr-14"
+                      className="pr-14"
                     />
                     {searchInput ? (
                       <button

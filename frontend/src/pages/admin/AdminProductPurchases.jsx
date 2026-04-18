@@ -3,6 +3,9 @@ import toast from 'react-hot-toast';
 import { FiPackage, FiSearch, FiShoppingBag, FiTruck, FiX } from 'react-icons/fi';
 import api from '../../api/api.js';
 import { EmptyState, PageLoader, Pagination } from '../../components/ui/index.jsx';
+import FloatingField from '../../components/forms/FloatingField.jsx';
+
+const getFieldLabel = (placeholder = '') => String(placeholder || '').replace(/\*/g, '').trim();
 
 function SearchableSelectField({ options, value, onChange, placeholder = 'Search option', disabled = false }) {
   const fieldRef = useRef(null);
@@ -31,7 +34,7 @@ function SearchableSelectField({ options, value, onChange, placeholder = 'Search
 
   return (
     <div ref={fieldRef} className="relative">
-      <input
+      <FloatingField
         value={query}
         onChange={(event) => {
           if (disabled) return;
@@ -40,9 +43,9 @@ function SearchableSelectField({ options, value, onChange, placeholder = 'Search
           if (!event.target.value.trim()) onChange('');
         }}
         onFocus={() => !disabled && setOpen(true)}
-        placeholder={placeholder}
+        label={getFieldLabel(placeholder)}
         disabled={disabled}
-        className={`input-field pr-12 ${disabled ? 'cursor-not-allowed bg-gray-100 text-gray-400' : ''}`}
+        className={disabled ? 'pr-12 cursor-not-allowed bg-gray-100 text-gray-400' : 'pr-12'}
       />
       {query ? (
         <button
@@ -190,18 +193,18 @@ export default function AdminProductPurchases() {
             placeholder="Search supplier *"
             disabled={!supplierOptions.length}
           />
-          <input value={form.productName} onChange={(event) => setForm({ ...form, productName: event.target.value })} placeholder="Bought Product Name *" className="input-field" />
-          <input type="number" min="1" value={form.quantity} onChange={(event) => setForm({ ...form, quantity: event.target.value })} placeholder="Quantity *" className="input-field" />
-          <input type="number" min="0" step="0.01" value={form.purchasePrice} onChange={(event) => setForm({ ...form, purchasePrice: event.target.value })} placeholder="Buy Rate *" className="input-field" />
-          <input value={form.invoiceNumber} onChange={(event) => setForm({ ...form, invoiceNumber: event.target.value })} placeholder="Invoice Number" className="input-field" />
-          <input type="date" value={form.purchaseDate} onChange={(event) => setForm({ ...form, purchaseDate: event.target.value })} className="input-field" />
+          <FloatingField label="Bought Product Name" value={form.productName} onChange={(event) => setForm({ ...form, productName: event.target.value })} required />
+          <FloatingField type="number" label="Quantity" min="1" value={form.quantity} onChange={(event) => setForm({ ...form, quantity: event.target.value })} required />
+          <FloatingField type="number" label="Buy Rate" min="0" step="0.01" value={form.purchasePrice} onChange={(event) => setForm({ ...form, purchasePrice: event.target.value })} required />
+          <FloatingField label="Invoice Number" value={form.invoiceNumber} onChange={(event) => setForm({ ...form, invoiceNumber: event.target.value })} />
+          <FloatingField type="date" label="Purchase Date" value={form.purchaseDate} onChange={(event) => setForm({ ...form, purchaseDate: event.target.value })} />
           <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
             Total: Rs.{totalAmount}
           </div>
           <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-600">
             This bought product will appear in the product module dropdown after saving.
           </div>
-          <textarea value={form.note} onChange={(event) => setForm({ ...form, note: event.target.value })} rows={3} placeholder="Purchase note" className="input-field resize-none xl:col-span-4" />
+          <FloatingField as="textarea" label="Purchase Note" value={form.note} onChange={(event) => setForm({ ...form, note: event.target.value })} rows={3} className="resize-none xl:col-span-4" wrapperClassName="xl:col-span-4" />
         </div>
 
         <div className="mt-6 flex justify-end gap-3 border-t border-gray-100 pt-4">
