@@ -9,7 +9,7 @@ import { useCart } from '../../context/CartContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import ProductCard from '../../components/shop/ProductCard.jsx';
 import { PageLoader } from '../../components/ui/index.jsx';
-import { getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
+import { calculatePricing, getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
 import { getDisplayProductName } from '../../utils/productName.js';
 import { useStoreWhatsappNumber } from '../../hooks/useStoreWhatsappNumber.js';
 
@@ -51,12 +51,20 @@ export default function ProductDetailPage() {
   const displayName = getDisplayProductName(product);
   const image = product.images?.[selectedImg]?.url;
   const sellingPrice = product.discountedPrice ?? getSellingPrice(product);
+  const pricing = calculatePricing({
+    basePrice: product.sellingPrice ?? product.basePrice ?? product.price ?? 0,
+    discountPercentage: product.discountPercentage,
+    cgstRate: product.cgstRate,
+    sgstRate: product.sgstRate,
+    igstRate: product.igstRate,
+  });
+  const totalUnitPrice = pricing.totalUnitPrice;
   const mrpPrice = getMrpPrice(product);
   const discountPercentage = Number(product.discountPercentage || 0);
-  const showStrikePrice = Number(mrpPrice || 0) > Number(sellingPrice || 0);
+  const showStrikePrice = Number(mrpPrice || 0) > Number(totalUnitPrice || 0);
   const showDiscountBadge = discountPercentage > 0;
   const productOccasions = product.occasions?.length ? product.occasions : (product.occasion ? [product.occasion] : []);
-  const enquireHref = `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hi! I'm interested in "${displayName}" (Rs.${Math.round(Number(sellingPrice || 0))}). Can I get more details?`)}`;
+  const enquireHref = `https://wa.me/${whatsapp}?text=${encodeURIComponent(`Hi! I'm interested in "${displayName}" (Rs.${Math.round(Number(totalUnitPrice || 0))}). Can I get more details?`)}`;
 
   const guarantees = [
     { icon: FiTruck, label: 'Fast Delivery' },
@@ -144,7 +152,7 @@ export default function ProductDetailPage() {
 
             <div className="mb-5 w-full border-b border-gray-100 pb-5">
               <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-                <span className="text-3xl font-bold text-gray-900">Rs.{Math.round(Number(sellingPrice || 0))}</span>
+                <span className="text-3xl font-bold text-gray-900">Rs.{Math.round(Number(totalUnitPrice || 0))}</span>
                 {showStrikePrice ? (
                   <>
                     <span className="text-base text-gray-300 line-through">Rs.{Math.round(Number(mrpPrice || 0))}</span>
@@ -156,8 +164,8 @@ export default function ProductDetailPage() {
                   </>
                 ) : null}
               </div>
-              <p className="mt-2 text-sm font-medium text-amber-700 lg:text-left">
-                GST is not included in this product price.
+              <p className="mt-2 text-sm font-medium text-emerald-700 lg:text-left">
+                GST is included in this product price.
               </p>
             </div>
 

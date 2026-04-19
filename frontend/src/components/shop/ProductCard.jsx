@@ -5,7 +5,7 @@ import { RiHeartLine, RiHeartFill } from 'react-icons/ri';
 import { useCart } from '../../context/CartContext.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useWishlist } from '../../context/WishlistContext.jsx';
-import { getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
+import { calculatePricing, getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
 import { getDisplayProductName } from '../../utils/productName.js';
 
 export default function ProductCard({ product, index = 0 }) {
@@ -18,9 +18,17 @@ export default function ProductCard({ product, index = 0 }) {
   const image = product.images?.[0]?.url;
   const displayName = getDisplayProductName(product);
   const sellingPrice = product.discountedPrice ?? getSellingPrice(product);
+  const pricing = calculatePricing({
+    basePrice: product.sellingPrice ?? product.basePrice ?? product.price ?? 0,
+    discountPercentage: product.discountPercentage,
+    cgstRate: product.cgstRate,
+    sgstRate: product.sgstRate,
+    igstRate: product.igstRate,
+  });
+  const totalUnitPrice = pricing.totalUnitPrice;
   const mrpPrice = getMrpPrice(product);
   const discountPercentage = Number(product.discountPercentage || 0);
-  const showStrikePrice = Number(mrpPrice || 0) > Number(sellingPrice || 0);
+  const showStrikePrice = Number(mrpPrice || 0) > Number(totalUnitPrice || 0);
   const showDiscountBadge = discountPercentage > 0;
   const wished = wishlistIds.has(product._id);
 
@@ -100,11 +108,11 @@ export default function ProductCard({ product, index = 0 }) {
 
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
-            <span className="text-lg sm:text-base font-bold text-gray-900">Rs.{Math.round(Number(sellingPrice || 0))}</span>
+            <span className="text-lg sm:text-base font-bold text-gray-900">Rs.{Math.round(Number(totalUnitPrice || 0))}</span>
             {showStrikePrice ? (
               <span className="block sm:inline text-xs text-gray-400 line-through sm:ml-1.5">Rs.{Math.round(Number(mrpPrice || 0))}</span>
             ) : null}
-            <p className="mt-1 text-[11px] font-medium text-amber-700">GST not included</p>
+            <p className="mt-1 text-[11px] font-medium text-emerald-700">GST included</p>
           </div>
 
           <motion.button

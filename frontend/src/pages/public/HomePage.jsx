@@ -114,7 +114,8 @@ const mergeHeroSlides = (slides = []) =>
 export default function HomePage() {
   const [featured, setFeatured] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [dynamicHeroSlides, setDynamicHeroSlides] = useState(heroSlides);
+  const [dynamicHeroSlides, setDynamicHeroSlides] = useState([]);
+  const [heroReady, setHeroReady] = useState(false);
   const [heroContentReady, setHeroContentReady] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [heroIndex, setHeroIndex] = useState(0);
@@ -171,7 +172,7 @@ export default function HomePage() {
   };
 
   useEffect(() => {
-    if (heroPaused) return;
+    if (heroPaused || dynamicHeroSlides.length <= 1) return;
     heroTimer.current = setInterval(() => {
       setHeroIndex(i => (i + 1) % dynamicHeroSlides.length);
     }, 4000);
@@ -184,10 +185,15 @@ export default function HomePage() {
       .then(([prodRes, catRes, heroRes]) => {
         setFeatured(prodRes.data.data);
         setCategories(catRes.data.data.slice(0, 8));
-        setDynamicHeroSlides(mergeHeroSlides(heroRes.data.data?.slides || []));
+        const resolvedSlides = mergeHeroSlides(heroRes.data.data?.slides || []);
+        setDynamicHeroSlides(resolvedSlides);
+        setHeroIndex(0);
+        setHeroReady(true);
         setHeroContentReady(true);
       })
       .catch(() => {
+        setDynamicHeroSlides(heroSlides);
+        setHeroReady(true);
         setHeroContentReady(true);
       })
       .finally(() => setLoadingProducts(false));
@@ -208,42 +214,52 @@ export default function HomePage() {
         onTouchStart={handleHeroTouchStart}
         onTouchEnd={handleHeroTouchEnd}
       >
-        {/* Slide backgrounds */}
-        {dynamicHeroSlides.map((s, i) => (
-          <motion.div
-            key={s.id}
-            className="absolute inset-0 transition-opacity duration-1000"
-            style={{
-              opacity: i === heroIndex ? 1 : 0,
-              zIndex: i === heroIndex ? 1 : 0,
-              y: heroBgY,
-              scale: heroBgScale,
-            }}
-          >
-            <img
-              src={s.image}
-              alt={s.tag}
-              className="h-full w-full object-cover object-center"
-              loading={i === 0 ? 'eager' : 'lazy'}
-            />
-            <div className="absolute inset-0 bg-black/20" />
-          </motion.div>
-        ))}
+        {!heroReady ? (
+          <div className="absolute inset-0 bg-gradient-to-br from-rose-100 via-rose-50 to-amber-50">
+            <div className="absolute inset-0 bg-black/10" />
+          </div>
+        ) : (
+          <>
+            {/* Slide backgrounds */}
+            {dynamicHeroSlides.map((s, i) => (
+              <motion.div
+                key={s.id}
+                className="absolute inset-0 transition-opacity duration-1000"
+                style={{
+                  opacity: i === heroIndex ? 1 : 0,
+                  zIndex: i === heroIndex ? 1 : 0,
+                  y: heroBgY,
+                  scale: heroBgScale,
+                }}
+              >
+                <img
+                  src={s.image}
+                  alt={s.tag}
+                  className="h-full w-full object-cover object-center"
+                  loading={i === 0 ? 'eager' : 'lazy'}
+                />
+                <div className="absolute inset-0 bg-black/20" />
+              </motion.div>
+            ))}
+          </>
+        )}
 
         {/* Progress bar */}
-        <div className="absolute bottom-0 left-0 right-0 z-10 flex h-[3px]">
-          {dynamicHeroSlides.map((s, i) => (
-            <div key={s.id} className="flex-1 bg-white/20">
-              <div
-                className="h-full bg-white transition-none"
-                style={{
-                  width: i === heroIndex ? '100%' : i < heroIndex ? '100%' : '0%',
-                  transition: i === heroIndex ? `width ${heroPaused ? '0s' : '4s'} linear` : 'none',
-                }}
-              />
-            </div>
-          ))}
-        </div>
+        {heroReady && dynamicHeroSlides.length > 0 ? (
+          <div className="absolute bottom-0 left-0 right-0 z-10 flex h-[3px]">
+            {dynamicHeroSlides.map((s, i) => (
+              <div key={s.id} className="flex-1 bg-white/20">
+                <div
+                  className="h-full bg-white transition-none"
+                  style={{
+                    width: i === heroIndex ? '100%' : i < heroIndex ? '100%' : '0%',
+                    transition: i === heroIndex ? `width ${heroPaused ? '0s' : '4s'} linear` : 'none',
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        ) : null}
 
         {/* Content */}
         <motion.div

@@ -124,8 +124,20 @@ export default function Navbar() {
               </Link>
             </div>
 
-            <div className="hidden md:grid md:min-h-[72px] md:w-full md:grid-cols-[1fr_auto_1fr] md:items-center">
-              <nav className="relative flex items-center gap-2 justify-self-start">
+            <div className="hidden md:grid md:min-h-[72px] md:w-full md:grid-cols-[auto_1fr_auto] md:items-center md:gap-8">
+              <Link to="/" className="justify-self-start">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border border-rose-200 bg-white shadow-sm">
+                    <img src={navbarLogo} alt="KIKI'S logo" className="h-full w-full object-cover" />
+                  </div>
+                  <div className="leading-none">
+                    <p className="font-display text-xl font-bold tracking-[0.01em] text-gray-900">KIKI'S</p>
+                    <p className="pt-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-rose-500">Return Gifts</p>
+                  </div>
+                </div>
+              </Link>
+
+              <nav className="relative flex items-center justify-center gap-2 justify-self-center">
                 <NavLink
                   to="/"
                   end
@@ -197,20 +209,19 @@ export default function Navbar() {
                 </NavLink>
               </nav>
 
-              <Link to="/" className="justify-self-center">
-                <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border border-rose-200 bg-white shadow-sm">
-                  <img src={navbarLogo} alt="KIKI'S logo" className="h-full w-full object-cover" />
-                </div>
-              </Link>
-
-              <div className="flex items-center gap-1 justify-self-end">
-                <button
-                  onClick={() => setSearchOpen(true)}
-                  className="rounded-full p-2.5 text-gray-900 transition-all hover:bg-black/5"
-                  aria-label="Search"
+              <div className="flex items-center gap-2 justify-self-end">
+                <form
+                  onSubmit={handleSearch}
+                  className="flex h-11 min-w-[240px] items-center gap-2 rounded-full border border-gray-200 bg-white px-4 shadow-sm"
                 >
-                  <FiSearch size={18} />
-                </button>
+                  <FiSearch size={16} className="flex-shrink-0 text-gray-400" />
+                  <input
+                    value={searchQ}
+                    onChange={(e) => setSearchQ(e.target.value)}
+                    placeholder="Search products..."
+                    className="w-full bg-transparent text-sm text-gray-800 outline-none placeholder:text-gray-400"
+                  />
+                </form>
 
                 <Link
                   to="/wishlist"

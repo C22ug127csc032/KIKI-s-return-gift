@@ -596,6 +596,45 @@
   box-shadow: 0 14px 30px var(--theme-primary600-rgba-16) !important;
 }
 
+:root[data-theme-key='kiki-market'] body {
+  background:
+    linear-gradient(180deg, #fff8f0 0%, #f7e9d5 100%);
+}
+
+:root[data-theme-key='kiki-market'] .site-navbar,
+:root[data-theme-key='kiki-market'] .site-navbar-drawer {
+  background: #fff6ec !important;
+  border-bottom-color: rgba(90, 45, 8, 0.1) !important;
+}
+
+:root[data-theme-key='kiki-market'] .btn-primary,
+:root[data-theme-key='kiki-market'] .site-login-pill {
+  background: #ef6c00 !important;
+  color: #fff !important;
+  border-color: #ef6c00 !important;
+  box-shadow: 0 16px 34px rgba(239, 108, 0, 0.22);
+}
+
+:root[data-theme-key='kiki-market'] .btn-primary:hover,
+:root[data-theme-key='kiki-market'] .hover\:bg-rose-600:hover,
+:root[data-theme-key='kiki-market'] .hover\:bg-rose-700:hover {
+  background: #cf5600 !important;
+}
+
+:root[data-theme-key='kiki-market'] .btn-outline,
+:root[data-theme-key='kiki-market'] .site-nav-link-active {
+  background: #fff1df !important;
+  color: #cf5600 !important;
+  border-color: rgba(239, 108, 0, 0.18) !important;
+}
+
+:root[data-theme-key='kiki-market'] .card,
+:root[data-theme-key='kiki-market'] .product-card,
+:root[data-theme-key='kiki-market'] .admin-card {
+  border-color: rgba(239, 108, 0, 0.08) !important;
+  box-shadow: 0 14px 34px rgba(90, 45, 8, 0.06);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-rain-item,
   .page-rain-item {
