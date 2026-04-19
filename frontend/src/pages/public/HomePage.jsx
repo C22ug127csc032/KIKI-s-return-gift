@@ -115,6 +115,7 @@ export default function HomePage() {
   const [featured, setFeatured] = useState([]);
   const [categories, setCategories] = useState([]);
   const [dynamicHeroSlides, setDynamicHeroSlides] = useState(heroSlides);
+  const [heroContentReady, setHeroContentReady] = useState(false);
   const [loadingProducts, setLoadingProducts] = useState(true);
   const [heroIndex, setHeroIndex] = useState(0);
   const [heroPaused, setHeroPaused] = useState(false);
@@ -184,12 +185,18 @@ export default function HomePage() {
         setFeatured(prodRes.data.data);
         setCategories(catRes.data.data.slice(0, 8));
         setDynamicHeroSlides(mergeHeroSlides(heroRes.data.data?.slides || []));
+        setHeroContentReady(true);
+      })
+      .catch(() => {
+        setHeroContentReady(true);
       })
       .finally(() => setLoadingProducts(false));
   }, []);
 
-  const slide = dynamicHeroSlides[heroIndex];
-  const heroHeadingLines = [slide.heading[0], slide.heading[1], slide.heading[2]].filter(Boolean);
+  const slide = dynamicHeroSlides[heroIndex] || dynamicHeroSlides[0];
+  const heroHeadingLines = heroContentReady
+    ? [slide?.heading?.[0], slide?.heading?.[1], slide?.heading?.[2]].filter(Boolean)
+    : [];
 
   return (
     <div className="relative overflow-x-hidden">
@@ -198,8 +205,6 @@ export default function HomePage() {
       <section
         ref={heroSectionRef}
         className="relative h-[92vh] min-h-[560px] max-h-[820px] overflow-hidden"
-        onMouseEnter={() => setHeroPaused(true)}
-        onMouseLeave={() => setHeroPaused(false)}
         onTouchStart={handleHeroTouchStart}
         onTouchEnd={handleHeroTouchEnd}
       >
@@ -255,29 +260,16 @@ export default function HomePage() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.55, ease: 'easeOut' }}
                 >
-                  <h1 className="mx-auto mb-8 flex w-full max-w-[24ch] flex-col items-center gap-1.5 font-display text-4xl font-bold leading-[1.08] text-white drop-shadow-sm sm:max-w-[26ch] sm:text-5xl md:gap-2 md:text-6xl lg:text-7xl">
-                    {heroHeadingLines.map((line, li) => (
-                      <span key={li} className="block whitespace-nowrap text-center">
-                        {line}
-                      </span>
-                    ))}
-                  </h1>
-
-                  <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
-                    <Link
-                      to={slide.ctaLink}
-                      className="inline-flex min-w-[210px] items-center justify-center gap-2 rounded-full bg-rose-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-rose-700 hover:shadow-rose-500/40 active:scale-95 sm:min-w-0"
-                    >
-                      Shop <FiArrowRight size={15} />
-                    </Link>
-                    <Link
-                      to={`https://wa.me/${whatsapp}?text=Hello! I'd like to know more about your return gifts.`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex min-w-[210px] items-center justify-center gap-2 rounded-full bg-green-500 px-6 py-3.5 text-sm font-semibold text-white shadow-lg transition-all hover:bg-green-600 active:scale-95 sm:min-w-0"
-                    >
-                      <FaWhatsapp size={17} /> WhatsApp Us
-                    </Link>
+                  <div className="mx-auto flex min-h-[164px] items-center justify-center sm:min-h-[220px] md:min-h-[252px] lg:min-h-[300px]">
+                    {heroContentReady ? (
+                      <h1 className="mx-auto flex w-full max-w-[24ch] flex-col items-center justify-center text-center font-display text-4xl font-bold leading-[1.08] text-white drop-shadow-sm sm:max-w-[26ch] sm:text-5xl md:text-6xl lg:text-7xl">
+                        {heroHeadingLines.map((line, li) => (
+                          <span key={li} className="block w-full text-center">
+                            {line}
+                          </span>
+                        ))}
+                      </h1>
+                    ) : null}
                   </div>
                 </motion.div>
               </AnimatePresence>
@@ -333,7 +325,7 @@ export default function HomePage() {
                 <motion.div key={cat._id} initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.07 }}>
                   <Link
                     to={`/shop?category=${cat._id}`}
-                    className="group flex flex-col items-center gap-2.5 rounded-2xl border border-transparent bg-white p-4 text-center transition-all hover:border-rose-100 hover:shadow-[0_4px_20px_rgba(225,29,72,0.1)]"
+                    className="group flex flex-col items-center gap-2.5 rounded-2xl bg-white p-4 text-center transition-all hover:shadow-[0_4px_20px_rgba(225,29,72,0.1)]"
                   >
                     <div className="h-14 w-14 flex-shrink-0 overflow-hidden rounded-xl bg-rose-50 transition-colors group-hover:bg-rose-100">
                       {cat.image ? (

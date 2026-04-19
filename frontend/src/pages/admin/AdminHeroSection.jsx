@@ -212,7 +212,7 @@ export default function AdminHeroSection() {
                   <Field label="Title Line 3" value={slide.titleLineThree} onChange={(value) => updateSlide(index, 'titleLineThree', value)} />
                 </div>
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                  The homepage hero now shows only the centered title with fixed Shop and WhatsApp buttons.
+                  The homepage hero now shows only the centered title text without action buttons.
                 </div>
               </div>
             </div>

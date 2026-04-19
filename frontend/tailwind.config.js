@@ -13,8 +13,8 @@ export default {
         warm: { 50: '#fef9f0', 100: '#fef3c7', 200: '#fde68a' },
       },
       fontFamily: {
-        display: ['"Cormorant Garamond"', 'Georgia', 'serif'],
-        body: ['"Plus Jakarta Sans"', 'sans-serif'],
+        display: ['"Quicksand"', 'sans-serif'],
+        body: ['"Quicksand"', 'sans-serif'],
       },
       boxShadow: {
         card: '0 2px 16px rgba(0,0,0,0.06)',

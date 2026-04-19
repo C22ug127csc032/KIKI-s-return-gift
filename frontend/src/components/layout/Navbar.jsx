@@ -6,6 +6,7 @@ import {
   FiPackage, FiSettings, FiChevronDown, FiSearch
 } from 'react-icons/fi';
 import { RiHeart3Line, RiHeart3Fill } from 'react-icons/ri';
+import api from '../../api/api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useCart } from '../../context/CartContext.jsx';
 import { useWishlist } from '../../context/WishlistContext.jsx';
@@ -17,12 +18,15 @@ export default function Navbar() {
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQ, setSearchQ] = useState('');
+  const [navCategories, setNavCategories] = useState([]);
+  const [categoriesOpen, setCategoriesOpen] = useState(false);
   const { user, logout, isAdmin } = useAuth();
   const { cartCount } = useCart();
   const { items: wishlistItems } = useWishlist();
   const navigate = useNavigate();
   const searchRef = useRef(null);
-  const userMenuRef = useRef(null);
+  const desktopUserMenuRef = useRef(null);
+  const mobileUserMenuRef = useRef(null);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 30);
@@ -44,10 +48,31 @@ export default function Navbar() {
   }, [menuOpen, searchOpen]);
 
   useEffect(() => {
+    let active = true;
+
+    api.get('/categories/all')
+      .then((response) => {
+        if (!active) return;
+        setNavCategories((response.data.data || []).filter((category) => category?.isActive !== false));
+      })
+      .catch(() => {
+        if (!active) return;
+        setNavCategories([]);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!userMenuOpen) return;
 
     const handlePointerDown = (event) => {
-      if (!userMenuRef.current?.contains(event.target)) {
+      const clickedDesktopMenu = desktopUserMenuRef.current?.contains(event.target);
+      const clickedMobileMenu = mobileUserMenuRef.current?.contains(event.target);
+
+      if (!clickedDesktopMenu && !clickedMobileMenu) {
         setUserMenuOpen(false);
       }
     };
@@ -72,51 +97,226 @@ export default function Navbar() {
     }
   };
 
-  const navLinks = [
+  const mobileNavLinks = [
     { to: '/', label: 'Home', end: true },
+    { to: '/shop', label: 'Categories' },
     { to: '/shop', label: 'Shop' },
     ...(user ? [{ to: '/my-orders', label: 'My Orders' }] : []),
   ];
 
   return (
     <>
-      <header className={`site-navbar fixed inset-x-0 top-0 z-[120] transition-all duration-300 ${scrolled ? 'bg-rose-600 shadow-[0_2px_20px_rgba(190,24,93,0.28)]' : 'bg-rose-600 border-b border-rose-500'}`}>
+      <header className={`site-navbar fixed inset-x-0 top-0 z-[120] border-b border-black/8 bg-white transition-all duration-300 ${scrolled ? 'shadow-[0_10px_30px_rgba(15,23,42,0.08)]' : 'shadow-none'}`}>
         <div className="page-container">
           <div className="flex min-h-[68px] items-center justify-between gap-1.5 py-2 sm:h-16 sm:min-h-0 sm:gap-4 sm:py-0">
-            <div className="flex min-w-0 flex-1 items-center gap-1.5 md:flex-none">
-              <button className="rounded-full p-2.5 text-white hover:bg-white/15 md:hidden flex-shrink-0" onClick={() => setMenuOpen(!menuOpen)}>
+            <div className="flex min-w-0 flex-1 items-center gap-1.5 md:hidden">
+              <button className="flex-shrink-0 rounded-full p-2.5 text-gray-900 transition-colors hover:bg-black/5" onClick={() => setMenuOpen(!menuOpen)}>
                 {menuOpen ? <FiX size={20} /> : <FiMenu size={20} />}
               </button>
               <Link to="/" className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2.5">
-                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-white/20 bg-white shadow-sm sm:h-11 sm:w-11">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border border-rose-200 bg-white shadow-sm sm:h-11 sm:w-11">
                   <img src={navbarLogo} alt="KIKI'S logo" className="h-full w-full object-cover" />
                 </div>
                 <div className="leading-none">
-                  <p className="font-display text-[15px] font-bold tracking-[0.01em] text-white sm:text-xl">KIKI'S</p>
-                  <p className="hidden truncate pt-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-rose-100 sm:block sm:text-[10px] sm:tracking-[0.24em]">Return Gifts</p>
+                  <p className="font-display text-[15px] font-bold tracking-[0.01em] text-gray-900 sm:text-xl">KIKI'S</p>
+                  <p className="hidden truncate pt-1 text-[9px] font-semibold uppercase tracking-[0.2em] text-rose-500 sm:block sm:text-[10px] sm:tracking-[0.24em]">Return Gifts</p>
                 </div>
               </Link>
             </div>
 
-            <nav className="hidden md:flex items-center gap-1">
-              {navLinks.map((l) => (
-                <NavLink key={l.to} to={l.to} end={l.end}
+            <div className="hidden md:grid md:min-h-[72px] md:w-full md:grid-cols-[1fr_auto_1fr] md:items-center">
+              <nav className="relative flex items-center gap-2 justify-self-start">
+                <NavLink
+                  to="/"
+                  end
                   className={({ isActive }) =>
-                    `site-nav-link px-4 py-2 rounded-full text-sm font-medium transition-all ${isActive ? 'site-nav-link-active text-rose-700 bg-white shadow-sm' : 'text-white hover:bg-white/15 hover:text-white'}`
-                  }>
-                  {l.label}
+                    `site-nav-link inline-flex items-center border-b-2 px-1 py-2 text-[15px] font-semibold uppercase tracking-[0.12em] transition-colors ${
+                      isActive ? 'border-rose-500 text-rose-600' : 'border-transparent text-gray-900 hover:text-rose-600'
+                    }`
+                  }
+                >
+                  Home
                 </NavLink>
-              ))}
-            </nav>
+                <span className="px-3 text-gray-300">|</span>
+                <div
+                  className="relative"
+                  onMouseEnter={() => setCategoriesOpen(true)}
+                  onMouseLeave={() => setCategoriesOpen(false)}
+                >
+                  <button
+                    type="button"
+                    onClick={() => setCategoriesOpen((current) => !current)}
+                    className={`site-nav-link inline-flex items-center border-b-2 px-1 py-2 text-[15px] font-semibold uppercase tracking-[0.12em] transition-colors ${
+                      categoriesOpen ? 'border-rose-500 text-rose-600' : 'border-transparent text-gray-900 hover:text-rose-600'
+                    }`}
+                  >
+                    Categories
+                  </button>
 
-            <div className="flex flex-shrink-0 items-center gap-0 sm:gap-1.5">
+                  <AnimatePresence>
+                    {categoriesOpen && navCategories.length > 0 && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        transition={{ duration: 0.18, ease: 'easeOut' }}
+                        className="absolute left-0 top-full z-[130] mt-4 w-[900px] max-w-[calc(100vw-80px)] rounded-[22px] border border-rose-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.14)]"
+                      >
+                        <div className="mb-5">
+                          <p className="font-display text-[20px] font-bold text-gray-900">Shop by Categories</p>
+                        </div>
+                        <div
+                          className="max-h-[360px] space-y-3 overflow-y-auto overscroll-contain pr-2"
+                          onWheel={(event) => event.stopPropagation()}
+                        >
+                          {navCategories.map((category) => (
+                            <Link
+                              key={category._id}
+                              to={`/shop?category=${category._id}`}
+                              onClick={() => setCategoriesOpen(false)}
+                              className="flex min-h-[58px] items-center justify-center rounded-2xl bg-gray-50 px-6 text-center text-[15px] font-semibold uppercase tracking-[0.08em] text-slate-800 transition-colors hover:bg-rose-50 hover:text-rose-600"
+                            >
+                              {category.name}
+                            </Link>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <span className="px-3 text-gray-300">|</span>
+                <NavLink
+                  to="/shop"
+                  className={({ isActive }) =>
+                    `site-nav-link inline-flex items-center border-b-2 px-1 py-2 text-[15px] font-semibold uppercase tracking-[0.12em] transition-colors ${
+                      isActive ? 'border-rose-500 text-rose-600' : 'border-transparent text-gray-900 hover:text-rose-600'
+                    }`
+                  }
+                >
+                  Shop
+                </NavLink>
+              </nav>
+
+              <Link to="/" className="justify-self-center">
+                <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full border border-rose-200 bg-white shadow-sm">
+                  <img src={navbarLogo} alt="KIKI'S logo" className="h-full w-full object-cover" />
+                </div>
+              </Link>
+
+              <div className="flex items-center gap-1 justify-self-end">
+                <button
+                  onClick={() => setSearchOpen(true)}
+                  className="rounded-full p-2.5 text-gray-900 transition-all hover:bg-black/5"
+                  aria-label="Search"
+                >
+                  <FiSearch size={18} />
+                </button>
+
+                <Link
+                  to="/wishlist"
+                  className="relative rounded-full p-2.5 text-gray-900 transition-all hover:bg-black/5"
+                  aria-label="Wishlist"
+                >
+                  {wishlistItems.length > 0 ? <RiHeart3Fill size={19} /> : <RiHeart3Line size={19} />}
+                  <AnimatePresence>
+                    {wishlistItems.length > 0 && (
+                      <motion.span
+                        key="wishlist-badge-desktop"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        className="absolute -top-0.5 -right-0.5 flex h-5 min-w-[20px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-bold leading-none text-white"
+                      >
+                        {wishlistItems.length > 9 ? '9+' : wishlistItems.length}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </Link>
+
+                <Link
+                  to="/cart"
+                  className="relative rounded-full p-2.5 text-gray-900 transition-all hover:bg-black/5"
+                  aria-label="Cart"
+                >
+                  <FiShoppingCart size={18} />
+                  <AnimatePresence>
+                    {cartCount > 0 && (
+                      <motion.span
+                        key="badge-desktop"
+                        initial={{ scale: 0 }}
+                        animate={{ scale: 1 }}
+                        exit={{ scale: 0 }}
+                        className="absolute -top-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold leading-none text-white"
+                      >
+                        {cartCount > 9 ? '9+' : cartCount}
+                      </motion.span>
+                    )}
+                  </AnimatePresence>
+                </Link>
+
+                {user ? (
+                  <div ref={desktopUserMenuRef} className="relative">
+                    <button
+                      onClick={() => setUserMenuOpen(!userMenuOpen)}
+                      className="flex h-10 w-10 items-center justify-center rounded-full text-gray-900 transition-all hover:bg-black/5"
+                      aria-label="Profile"
+                    >
+                      <FiUser size={20} />
+                    </button>
+                    <AnimatePresence>
+                      {userMenuOpen && (
+                        <motion.div initial={{ opacity: 0, y: 6, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 6 }}
+                          className="absolute right-0 top-full z-50 mt-2 w-52 rounded-2xl border border-gray-100 bg-white py-2 shadow-xl">
+                          <div className="border-b border-gray-50 px-4 py-2.5">
+                            <p className="text-sm font-semibold text-gray-800">{user.name}</p>
+                            <p className="truncate text-xs text-gray-400">{user.email}</p>
+                          </div>
+                          {[
+                            { to: '/profile', icon: FiUser, label: 'Profile' },
+                            { to: '/wishlist', icon: wishlistItems.length > 0 ? RiHeart3Fill : RiHeart3Line, label: 'My Wishlist' },
+                            { to: '/my-orders', icon: FiPackage, label: 'My Orders' },
+                          ].map(({ to, icon: Icon, label }) => (
+                            <Link key={to} to={to} onClick={() => setUserMenuOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-sm text-gray-600 transition-colors hover:bg-rose-50 hover:text-rose-600">
+                              <Icon size={14} /> {label}
+                            </Link>
+                          ))}
+                          {isAdmin && (
+                            <Link to="/admin/dashboard" onClick={() => setUserMenuOpen(false)}
+                              className="flex items-center gap-2.5 px-4 py-2 text-sm text-purple-600 transition-colors hover:bg-purple-50">
+                              <FiSettings size={14} /> Admin Panel
+                            </Link>
+                          )}
+                          <div className="mt-1 border-t border-gray-50 pt-1">
+                            <button onClick={handleLogout}
+                              className="flex w-full items-center gap-2.5 px-4 py-2 text-sm text-red-500 transition-colors hover:bg-red-50">
+                              <FiLogOut size={14} /> Logout
+                            </button>
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
+                ) : (
+                  <Link
+                    to="/login"
+                    className="flex h-10 w-10 items-center justify-center rounded-full text-gray-900 transition-all hover:bg-black/5"
+                    aria-label="Login"
+                  >
+                    <FiUser size={20} />
+                  </Link>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-shrink-0 items-center gap-0 sm:gap-1.5 md:hidden">
               <button onClick={() => setSearchOpen(true)}
-                className="rounded-full p-1.5 text-white transition-all hover:bg-white/15 sm:p-2.5">
+                className="rounded-full p-1.5 text-gray-900 transition-all hover:bg-black/5 sm:p-2.5">
                 <FiSearch size={16} />
               </button>
 
               {user ? (
-                <Link to="/wishlist" className="relative rounded-full p-1.5 text-white transition-all hover:bg-white/15 sm:p-2.5">
+                <Link to="/wishlist" className="relative rounded-full p-1.5 text-gray-900 transition-all hover:bg-black/5 sm:p-2.5">
                   {wishlistItems.length > 0 ? <RiHeart3Fill size={17} /> : <RiHeart3Line size={17} />}
                   <AnimatePresence>
                     {wishlistItems.length > 0 && (
@@ -129,7 +329,7 @@ export default function Navbar() {
                 </Link>
               ) : null}
 
-              <Link to="/cart" className="relative rounded-full p-1.5 text-white transition-all hover:bg-white/15 sm:p-2.5">
+              <Link to="/cart" className="relative rounded-full p-1.5 text-gray-900 transition-all hover:bg-black/5 sm:p-2.5">
                 <FiShoppingCart size={16} />
                 <AnimatePresence>
                   {cartCount > 0 && (
@@ -142,14 +342,14 @@ export default function Navbar() {
               </Link>
 
               {user ? (
-                <div ref={userMenuRef} className="relative">
+                <div ref={mobileUserMenuRef} className="relative">
                   <button onClick={() => setUserMenuOpen(!userMenuOpen)}
-                    className="flex items-center gap-1 sm:gap-2 pl-1 sm:pl-2 pr-1 sm:pr-3 py-1 rounded-full hover:bg-white/15 transition-all border border-transparent hover:border-white/20 max-w-[40px] sm:max-w-none">
-                    <div className="flex h-7 w-7 items-center justify-center rounded-full border border-white/15 bg-white/20 flex-shrink-0">
-                      <span className="text-white font-bold text-xs">{user.name[0].toUpperCase()}</span>
+                    className="flex max-w-[40px] items-center gap-1 rounded-full border border-transparent py-1 pl-1 pr-1 transition-all hover:border-black/10 hover:bg-black/5 sm:max-w-none sm:gap-2 sm:pl-2 sm:pr-3">
+                    <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full border border-gray-200 bg-gray-100">
+                      <span className="text-xs font-bold text-gray-900">{user.name[0].toUpperCase()}</span>
                     </div>
-                    <span className="hidden sm:block text-sm font-medium text-white max-w-[80px] truncate">{user.name.split(' ')[0]}</span>
-                    <FiChevronDown size={13} className={`hidden text-rose-100 transition-transform sm:block ${userMenuOpen ? 'rotate-180' : ''}`} />
+                    <span className="hidden max-w-[80px] truncate text-sm font-medium text-gray-900 sm:block">{user.name.split(' ')[0]}</span>
+                    <FiChevronDown size={13} className={`hidden text-gray-500 transition-transform sm:block ${userMenuOpen ? 'rotate-180' : ''}`} />
                   </button>
                   <AnimatePresence>
                     {userMenuOpen && (
@@ -186,7 +386,7 @@ export default function Navbar() {
                   </AnimatePresence>
                 </div>
               ) : (
-                <Link to="/login" className="site-login-pill flex whitespace-nowrap rounded-full bg-white px-3.5 py-2 text-[11px] font-semibold text-rose-700 shadow-sm transition-all hover:bg-rose-50 sm:px-5 sm:text-xs">
+                <Link to="/login" className="site-login-pill flex whitespace-nowrap rounded-full border border-gray-200 bg-white px-3.5 py-2 text-[11px] font-semibold text-gray-900 shadow-sm transition-all hover:bg-gray-50 sm:px-5 sm:text-xs">
                   Login
                 </Link>
               )}
@@ -244,9 +444,9 @@ export default function Navbar() {
                   </div>
                 ) : null}
 
-                {navLinks.map((l) => (
+                {mobileNavLinks.map((l, index) => (
                   <NavLink
-                    key={l.to}
+                    key={`${l.to}-${l.label}-${index}`}
                     to={l.to}
                     end={l.end}
                     onClick={() => setMenuOpen(false)}

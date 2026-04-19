@@ -52,9 +52,9 @@ export default function CartPage() {
               <AnimatePresence>
                 {items.map((item) => (
                   <motion.div key={item._id} layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, x: -20 }}
-                    className="bg-white rounded-2xl border border-gray-100 p-3 sm:p-4 flex gap-3 sm:gap-4 shadow-sm hover:shadow-md transition-shadow items-start">
+                    className="bg-white rounded-2xl p-3 sm:p-4 flex gap-3 sm:gap-4 shadow-sm hover:shadow-md transition-shadow items-start">
                     <Link to={`/product/${item.slug || item._id}`}
-                      className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden bg-gray-50 flex-shrink-0 border border-gray-100 product-img-wrap">
+                      className="w-16 h-16 sm:w-20 sm:h-20 overflow-hidden rounded-xl bg-gray-50 flex-shrink-0 product-img-wrap">
                       {item.images?.[0]?.url
                         ? <img src={item.images[0].url} alt={item.name} className="w-full h-full object-contain p-1" />
                         : <div className="w-full h-full flex items-center justify-center text-rose-200"><RiGiftLine size={26} /></div>}
@@ -71,7 +71,7 @@ export default function CartPage() {
                         ) : null}
                       </div>
                       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-3">
-                        <div className="flex items-center border border-gray-200 rounded-lg overflow-hidden bg-gray-50 w-fit">
+                        <div className="flex items-center overflow-hidden rounded-lg bg-gray-50 w-fit">
                           <button onClick={() => updateQuantity(item._id, item.quantity - 1)}
                             className="px-2.5 sm:px-3 py-1.5 hover:bg-rose-50 hover:text-rose-600 transition-colors text-gray-500">
                             <FiMinus size={12} />
@@ -85,7 +85,7 @@ export default function CartPage() {
                         <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto">
                           <span className="font-bold text-gray-900 text-sm">Rs.{Math.round(Number(item.roundedTotalAmount || item.totalAmount || 0))}</span>
                           <button onClick={() => removeItem(item._id)}
-                            className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                            className="rounded-lg p-1.5 text-gray-300 transition-colors hover:bg-red-50 hover:text-red-500">
                             <FiTrash2 size={15} />
                           </button>
                         </div>
@@ -97,7 +97,7 @@ export default function CartPage() {
             </div>
 
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-2xl border border-gray-100 p-5 sm:p-6 shadow-sm lg:sticky lg:top-24">
+              <div className="bg-white rounded-2xl p-5 sm:p-6 shadow-sm lg:sticky lg:top-24">
                 <h2 className="font-display text-xl font-bold text-gray-900 mb-5 text-center sm:text-left">Order Summary</h2>
                 <div className="space-y-3 mb-5">
                   <div className="flex justify-between text-sm">
@@ -147,7 +147,7 @@ export default function CartPage() {
                     <span className="text-emerald-600 font-semibold text-xs">To be confirmed</span>
                   </div>
                   {grandTotal >= 999 && (
-                    <div className="flex items-center gap-2 bg-emerald-50 text-emerald-700 text-xs font-semibold px-3 py-2 rounded-xl border border-emerald-100">
+                    <div className="flex items-center gap-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-700">
                       <FiTag size={12} /> Free shipping unlocked <FiGift size={12} />
                     </div>
                   )}

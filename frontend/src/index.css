@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Quicksand:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -47,10 +47,10 @@
 @layer base {
   html { scroll-behavior: smooth; }
   body {
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: 'Quicksand', sans-serif;
     @apply text-gray-800 bg-white antialiased;
   }
-  h1, h2, h3, h4 { font-family: 'Cormorant Garamond', serif; }
+  h1, h2, h3, h4 { font-family: 'Quicksand', sans-serif; }
 }
 
 @layer components {
