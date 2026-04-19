@@ -4,6 +4,9 @@ const themeSettingSchema = new mongoose.Schema(
   {
     themeKey: { type: String, default: 'kiki-classic' },
     themeName: { type: String, default: 'Kiki Classic' },
+    useCustomColors: { type: Boolean, default: false },
+    customPrimaryHex: { type: String, default: '#e11d48' },
+    customAccentHex: { type: String, default: '#f59e0b' },
     customPrimaryRgb: {
       r: { type: Number, default: 225 },
       g: { type: Number, default: 29 },

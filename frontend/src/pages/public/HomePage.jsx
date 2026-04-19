@@ -105,6 +105,7 @@ const mergeHeroSlides = (slides = []) =>
       heading: [
         apiSlide.titleLineOne ?? defaultSlide.heading[0],
         apiSlide.titleLineTwo ?? defaultSlide.heading[1],
+        apiSlide.titleLineThree ?? defaultSlide.heading[2],
       ],
       ctaLink: apiSlide.buttonLink || defaultSlide.ctaLink,
     };
@@ -188,7 +189,7 @@ export default function HomePage() {
   }, []);
 
   const slide = dynamicHeroSlides[heroIndex];
-  const heroHeadingLines = [slide.heading[0], slide.heading[1]].filter(Boolean);
+  const heroHeadingLines = [slide.heading[0], slide.heading[1], slide.heading[2]].filter(Boolean);
 
   return (
     <div className="relative overflow-x-hidden">

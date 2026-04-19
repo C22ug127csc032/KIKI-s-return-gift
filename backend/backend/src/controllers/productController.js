@@ -266,7 +266,6 @@ export const createProduct = asyncHandler(async (req, res) => {
 
   await ensureUniqueProductName(resolvedName);
   if (!resolvedName?.trim()) throw new ApiError(400, 'Product name is required');
-  if (!String(description || '').trim()) throw new ApiError(400, 'Description is required');
   if (resolvedStock === undefined || resolvedStock === '' || Number.isNaN(Number(resolvedStock)) || Number(resolvedStock) < 0) {
     throw new ApiError(400, 'Stock must be a valid number');
   }
@@ -349,9 +348,6 @@ export const updateProduct = asyncHandler(async (req, res) => {
   const product = await Product.findById(req.params.id);
   if (!product) throw new ApiError(404, 'Product not found');
   if (req.body.name !== undefined) await ensureUniqueProductName(req.body.name, req.params.id);
-  if (req.body.description !== undefined && !String(req.body.description || '').trim()) {
-    throw new ApiError(400, 'Description is required');
-  }
   const fields = ['name', 'description', 'stock', 'category', 'supplier', 'sku', 'featured', 'lowStockThreshold', 'isActive'];
   fields.forEach((f) => {
     if (req.body[f] === undefined) return;

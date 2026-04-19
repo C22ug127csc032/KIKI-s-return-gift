@@ -263,11 +263,6 @@ export default function AdminProducts() {
       return;
     }
 
-    if (!form.description.trim()) {
-      toast.error('Description is required');
-      return;
-    }
-
     if (!form.category) {
       toast.error('Category is required');
       return;
@@ -505,7 +500,7 @@ export default function AdminProducts() {
             placeholder="Search category *"
           />
           <FloatingField label="SKU" value={form.sku} onChange={setField('sku')} className="self-start" />
-          <FloatingField as="textarea" label="Description" value={form.description} onChange={setField('description')} rows={3} className="resize-none xl:col-span-3" wrapperClassName="xl:col-span-3" required />
+          <FloatingField as="textarea" label="Description" value={form.description} onChange={setField('description')} rows={3} className="resize-none xl:col-span-3" wrapperClassName="xl:col-span-3" />
           <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700 xl:col-span-4">
             <div className="flex flex-wrap gap-x-5 gap-y-1">
               <span>MRP: Rs.{Number(form.mrp || 0).toFixed(2)}</span>

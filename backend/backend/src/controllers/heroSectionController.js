@@ -76,7 +76,7 @@ const normalizeSlides = (slides = []) =>
       order: index,
       titleLineOne: incomingSlide.titleLineOne ?? defaultSlide.titleLineOne,
       titleLineTwo: incomingSlide.titleLineTwo ?? defaultSlide.titleLineTwo,
-      titleLineThree: '',
+      titleLineThree: incomingSlide.titleLineThree ?? defaultSlide.titleLineThree,
       image: incomingSlide.image || defaultSlide.image,
       imagePublicId: incomingSlide.imagePublicId || defaultSlide.imagePublicId,
     };

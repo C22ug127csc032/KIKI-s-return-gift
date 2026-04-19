@@ -144,10 +144,10 @@ export default function ProductDetailPage() {
 
             <div className="mb-5 w-full border-b border-gray-100 pb-5">
               <div className="flex flex-wrap items-center justify-center gap-3 lg:justify-start">
-                <span className="text-3xl font-bold text-gray-900">Rs.{Number(sellingPrice || 0).toFixed(2)}</span>
+                <span className="text-3xl font-bold text-gray-900">Rs.{Math.round(Number(sellingPrice || 0))}</span>
                 {showStrikePrice ? (
                   <>
-                    <span className="text-base text-gray-300 line-through">Rs.{Number(mrpPrice || 0).toFixed(2)}</span>
+                    <span className="text-base text-gray-300 line-through">Rs.{Math.round(Number(mrpPrice || 0))}</span>
                     {showDiscountBadge ? (
                       <span className="product-discount-badge bg-emerald-50 text-emerald-700 text-xs font-bold px-3 py-1.5 rounded-full border border-emerald-200">
                         {discountPercentage}% OFF

@@ -15,6 +15,7 @@ const defaultSlides = [
     mobileTag: 'Wedding Gifts',
     titleLineOne: 'Perfect Gifts',
     titleLineTwo: 'for Every Celebration',
+    titleLineThree: '',
     subtitle: 'Curated return gifts for weddings, birthdays, pooja, and every special occasion. Premium quality, affordable prices.',
     buttonText: 'Shop Gifts',
     buttonLink: '/shop?occasion=Wedding',
@@ -31,6 +32,7 @@ const defaultSlides = [
     mobileTag: 'Birthday Gifts',
     titleLineOne: 'Celebrate Every',
     titleLineTwo: 'Special Occasion',
+    titleLineThree: '',
     subtitle: 'From sweet hampers to luxury boxes - find the perfect birthday return gift for every age and taste.',
     buttonText: 'Shop Gifts',
     buttonLink: '/shop?occasion=Birthday',
@@ -47,6 +49,7 @@ const defaultSlides = [
     mobileTag: 'Pooja Gifts',
     titleLineOne: 'Bless Every',
     titleLineTwo: 'Home with Joy & Love',
+    titleLineThree: '',
     subtitle: 'Handpicked pooja and Diwali return gifts with traditional charm - thoughtful, affordable and delivered pan-India.',
     buttonText: 'Shop Gifts',
     buttonLink: '/shop?occasion=Diwali',
@@ -97,7 +100,7 @@ export default function AdminHeroSection() {
     mobileTag: slide.mobileTag,
     titleLineOne: slide.titleLineOne,
     titleLineTwo: slide.titleLineTwo,
-    titleLineThree: '',
+    titleLineThree: slide.titleLineThree,
     subtitle: slide.subtitle,
     buttonText: slide.buttonText,
     buttonLink: slide.buttonLink,
@@ -154,7 +157,7 @@ export default function AdminHeroSection() {
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-2xl font-semibold text-gray-900">Slide {index + 1}</h2>
-                <p className="text-sm text-gray-500">Replace the hero image and update the two title lines shown on the homepage.</p>
+                <p className="text-sm text-gray-500">Replace the hero image and update the three title lines shown on the homepage.</p>
               </div>
               <span className="inline-flex w-fit items-center gap-2 rounded-full bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700">
                 <FiImage size={14} /> Full Image Control
@@ -203,9 +206,10 @@ export default function AdminHeroSection() {
               </div>
 
               <div className="space-y-4">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-4">
                   <Field label="Title Line 1" value={slide.titleLineOne} onChange={(value) => updateSlide(index, 'titleLineOne', value)} />
                   <Field label="Title Line 2" value={slide.titleLineTwo} onChange={(value) => updateSlide(index, 'titleLineTwo', value)} />
+                  <Field label="Title Line 3" value={slide.titleLineThree} onChange={(value) => updateSlide(index, 'titleLineThree', value)} />
                 </div>
                 <div className="rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
                   The homepage hero now shows only the centered title with fixed Shop and WhatsApp buttons.
