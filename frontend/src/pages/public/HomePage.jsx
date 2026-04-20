@@ -14,15 +14,12 @@ import { TbRosetteDiscountCheck } from 'react-icons/tb';
 import api from '../../api/api.js';
 import ProductCard from '../../components/shop/ProductCard.jsx';
 import { SkeletonCard } from '../../components/ui/index.jsx';
-import heroImage1 from '../../assets/hero-1.jpg';
-import heroImage2 from '../../assets/hero-2.jpg';
-import heroImage3 from '../../assets/hero-3.jpg';
 import { useStoreWhatsappNumber } from '../../hooks/useStoreWhatsappNumber.js';
 
 const heroSlides = [
   {
     id: 0,
-    image: heroImage1,
+    image: '',
     tag: 'Wedding & Haldi',
     mobileTag: 'Wedding Gifts',
     tagIcon: FaRing,
@@ -37,7 +34,7 @@ const heroSlides = [
   },
   {
     id: 1,
-    image: heroImage2,
+    image: '',
     tag: 'Birthday & Anniversary',
     mobileTag: 'Birthday Gifts',
     tagIcon: RiCake2Line,
@@ -52,7 +49,7 @@ const heroSlides = [
   },
   {
     id: 2,
-    image: heroImage3,
+    image: '',
     tag: 'Pooja & Diwali',
     mobileTag: 'Pooja Gifts',
     tagIcon: PiHandsPrayingLight,
@@ -232,12 +229,16 @@ export default function HomePage() {
                   scale: heroBgScale,
                 }}
               >
-                <img
-                  src={s.image}
-                  alt={s.tag}
-                  className="absolute inset-0 h-full w-full min-h-full min-w-full scale-[1.08] object-cover object-center sm:scale-100"
-                  loading={i === 0 ? 'eager' : 'lazy'}
-                />
+                {s.image ? (
+                  <img
+                    src={s.image}
+                    alt={s.tag}
+                    className="absolute inset-0 h-full w-full min-h-full min-w-full scale-[1.08] object-cover object-center sm:scale-100"
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                  />
+                ) : (
+                  <div className="absolute inset-0 bg-gradient-to-br from-rose-200 via-amber-100 to-white" />
+                )}
                 <div className="absolute inset-0 bg-black/20" />
               </motion.div>
             ))}

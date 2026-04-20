@@ -21,6 +21,7 @@ dotenv.config();
 const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const normalizeOrigin = (value = '') => String(value || '').replace(/\/+$/, '');
 
 const parseTrustProxy = () => {
   const value = process.env.TRUST_PROXY;
@@ -34,8 +35,9 @@ const parseTrustProxy = () => {
 // Security & parsing
 app.set('trust proxy', parseTrustProxy());
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+const allowedOrigin = normalizeOrigin(process.env.CLIENT_URL || 'http://localhost:5173');
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: allowedOrigin,
   credentials: true,
 }));
 app.use(express.json({ limit: '10mb' }));

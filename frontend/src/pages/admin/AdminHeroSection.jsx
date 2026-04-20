@@ -4,9 +4,6 @@ import { FiImage, FiSave, FiTrash2 } from 'react-icons/fi';
 import api from '../../api/api.js';
 import { PageLoader } from '../../components/ui/index.jsx';
 import FloatingField from '../../components/forms/FloatingField.jsx';
-import heroImage1 from '../../assets/hero-1.jpg';
-import heroImage2 from '../../assets/hero-2.jpg';
-import heroImage3 from '../../assets/hero-3.jpg';
 
 const defaultSlides = [
   {
@@ -24,7 +21,6 @@ const defaultSlides = [
     badgeTwoLabel: 'Premium Picks',
     badgeTwoValue: 'Curated Daily',
     image: '',
-    fallbackImage: heroImage1,
   },
   {
     order: 1,
@@ -41,7 +37,6 @@ const defaultSlides = [
     badgeTwoLabel: '100% Quality',
     badgeTwoValue: 'Assured',
     image: '',
-    fallbackImage: heroImage2,
   },
   {
     order: 2,
@@ -58,7 +53,6 @@ const defaultSlides = [
     badgeTwoLabel: '500+ Customers',
     badgeTwoValue: 'Happy & Loved',
     image: '',
-    fallbackImage: heroImage3,
   },
 ];
 
@@ -168,14 +162,26 @@ export default function AdminHeroSection() {
               <div className="space-y-4">
                 <div>
                   <label className="mb-1.5 block text-sm font-medium text-gray-700">Hero Image</label>
-                  <img
-                    src={slide.image || slide.fallbackImage}
-                    alt={`Hero slide ${index + 1}`}
-                    className="mb-3 h-56 w-full rounded-2xl border border-gray-200 object-cover"
-                  />
+                  {slide.image ? (
+                    <img
+                      src={slide.image}
+                      alt={`Hero slide ${index + 1}`}
+                      className="mb-3 h-56 w-full rounded-2xl border border-gray-200 object-cover"
+                    />
+                  ) : (
+                    <div className="mb-3 flex h-56 w-full items-center justify-center rounded-2xl border border-dashed border-gray-300 bg-gray-50 text-center">
+                      <div>
+                        <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-gray-400 shadow-sm">
+                          <FiImage size={20} />
+                        </div>
+                        <p className="text-sm font-medium text-gray-600">No hero image uploaded</p>
+                        <p className="mt-1 text-xs text-gray-400">Upload a Cloudinary image for this slide.</p>
+                      </div>
+                    </div>
+                  )}
                   <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
                     <span className={`rounded-full px-2.5 py-1 font-medium ${slide.image ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
-                      {slide.image ? 'Uploaded image active' : 'Using original project image'}
+                      {slide.image ? 'Uploaded image active' : 'No uploaded image yet'}
                     </span>
                     {slide.image ? (
                       <button
@@ -201,7 +207,7 @@ export default function AdminHeroSection() {
                     }}
                     className="input-field text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-brand-50 file:px-3 file:py-1 file:text-xs file:text-brand-600"
                   />
-                  <p className="mt-2 text-xs text-gray-400">Upload a full hero banner image. Removing it will automatically restore the original built-in slide image.</p>
+                  <p className="mt-2 text-xs text-gray-400">Upload a full hero banner image. Removing it will clear the slide image until you upload a new one.</p>
                 </div>
               </div>
 
