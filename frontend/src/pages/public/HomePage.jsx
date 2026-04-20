@@ -210,7 +210,7 @@ export default function HomePage() {
       {/* ── HERO SLIDER ── */}
       <section
         ref={heroSectionRef}
-        className="relative h-[100svh] min-h-[620px] max-h-[820px] overflow-hidden sm:h-[92vh] sm:min-h-[560px]"
+        className="relative h-[100svh] min-h-[560px] overflow-hidden sm:h-[92vh] sm:min-h-[560px] sm:max-h-[820px]"
         onTouchStart={handleHeroTouchStart}
         onTouchEnd={handleHeroTouchEnd}
       >
@@ -263,10 +263,10 @@ export default function HomePage() {
 
         {/* Content */}
         <motion.div
-          className="absolute inset-0 z-10 flex items-center pt-10 sm:pt-0"
+          className="absolute inset-0 z-10 flex items-center justify-center px-4 pt-10 sm:justify-start sm:px-0 sm:pt-0"
           style={{ y: heroContentY, opacity: heroContentOpacity }}
         >
-          <div className="page-container w-full">
+          <div className="w-full sm:page-container">
             <div className="mx-auto max-w-3xl text-center">
               <AnimatePresence mode="wait">
                 <motion.div
@@ -276,9 +276,9 @@ export default function HomePage() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.55, ease: 'easeOut' }}
                 >
-                  <div className="mx-auto flex min-h-[164px] items-center justify-center sm:min-h-[220px] md:min-h-[252px] lg:min-h-[300px]">
+                  <div className="mx-auto flex min-h-[164px] w-full items-center justify-center sm:min-h-[220px] md:min-h-[252px] lg:min-h-[300px]">
                     {heroContentReady ? (
-                      <h1 className="mx-auto flex w-full max-w-[24ch] flex-col items-center justify-center text-center font-display text-4xl font-bold leading-[1.08] text-white drop-shadow-sm sm:max-w-[26ch] sm:text-5xl md:text-6xl lg:text-7xl">
+                      <h1 className="mx-auto flex w-full max-w-[12ch] flex-col items-center justify-center text-center font-display text-4xl font-bold leading-[1.08] text-white drop-shadow-sm sm:max-w-[26ch] sm:text-5xl md:text-6xl lg:text-7xl">
                         {heroHeadingLines.map((line, li) => (
                           <span key={li} className="block w-full text-center">
                             {line}

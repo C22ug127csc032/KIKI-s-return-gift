@@ -782,11 +782,14 @@ export function AdminOfflineSales() {
   const [sales, setSales] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showModal, setShowModal] = useState(false);
   const [form, setForm] = useState({ customerName: '', phone: '', address: '', notes: '', gstMode: 'with_gst' });
   const [cartItems, setCartItems] = useState([createCartItem()]);
   const [saving, setSaving] = useState(false);
   const [listFilters, setListFilters] = useState({ search: '', hasPhone: '', gstMode: 'with_gst', sortBy: 'date-desc', page: 1, pageSize: 10 });
+  const productSelectOptions = products.map((product) => ({
+    value: product._id,
+    label: product.sku ? `${product.name} - ${product.sku}` : product.name,
+  }));
 
   useEffect(() => {
     document.title = 'Offline Sales - Admin';
@@ -900,7 +903,6 @@ export function AdminOfflineSales() {
     try {
       await api.post('/offline-sales', { ...form, customerName: form.customerName.trim(), items });
       toast.success('Offline sale recorded');
-      setShowModal(false);
       setForm({ customerName: '', phone: '', address: '', notes: '', gstMode: 'with_gst' });
       setCartItems([createCartItem()]);
       fetchSales();
@@ -948,81 +950,26 @@ export function AdminOfflineSales() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="font-display text-2xl font-bold text-gray-900">Offline Sales</h1>
-        <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2"><FiPlus size={16} /> New Sale</button>
+        <button
+          onClick={() => {
+            setForm({ customerName: '', phone: '', address: '', notes: '', gstMode: 'with_gst' });
+            setCartItems([createCartItem()]);
+          }}
+          className="btn-outline flex items-center gap-2"
+        >
+          <FiPlus size={16} /> Clear Form
+        </button>
       </div>
 
-      {loading ? <PageLoader /> : sales.length === 0 ? (
-        <EmptyState icon={<FiFileText size={56} />} title="No offline sales yet" action={<button onClick={() => setShowModal(true)} className="btn-primary">Record Sale</button>} />
-      ) : (
-        <div className="admin-card overflow-hidden">
-          <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50/80 px-4 py-3">
-            <div className="relative w-full max-w-sm">
-              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
-              <input
-                value={listFilters.search}
-                onChange={(e) => setListFilters({ ...listFilters, search: e.target.value, page: 1 })}
-                placeholder="Search invoices..."
-                className="input-field h-11 py-2 pl-10 text-sm"
-              />
-            </div>
-            <select value={listFilters.sortBy} onChange={(e) => setListFilters({ ...listFilters, sortBy: e.target.value, page: 1 })} className="input-field h-11 w-full max-w-[180px] py-2 text-sm">
-              <option value="date-desc">Latest First</option>
-              <option value="date-asc">Oldest First</option>
-              <option value="total-desc">Highest Total</option>
-              <option value="total-asc">Lowest Total</option>
-              <option value="customer-asc">Customer A-Z</option>
-              <option value="customer-desc">Customer Z-A</option>
-              <option value="invoice-asc">Invoice A-Z</option>
-              <option value="invoice-desc">Invoice Z-A</option>
-            </select>
-            <select value={listFilters.hasPhone} onChange={(e) => setListFilters({ ...listFilters, hasPhone: e.target.value, page: 1 })} className="input-field h-11 w-full max-w-[170px] py-2 text-sm">
-              <option value="">All Phone Types</option>
-              <option value="yes">With Phone</option>
-              <option value="no">Without Phone</option>
-            </select>
-            <select value={listFilters.pageSize} onChange={(e) => setListFilters({ ...listFilters, pageSize: Number(e.target.value), page: 1 })} className="input-field h-11 w-full max-w-[130px] py-2 text-sm">
-              {[10, 20, 50].map((size) => <option key={size} value={size}>{size} / page</option>)}
-            </select>
+      <div className="admin-card mb-6">
+        <div className="mb-5 flex items-center justify-between gap-3">
+          <div>
+            <h2 className="text-2xl font-semibold text-gray-900">Record Offline Sale</h2>
+            <p className="mt-1 text-sm text-gray-500">Add customer details, choose products, and create the sale directly from this page.</p>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
-                  <th className="px-2 pb-3 font-medium">
-                    <label className="inline-flex items-center gap-2 text-gray-500">
-                      <input
-                        type="checkbox"
-                        checked={listFilters.gstMode === 'without_gst'}
-                        onChange={(e) => setListFilters({ ...listFilters, gstMode: e.target.checked ? 'without_gst' : 'with_gst', page: 1 })}
-                        className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-400"
-                      />
-                    </label>
-                  </th>
-                  {['Invoice', 'Customer', 'Phone', 'Total', 'Date', 'Invoice PDF'].map((head) => <th key={head} className="px-2 pb-3 font-medium">{head}</th>)}
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-50">
-                {paginatedSales.map((sale, index) => (
-                  <tr key={sale._id} className="hover:bg-gray-50">
-                    <td className="px-2 py-2.5 text-gray-500">{(salesCurrentPage - 1) * listFilters.pageSize + index + 1}</td>
-                    <td className="px-2 py-2.5 font-medium text-brand-600">{sale.invoiceNumber}</td>
-                    <td className="px-2 py-2.5">{sale.customerName}</td>
-                    <td className="px-2 py-2.5 text-gray-500">{sale.phone || '-'}</td>
-                    <td className="px-2 py-2.5 font-semibold">{formatAmount(sale.totalAmount)}</td>
-                    <td className="px-2 py-2.5 text-xs text-gray-400">{new Date(sale.createdAt).toLocaleDateString('en-IN')}</td>
-                    <td className="px-2 py-2.5">
-                      <button onClick={() => downloadInvoice(sale._id, sale.invoiceNumber)} className="rounded-lg p-1.5 text-gray-400 hover:text-brand-500"><FiDownload size={15} /></button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <Pagination currentPage={salesCurrentPage} totalPages={salesTotalPages} onPageChange={(page) => setListFilters({ ...listFilters, page })} />
+          <button onClick={addItem} className="text-sm font-semibold text-brand-500 transition hover:text-brand-600">+ Add item</button>
         </div>
-      )}
 
-      <Modal isOpen={showModal} onClose={() => setShowModal(false)} title="Record Offline Sale" size="lg">
         <div className="space-y-4">
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <FloatingField
@@ -1043,30 +990,35 @@ export function AdminOfflineSales() {
                 onChange={(e) => setForm({ ...form, address: e.target.value })}
               />
             </div>
-            <div className="sm:col-span-2">
-              <label className="inline-flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={form.gstMode === 'without_gst'}
-                  onChange={(e) => setForm({ ...form, gstMode: e.target.checked ? 'without_gst' : 'with_gst' })}
-                  className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-400"
-                />
-              </label>
-            </div>
           </div>
 
           <div>
             <div className="mb-2 flex items-center justify-between gap-3">
-              <label className="text-sm font-medium">Items *</label>
-              <button onClick={addItem} className="text-xs text-brand-500 hover:underline">+ Add item</button>
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium text-gray-700">Items *</label>
+                <label className="inline-flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={form.gstMode === 'without_gst'}
+                    onChange={(e) => setForm({ ...form, gstMode: e.target.checked ? 'without_gst' : 'with_gst' })}
+                    className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-400"
+                    aria-label="Without GST"
+                  />
+                </label>
+              </div>
+              <div className="flex items-center gap-4">
+                <button onClick={addItem} className="text-xs text-brand-500 hover:underline">+ Add item</button>
+              </div>
             </div>
             {cartItems.map((item, index) => (
               <div key={index} className="mb-3 rounded-2xl border border-gray-100 bg-gray-50/70 p-3">
                 <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_96px_auto] sm:items-center">
-                  <select value={item.productId} onChange={(e) => updateItem(index, 'productId', e.target.value)} className="input-field w-full text-sm">
-                    <option value="">Select product</option>
-                    {products.map((product) => <option key={product._id} value={product._id}>{product.name}</option>)}
-                  </select>
+                  <SearchableSelectField
+                    options={productSelectOptions}
+                    value={item.productId}
+                    onChange={(productId) => updateItem(index, 'productId', productId)}
+                    placeholder="Search product"
+                  />
                   <input type="number" value={item.quantity} onChange={(e) => updateItem(index, 'quantity', e.target.value)} min="1" className="input-field w-full text-sm" />
                   {cartItems.length > 1 ? (
                     <button onClick={() => removeItem(index)} className="inline-flex h-11 w-11 items-center justify-center justify-self-start rounded-xl border border-red-100 text-red-400 transition hover:bg-red-50 hover:text-red-600 sm:justify-self-auto">
@@ -1159,9 +1111,7 @@ export function AdminOfflineSales() {
                           <span>After Discount: {formatAmount(preview.taxableUnitPrice)}</span>
                           <span>CGST: {formatAmount(preview.cgstAmountPerUnit)}</span>
                           <span>SGST: {formatAmount(preview.sgstAmountPerUnit)}</span>
-                          {Number(preview.igstRate || 0) > 0 ? (
-                            <span>IGST: {formatAmount(preview.igstAmountPerUnit)}</span>
-                          ) : null}
+                          {Number(preview.igstRate || 0) > 0 ? <span>IGST: {formatAmount(preview.igstAmountPerUnit)}</span> : null}
                           <span>Total Price: {formatAmount(preview.totalUnitPrice)}</span>
                         </div>
                       </div>
@@ -1172,39 +1122,96 @@ export function AdminOfflineSales() {
             ))}
           </div>
 
-          <div className="rounded-2xl border border-gray-100 bg-gray-50/80 p-4">
-            <p className="mb-3 text-sm font-semibold text-gray-700">Offline Sale Summary</p>
-            <div className="grid grid-cols-2 gap-3 text-sm sm:grid-cols-4">
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-400">MRP Total</p>
-                <p className="mt-1 font-semibold text-gray-800">{formatAmount(saleSummary.mrp)}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-400">Discount</p>
-                <p className="mt-1 font-semibold text-gray-800">- {formatAmount(saleSummary.discount)}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-400">GST Total</p>
-                <p className="mt-1 font-semibold text-gray-800">{formatAmount(saleSummary.gst)}</p>
-              </div>
-              <div>
-                <p className="text-xs uppercase tracking-wide text-gray-400">Grand Total</p>
-                <p className="mt-1 font-semibold text-rose-600">{formatAmount(saleSummary.total)}</p>
-              </div>
-            </div>
-          </div>
-
           <FloatingField
             label="Notes"
             value={form.notes}
             onChange={(e) => setForm({ ...form, notes: e.target.value })}
           />
           <div className="flex flex-col gap-3 sm:flex-row">
-            <button onClick={() => setShowModal(false)} className="btn-outline flex-1">Cancel</button>
+            <button
+              onClick={() => {
+                setForm({ customerName: '', phone: '', address: '', notes: '', gstMode: 'with_gst' });
+                setCartItems([createCartItem()]);
+              }}
+              className="btn-outline flex-1"
+            >
+              Reset Form
+            </button>
             <button onClick={handleCreate} disabled={saving} className="btn-primary flex-1">{saving ? 'Saving...' : 'Record Sale'}</button>
           </div>
         </div>
-      </Modal>
+      </div>
+
+      {loading ? <PageLoader /> : sales.length === 0 ? (
+        <EmptyState icon={<FiFileText size={56} />} title="No offline sales yet" />
+      ) : (
+        <div className="admin-card overflow-hidden">
+          <div className="mb-5 flex flex-wrap items-center gap-3 rounded-2xl border border-gray-100 bg-gray-50/80 px-4 py-3">
+            <div className="relative w-full max-w-sm">
+              <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={16} />
+              <input
+                value={listFilters.search}
+                onChange={(e) => setListFilters({ ...listFilters, search: e.target.value, page: 1 })}
+                placeholder="Search invoices..."
+                className="input-field h-11 py-2 pl-10 text-sm"
+              />
+            </div>
+            <select value={listFilters.sortBy} onChange={(e) => setListFilters({ ...listFilters, sortBy: e.target.value, page: 1 })} className="input-field h-11 w-full max-w-[180px] py-2 text-sm">
+              <option value="date-desc">Latest First</option>
+              <option value="date-asc">Oldest First</option>
+              <option value="total-desc">Highest Total</option>
+              <option value="total-asc">Lowest Total</option>
+              <option value="customer-asc">Customer A-Z</option>
+              <option value="customer-desc">Customer Z-A</option>
+              <option value="invoice-asc">Invoice A-Z</option>
+              <option value="invoice-desc">Invoice Z-A</option>
+            </select>
+            <select value={listFilters.hasPhone} onChange={(e) => setListFilters({ ...listFilters, hasPhone: e.target.value, page: 1 })} className="input-field h-11 w-full max-w-[170px] py-2 text-sm">
+              <option value="">All Phone Types</option>
+              <option value="yes">With Phone</option>
+              <option value="no">Without Phone</option>
+            </select>
+            <select value={listFilters.pageSize} onChange={(e) => setListFilters({ ...listFilters, pageSize: Number(e.target.value), page: 1 })} className="input-field h-11 w-full max-w-[130px] py-2 text-sm">
+              {[10, 20, 50].map((size) => <option key={size} value={size}>{size} / page</option>)}
+            </select>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 text-left text-xs text-gray-500">
+                  <th className="px-2 pb-3 font-medium">
+                    <label className="inline-flex items-center gap-2 text-gray-500">
+                      <input
+                        type="checkbox"
+                        checked={listFilters.gstMode === 'without_gst'}
+                        onChange={(e) => setListFilters({ ...listFilters, gstMode: e.target.checked ? 'without_gst' : 'with_gst', page: 1 })}
+                        className="h-4 w-4 rounded border-gray-300 text-brand-500 focus:ring-brand-400"
+                      />
+                    </label>
+                  </th>
+                  {['Invoice', 'Customer', 'Phone', 'Total', 'Date', 'Invoice PDF'].map((head) => <th key={head} className="px-2 pb-3 font-medium">{head}</th>)}
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {paginatedSales.map((sale, index) => (
+                  <tr key={sale._id} className="hover:bg-gray-50">
+                    <td className="px-2 py-2.5 text-gray-500">{(salesCurrentPage - 1) * listFilters.pageSize + index + 1}</td>
+                    <td className="px-2 py-2.5 font-medium text-brand-600">{sale.invoiceNumber}</td>
+                    <td className="px-2 py-2.5">{sale.customerName}</td>
+                    <td className="px-2 py-2.5 text-gray-500">{sale.phone || '-'}</td>
+                    <td className="px-2 py-2.5 font-semibold">{formatAmount(sale.totalAmount)}</td>
+                    <td className="px-2 py-2.5 text-xs text-gray-400">{new Date(sale.createdAt).toLocaleDateString('en-IN')}</td>
+                    <td className="px-2 py-2.5">
+                      <button onClick={() => downloadInvoice(sale._id, sale.invoiceNumber)} className="rounded-lg p-1.5 text-gray-400 hover:text-brand-500"><FiDownload size={15} /></button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <Pagination currentPage={salesCurrentPage} totalPages={salesTotalPages} onPageChange={(page) => setListFilters({ ...listFilters, page })} />
+        </div>
+      )}
     </div>
   );
 }

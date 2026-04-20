@@ -3,8 +3,9 @@ import toast from 'react-hot-toast';
 const getSafeInvoiceCode = (value) => String(value || 'invoice').replace(/[^a-zA-Z0-9-_]/g, '-');
 
 export const downloadInvoiceFile = (blob, invoiceCode) => {
-  const fileName = `invoice-${getSafeInvoiceCode(invoiceCode)}.html`;
-  const invoiceBlob = blob instanceof Blob ? blob : new Blob([blob], { type: 'text/html;charset=utf-8' });
+  const invoiceBlob = blob instanceof Blob ? blob : new Blob([blob], { type: 'application/octet-stream' });
+  const extension = invoiceBlob.type === 'application/pdf' ? 'pdf' : 'html';
+  const fileName = `invoice-${getSafeInvoiceCode(invoiceCode)}.${extension}`;
   const url = URL.createObjectURL(invoiceBlob);
   const link = document.createElement('a');
 

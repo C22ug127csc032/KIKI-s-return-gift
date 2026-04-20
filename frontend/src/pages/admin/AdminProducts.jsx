@@ -293,6 +293,11 @@ export default function AdminProducts() {
       return;
     }
 
+    if (finalPrice > mrp) {
+      toast.error('Final price including GST cannot be more than MRP');
+      return;
+    }
+
     if ([form.discountPercentage, form.cgstRate, form.sgstRate, form.igstRate].some((value) => !Number.isFinite(Number(value)) || Number(value) < 0 || Number(value) > 100)) {
       toast.error('Discount and tax rates must be between 0 and 100');
       return;
@@ -490,7 +495,20 @@ export default function AdminProducts() {
           <FloatingField type="number" label="CGST %" value={form.cgstRate} onChange={setField('cgstRate')} min="0" max="100" step="0.01" />
           <FloatingField type="number" label="SGST %" value={form.sgstRate} onChange={setField('sgstRate')} min="0" max="100" step="0.01" />
           <FloatingField type="number" label="IGST %" value={form.igstRate} onChange={setField('igstRate')} min="0" max="100" step="0.01" />
-          <FloatingField type="number" label="Final Price" value={form.sellingPrice === '' ? '' : Number(pricingPreview.totalUnitPrice || 0).toFixed(2)} readOnly className="bg-gray-50 font-semibold text-gray-700" />
+          <div className="space-y-1">
+            <FloatingField
+              type="number"
+              label="Final Price"
+              value={form.sellingPrice === '' ? '' : Number(pricingPreview.totalUnitPrice || 0).toFixed(2)}
+              readOnly
+              className={`font-semibold ${Number(pricingPreview.totalUnitPrice || 0) > Number(form.mrp || 0) && Number(form.mrp || 0) > 0 ? 'bg-red-50 text-red-700 border-red-300' : 'bg-gray-50 text-gray-700'}`}
+            />
+            {Number(pricingPreview.totalUnitPrice || 0) > Number(form.mrp || 0) && Number(form.mrp || 0) > 0 ? (
+              <p className="px-1 text-sm font-medium text-red-600">Warning: Final price with GST is more than MRP.</p>
+            ) : (
+              <p className="px-1 text-xs text-gray-500">Final price = selling price after discount + GST.</p>
+            )}
+          </div>
           <FloatingField type="number" label="Stock" value={form.stock} onChange={setField('stock')} min="0" max={!editProduct && form.sourceType === 'purchase' && selectedBoughtProduct ? selectedBoughtProduct.quantity : undefined} required />
           <FloatingField type="number" label="Stock Alert Level" value={form.lowStockThreshold} onChange={setField('lowStockThreshold')} min="0" />
           <SearchableSelectField

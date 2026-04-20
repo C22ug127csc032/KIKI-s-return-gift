@@ -635,6 +635,127 @@
   box-shadow: 0 14px 34px rgba(90, 45, 8, 0.06);
 }
 
+:root[data-theme-key='kiki-noir'] body {
+  background: linear-gradient(180deg, #f7f7f8 0%, #efeff1 100%);
+  color: #111111;
+}
+
+:root[data-theme-key='kiki-noir'] .admin-card,
+:root[data-theme-key='kiki-noir'] .card,
+:root[data-theme-key='kiki-noir'] .product-card,
+:root[data-theme-key='kiki-noir'] .theme-soft-bg {
+  background: #ffffff !important;
+  border-color: rgba(17, 17, 17, 0.1) !important;
+  box-shadow: 0 14px 34px rgba(17, 17, 17, 0.08) !important;
+}
+
+:root[data-theme-key='kiki-noir'] .btn-primary,
+:root[data-theme-key='kiki-noir'] .btn-outline,
+:root[data-theme-key='kiki-noir'] .btn-white,
+:root[data-theme-key='kiki-noir'] .site-login-pill,
+:root[data-theme-key='kiki-noir'] .site-nav-link-active {
+  background: #ffffff !important;
+  color: #111111 !important;
+  border: 1px solid rgba(17, 17, 17, 0.14) !important;
+  box-shadow: 0 10px 24px rgba(17, 17, 17, 0.08) !important;
+  text-shadow: none !important;
+}
+
+:root[data-theme-key='kiki-noir'] .btn-primary:hover,
+:root[data-theme-key='kiki-noir'] .btn-outline:hover,
+:root[data-theme-key='kiki-noir'] .btn-white:hover,
+:root[data-theme-key='kiki-noir'] .site-login-pill:hover,
+:root[data-theme-key='kiki-noir'] .site-nav-link-active:hover,
+:root[data-theme-key='kiki-noir'] .hover\:bg-rose-600:hover,
+:root[data-theme-key='kiki-noir'] .hover\:bg-rose-700:hover,
+:root[data-theme-key='kiki-noir'] .hover\:bg-purple-600:hover,
+:root[data-theme-key='kiki-noir'] .hover\:bg-purple-700:hover {
+  background: #f3f4f6 !important;
+  color: #111111 !important;
+  border-color: rgba(17, 17, 17, 0.18) !important;
+}
+
+:root[data-theme-key='kiki-noir'] .bg-brand-50,
+:root[data-theme-key='kiki-noir'] .bg-rose-50,
+:root[data-theme-key='kiki-noir'] .bg-purple-50,
+:root[data-theme-key='kiki-noir'] .from-rose-50,
+:root[data-theme-key='kiki-noir'] .hover\:bg-rose-50:hover,
+:root[data-theme-key='kiki-noir'] .hover\:bg-brand-50:hover,
+:root[data-theme-key='kiki-noir'] .hover\:bg-purple-50:hover {
+  background-color: #ffffff !important;
+}
+
+:root[data-theme-key='kiki-noir'] .text-brand-500,
+:root[data-theme-key='kiki-noir'] .text-brand-600,
+:root[data-theme-key='kiki-noir'] .text-brand-700,
+:root[data-theme-key='kiki-noir'] .text-rose-500,
+:root[data-theme-key='kiki-noir'] .text-rose-600,
+:root[data-theme-key='kiki-noir'] .text-rose-700,
+:root[data-theme-key='kiki-noir'] .text-purple-500,
+:root[data-theme-key='kiki-noir'] .text-purple-600,
+:root[data-theme-key='kiki-noir'] .text-purple-700 {
+  color: #111111 !important;
+}
+
+:root[data-theme-key='kiki-noir'] .border-brand-100,
+:root[data-theme-key='kiki-noir'] .border-brand-200,
+:root[data-theme-key='kiki-noir'] .border-brand-300,
+:root[data-theme-key='kiki-noir'] .border-rose-100,
+:root[data-theme-key='kiki-noir'] .border-rose-200,
+:root[data-theme-key='kiki-noir'] .border-rose-300,
+:root[data-theme-key='kiki-noir'] .border-rose-400,
+:root[data-theme-key='kiki-noir'] .border-rose-500,
+:root[data-theme-key='kiki-noir'] .border-rose-600,
+:root[data-theme-key='kiki-noir'] .border-purple-100,
+:root[data-theme-key='kiki-noir'] .border-purple-300,
+:root[data-theme-key='kiki-noir'] .border-purple-600,
+:root[data-theme-key='kiki-noir'] .theme-soft-border {
+  border-color: rgba(17, 17, 17, 0.12) !important;
+}
+
+:root[data-theme-key='kiki-noir'] .admin-shell aside a[aria-current='page'] {
+  background: #ffffff !important;
+  color: #111111 !important;
+  box-shadow: 0 12px 24px rgba(17, 17, 17, 0.12) !important;
+}
+
+:root[data-theme-key='kiki-noir'] .admin-shell {
+  background: linear-gradient(180deg, #f4f4f5 0%, #ececef 100%) !important;
+}
+
+:root[data-theme-key='kiki-noir'] .admin-shell aside {
+  background-image: linear-gradient(180deg, #18181b 0%, #232326 52%, #2f2f33 100%) !important;
+  border-right-color: rgba(255, 255, 255, 0.08) !important;
+}
+
+:root[data-theme-key='kiki-noir'] .admin-shell aside .border-brand-200\/70 {
+  border-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+:root[data-theme-key='kiki-noir'] .admin-shell aside .text-gray-900,
+:root[data-theme-key='kiki-noir'] .admin-shell aside .text-gray-700 {
+  color: rgba(255, 255, 255, 0.88) !important;
+}
+
+:root[data-theme-key='kiki-noir'] .admin-shell aside .text-brand-600,
+:root[data-theme-key='kiki-noir'] .admin-shell aside .text-brand-700 {
+  color: rgba(255, 255, 255, 0.64) !important;
+}
+
+:root[data-theme-key='kiki-noir'] .admin-shell aside .bg-brand-100 {
+  background: rgba(255, 255, 255, 0.14) !important;
+}
+
+:root[data-theme-key='kiki-noir'] .admin-shell aside a:not([aria-current='page']) {
+  color: rgba(255, 255, 255, 0.72) !important;
+}
+
+:root[data-theme-key='kiki-noir'] .admin-shell aside a:not([aria-current='page']):hover,
+:root[data-theme-key='kiki-noir'] .admin-shell aside button:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .hero-rain-item,
   .page-rain-item {
