@@ -278,12 +278,13 @@ const buildInvoiceHtml = (data, settings) => {
       margin: 0 40px;
     }
 
+    /* ── FIX: address-section now has bigger gap and meta is protected ── */
     .address-section {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
       padding: 24px 40px;
-      gap: 20px;
+      gap: 40px;
     }
 
     .bill-to-label {
@@ -303,6 +304,7 @@ const buildInvoiceHtml = (data, settings) => {
       text-transform: uppercase;
       color: var(--ink);
       margin-bottom: 6px;
+      word-break: break-word;
     }
 
     .client-detail {
@@ -312,18 +314,23 @@ const buildInvoiceHtml = (data, settings) => {
       font-weight: 300;
     }
 
+    /* ── FIX: min-width and flex-shrink prevent squishing ── */
     .invoice-meta {
       text-align: right;
       font-size: 13px;
+      min-width: 220px;
+      flex-shrink: 0;
     }
     .invoice-meta p {
       color: var(--ink-muted);
       margin-bottom: 7px;
       font-weight: 400;
+      white-space: nowrap;
     }
     .invoice-meta span {
       color: var(--ink);
       font-weight: 700;
+      white-space: nowrap;
     }
 
     .table-wrap {
@@ -369,29 +376,14 @@ const buildInvoiceHtml = (data, settings) => {
 
     .totals-section {
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-end;
       align-items: flex-start;
       padding: 0 40px 32px;
       gap: 20px;
-      flex-wrap: wrap;
-    }
-
-    .subtotal-labels {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      min-width: 220px;
-    }
-    .subtotal-labels p {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 17px;
-      font-weight: 500;
-      color: var(--ink);
     }
 
     .totals-values {
       min-width: 280px;
-      flex: 1;
       max-width: 360px;
     }
 
@@ -525,7 +517,7 @@ const buildInvoiceHtml = (data, settings) => {
       .divider { margin: 0 20px; }
       .invoice-word { font-size: 42px; }
       .address-section, .payment-section { flex-direction: column; }
-      .invoice-meta { text-align: left; }
+      .invoice-meta { text-align: left; min-width: unset; }
       .totals-values { width: 100%; }
       .signature-block { display: none; }
     }
@@ -566,7 +558,7 @@ const buildInvoiceHtml = (data, settings) => {
   <div class="divider"></div>
 
   <div class="address-section">
-    <div>
+    <div style="flex: 1; min-width: 0;">
       <div class="bill-to-label">invoice to :</div>
       <div class="client-name" id="clientName">${escapeHtml(data.customerName || "CLIENT'S NAME")}</div>
       <div class="client-detail">
@@ -583,87 +575,70 @@ const buildInvoiceHtml = (data, settings) => {
   </div>
 
   <div class="table-wrap">
-	    <table>
-	      <thead>
-	        <tr>
-	          <th>Product</th>
-	          <th>QTY</th>
-	          <th>Base</th>
-	          <th>Discount</th>
-	          <th>Taxable</th>
-	          ${showGstDetails ? '<th>CGST</th>' : ''}
-	          ${showGstDetails ? '<th>SGST</th>' : ''}
-	          ${showGstDetails ? '<th>IGST</th>' : ''}
-	          <th>Total</th>
-	        </tr>
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>QTY</th>
+          <th>Base</th>
+          <th>Discount</th>
+          <th>Taxable</th>
+          ${showGstDetails ? '<th>CGST</th>' : ''}
+          ${showGstDetails ? '<th>SGST</th>' : ''}
+          ${showGstDetails ? '<th>IGST</th>' : ''}
+          <th>Total</th>
+        </tr>
       </thead>
       <tbody id="invoiceRows">${rows}
       </tbody>
     </table>
   </div>
 
-	  <div class="totals-section">
-	    <div class="subtotal-labels">
-	      <p><strong>MRP Total :</strong></p>
-	      <p>Selling Price :</p>
-	      <p>Discount: ${totals.discountPercentage}%</p>
-	      <p>Taxable Amount :</p>
-	      ${showGstDetails ? '<p>CGST :</p>' : ''}
-	      ${showGstDetails ? '<p>SGST :</p>' : ''}
-	      ${showGstDetails ? '<p>IGST :</p>' : ''}
-	      ${showGstDetails ? '<p>GST :</p>' : ''}
-	      ${Math.abs(totals.roundOff) > 0.001 ? '<p>Round Off :</p>' : ''}
-	      <p>Grand Total :</p>
-	    </div>
-
-	    <div class="totals-values">
-	      <div class="totals-row">
-	        <span class="label">MRP Total :</span>
-	        <span id="actualTotal">${formatCurrency(totals.mrpTotal)}</span>
-	      </div>
-	      <div class="totals-row">
-	        <span class="label">Selling Price :</span>
-	        <span id="sellingPriceTotal">${formatCurrency(totals.sellingPriceTotal)}</span>
-	      </div>
-	      <div class="totals-row">
-	        <span class="label">Discount (${totals.discountPercentage}%) :</span>
-	        <span id="discountVal">- ${formatCurrency(totals.discount)}</span>
-	      </div>
-	      <div class="totals-row">
-	        <span class="label">Taxable Amount :</span>
-	        <span id="subTotal">${formatCurrency(totals.taxableSubtotal)}</span>
-	      </div>
-	      ${showGstDetails ? `
-	      <div class="totals-row">
-	        <span class="label">CGST :</span>
-	        <span id="cgstTotal">${formatCurrency(totals.cgst)}</span>
-	      </div>` : ''}
-	      ${showGstDetails ? `
-	      <div class="totals-row">
-	        <span class="label">SGST :</span>
-	        <span id="sgstTotal">${formatCurrency(totals.sgst)}</span>
-	      </div>` : ''}
-	      ${showGstDetails ? `
-	      <div class="totals-row">
-	        <span class="label">IGST :</span>
-	        <span id="igstTotal">${formatCurrency(totals.igst)}</span>
-	      </div>` : ''}
-	      ${showGstDetails ? `
-	      <div class="totals-row">
-	        <span class="label">GST :</span>
-	        <span id="gstTotal">${formatCurrency(totals.gst)}</span>
-	      </div>` : ''}
-	      ${Math.abs(totals.roundOff) > 0.001 ? `
-	      <div class="totals-row">
-	        <span class="label">Round Off :</span>
-	        <span id="roundOffTotal">${formatCurrency(totals.roundOff)}</span>
-	      </div>` : ''}
-	      <div class="total-final">
-	        <span>Grand Total :</span>
-	        <span id="grandTotal">${formatCurrency(totals.grandTotal)}</span>
-	      </div>
-	    </div>
-	  </div>
+  <div class="totals-section">
+    <div class="totals-values">
+      <div class="totals-row">
+        <span class="label">Total :</span>
+        <span id="actualTotal">${formatCurrency(totals.mrpTotal)}</span>
+      </div>
+      <div class="totals-row">
+        <span class="label">Discount (${totals.discountPercentage}%) :</span>
+        <span id="discountVal">- ${formatCurrency(totals.discount)}</span>
+      </div>
+      <div class="totals-row">
+        <span class="label">Sub Total :</span>
+        <span id="subTotal">${formatCurrency(totals.taxableSubtotal)}</span>
+      </div>
+      ${showGstDetails ? `
+      <div class="totals-row">
+        <span class="label">CGST :</span>
+        <span id="cgstTotal">${formatCurrency(totals.cgst)}</span>
+      </div>` : ''}
+      ${showGstDetails ? `
+      <div class="totals-row">
+        <span class="label">SGST :</span>
+        <span id="sgstTotal">${formatCurrency(totals.sgst)}</span>
+      </div>` : ''}
+      ${showGstDetails ? `
+      <div class="totals-row">
+        <span class="label">IGST :</span>
+        <span id="igstTotal">${formatCurrency(totals.igst)}</span>
+      </div>` : ''}
+      ${showGstDetails ? `
+      <div class="totals-row">
+        <span class="label">GST :</span>
+        <span id="gstTotal">${formatCurrency(totals.gst)}</span>
+      </div>` : ''}
+      ${Math.abs(totals.roundOff) > 0.001 ? `
+      <div class="totals-row">
+        <span class="label">Round Off :</span>
+        <span id="roundOffTotal">${formatCurrency(totals.roundOff)}</span>
+      </div>` : ''}
+      <div class="total-final">
+        <span>Grand Total :</span>
+        <span id="grandTotal">${formatCurrency(totals.grandTotal)}</span>
+      </div>
+    </div>
+  </div>
 
   <div class="invoice-footer">
     <div class="payment-section">
@@ -684,9 +659,6 @@ const buildInvoiceHtml = (data, settings) => {
           <circle cx="28" cy="22" r="2.5" fill="#f9a8c0"/>
         </svg>
         <div class="thankyou-text">Thank you</div>
-        <svg width="24" height="22" viewBox="0 0 28 26" fill="none" xmlns="http://www.w3.org/2000/svg" style="margin-left:-4px;margin-bottom:14px;opacity:0.7">
-          <path d="M14 23S2 15 2 8a6 6 0 0112 0 6 6 0 0112 0c0 7-12 15-12 15z" fill="#e8648a"/>
-        </svg>
       </div>
 
       <div class="signature-block">
@@ -716,28 +688,23 @@ const formatPdfCurrency = (value) => `Rs.${Number(value || 0).toLocaleString('en
 
 const drawPdfTableHeader = (doc, y, headers, widths) => {
   let x = doc.page.margins.left;
-
   doc.font('Helvetica-Bold').fontSize(8.5);
   headers.forEach((header, index) => {
     const width = widths[index];
     doc.rect(x, y, width, 22).fillAndStroke('#fff0f4', '#f0c8d8');
-    doc
-      .fillColor('#a03b61')
-      .text(header.toUpperCase(), x + 5, y + 7, {
-        width: width - 10,
-        align: index === 0 ? 'left' : 'center',
-        lineBreak: false,
-      });
+    doc.fillColor('#a03b61').text(header.toUpperCase(), x + 5, y + 7, {
+      width: width - 10,
+      align: index === 0 ? 'left' : 'center',
+      lineBreak: false,
+    });
     x += width;
   });
-
   return y + 22;
 };
 
 const drawPdfTableRow = (doc, y, row, widths) => {
   const rowHeight = 24;
   let x = doc.page.margins.left;
-
   row.forEach((cell, index) => {
     const width = widths[index];
     doc.rect(x, y, width, rowHeight).stroke('#f0c8d8');
@@ -753,7 +720,6 @@ const drawPdfTableRow = (doc, y, row, widths) => {
       });
     x += width;
   });
-
   return y + rowHeight;
 };
 
@@ -784,38 +750,64 @@ const sendOfflineSaleInvoicePdf = (res, invoiceNumber, data, settings) => {
   const border = '#f0c8d8';
   const ink = '#2a1a22';
   const muted = '#7a5566';
+  const pageW = 515;
 
-  doc.circle(60, 56, 18).lineWidth(1.2).strokeColor('#f9a8c0').stroke();
-  doc.font('Times-Italic').fontSize(14).fillColor(accent).text('K', 54, 47);
-  doc.font('Times-Roman').fontSize(16).fillColor(ink).text(storeName, 92, 43);
-  doc.font('Helvetica').fontSize(8).fillColor(accent).text(tagline.toUpperCase(), 92, 62, {
-    characterSpacing: 2.2,
-  });
+  // ── HEADER ──────────────────────────────────────────────
+  doc.circle(58, 55, 18).lineWidth(1.2).strokeColor('#f9a8c0').stroke();
+  doc.font('Times-Italic').fontSize(14).fillColor(accent).text('K', 52, 46);
+  doc.font('Times-Bold').fontSize(14).fillColor(ink).text(storeName, 86, 42);
+  doc.font('Helvetica').fontSize(7.5).fillColor(accent).text(tagline.toUpperCase(), 87, 60, { characterSpacing: 2.2 });
   if (showGstNumber) {
-    doc.fontSize(8.5).fillColor(muted).text(`GSTIN: ${gstNumber}`, 40, 84);
+    doc.font('Helvetica').fontSize(8).fillColor(muted).text(`GSTIN: ${gstNumber}`, 40, 82);
   }
 
-  doc.roundedRect(501, 44, 24, 6, 2).fillAndStroke('#f29ab6', accent);
-  doc.roundedRect(502, 50, 22, 22, 2).fillAndStroke('#ffd6e2', accent);
-  doc.moveTo(513, 44).lineTo(513, 72).lineWidth(1.3).strokeColor(accent).stroke();
-  doc.moveTo(502, 50).lineTo(524, 50).lineWidth(1).strokeColor(accent).stroke();
-  doc.path('M513 43 C513 40 510 38 508 39.5 C506.5 40.6 507 43 509.3 43 L513 43 Z').fill(accent);
-  doc.path('M513 43 C513 40 516 38 518 39.5 C519.5 40.6 519 43 516.7 43 L513 43 Z').fill(accent);
-  doc.circle(513, 44, 1.8).fill('#f9a8c0');
-  doc.font('Times-Italic').fontSize(42).fillColor(ink).text('Invoice', 350, 82, { align: 'right', width: 175 });
+  // Gift box icon (top right)
+  const gx = 490, gy = 38;
+  doc.roundedRect(gx - 1, gy + 6, 26, 6, 2).fillAndStroke('#f29ab6', accent);
+  doc.roundedRect(gx, gy + 12, 24, 22, 2).fillAndStroke('#ffd6e2', accent);
+  doc.moveTo(gx + 12, gy + 6).lineTo(gx + 12, gy + 34).lineWidth(1.3).strokeColor(accent).stroke();
+  doc.moveTo(gx, gy + 12).lineTo(gx + 24, gy + 12).lineWidth(1).strokeColor(accent).stroke();
+  doc.path(`M${gx+12} ${gy+5} C${gx+12} ${gy+2} ${gx+9} ${gy} ${gx+7} ${gy+1.5} C${gx+5.5} ${gy+2.6} ${gx+6} ${gy+5} ${gx+8.3} ${gy+5} L${gx+12} ${gy+5} Z`).fill(accent);
+  doc.path(`M${gx+12} ${gy+5} C${gx+12} ${gy+2} ${gx+15} ${gy} ${gx+17} ${gy+1.5} C${gx+18.5} ${gy+2.6} ${gx+18} ${gy+5} ${gx+15.7} ${gy+5} L${gx+12} ${gy+5} Z`).fill(accent);
+  doc.circle(gx + 12, gy + 6, 1.8).fill('#f9a8c0');
+
+  // "Invoice" italic heading
+  doc.font('Times-Italic').fontSize(38).fillColor(ink).text('Invoice', 340, 72, { align: 'right', width: 175 });
+
+// 1. Horizontal divider
+doc.moveTo(40, 108).lineTo(555, 108).lineWidth(0.8).strokeColor(border).stroke();
+
+// 2. Invoice meta TOP RIGHT
+// 2. Invoice meta TOP RIGHT
+doc.font('Helvetica').fontSize(9).fillColor(muted)
+  .text('Invoice No :', 400, 122, { width: 65, align: 'left' });
+doc.font('Helvetica-Bold').fontSize(9).fillColor(ink)
+  .text(data.invoiceNumber || '', 455, 122, { width: 100, align: 'left' });
+
+doc.font('Helvetica').fontSize(9).fillColor(muted)
+  .text('Date :', 400, 138, { width: 65, align: 'left' });
+doc.font('Helvetica-Bold').fontSize(9).fillColor(ink)
+  .text(formatDate(data.date), 455, 138, { width: 100, align: 'left' });
+
+// 3. Bill to TOP LEFT
+doc.font('Helvetica').fontSize(8.5).fillColor(muted)
+  .text('INVOICE TO :', 40, 122, { characterSpacing: 2 });
+doc.font('Times-Bold').fontSize(16).fillColor(ink)
+  .text(String(data.customerName || 'Customer').toUpperCase(), 40, 138, { width: 280 });
+
+  let addrY = 165;
   doc.font('Helvetica').fontSize(9).fillColor(muted);
-  doc.text(`Invoice No : ${data.invoiceNumber || ''}`, 370, 136, { align: 'right', width: 160 });
-  doc.font('Helvetica-Bold').fontSize(9).fillColor(ink).text(`Date : ${formatDate(data.date)}`, 370, 154, { align: 'right', width: 160 });
+  if (data.customerAddress) {
+    doc.text(`address: ${data.customerAddress}`, 40, addrY, { width: 260, lineBreak: false, ellipsis: true });
+    addrY += 16;
+  }
+  if (data.customerPhone) {
+    doc.text(`phone number: ${data.customerPhone}`, 40, addrY, { width: 260, lineBreak: false, ellipsis: true });
+    addrY += 16;
+  }
 
-  doc.moveTo(40, 190).lineTo(555, 190).strokeColor(border).stroke();
-
-  doc.font('Helvetica').fontSize(9).fillColor(muted).text('INVOICE TO :', 40, 212, { characterSpacing: 2.4 });
-  doc.font('Times-Bold').fontSize(17).fillColor(ink).text(String(data.customerName || 'Customer').toUpperCase(), 40, 232);
-  doc.font('Helvetica').fontSize(9.5).fillColor(muted);
-  if (data.customerAddress) doc.text(`address: ${data.customerAddress}`, 40, 276, { width: 260, lineBreak: false, ellipsis: true });
-  if (data.customerPhone) doc.text(`phone number: ${data.customerPhone}`, 40, data.customerAddress ? 294 : 276, { width: 260, lineBreak: false, ellipsis: true });
-
-  let y = 320;
+  // ── TABLE ────────────────────────────────────────────────
+  let y = Math.max(addrY + 14, 210);
   const tableHeaderY = () => drawPdfTableHeader(doc, 60, tableHeaders, widths);
   y = drawPdfTableHeader(doc, y, tableHeaders, widths);
 
@@ -826,17 +818,18 @@ const sendOfflineSaleInvoicePdf = (res, invoiceNumber, data, settings) => {
       formatPdfCurrency(item.basePrice || item.price || 0),
       formatPdfCurrency(item.totalAmount || 0),
     ];
-
     y = ensurePdfPageSpace(doc, y, 34, tableHeaderY);
     y = drawPdfTableRow(doc, y, row, widths);
   });
 
-  y += 20;
-  y = ensurePdfPageSpace(doc, y, 130, () => 60);
+  // ── TOTALS — right side only, no duplicate left labels ───
+  y += 18;
+  y = ensurePdfPageSpace(doc, y, 160, () => 60);
 
-  const summaryX = 378;
-  const summaryLabelWidth = 90;
+  const valueX = 358;
+  const summaryLabelWidth = 110;
   const summaryValueWidth = 95;
+
   const summaryRows = [
     ['Total', formatPdfCurrency(totals.mrpTotal)],
     [`Discount (${totals.discountPercentage}%)`, `- ${formatPdfCurrency(totals.discount)}`],
@@ -852,41 +845,60 @@ const sendOfflineSaleInvoicePdf = (res, invoiceNumber, data, settings) => {
 
   let summaryY = y;
   summaryRows.forEach(([label, value]) => {
-    doc.font('Helvetica').fontSize(10).fillColor(muted).text(`${label} :`, summaryX, summaryY, { width: summaryLabelWidth });
-    doc.font('Helvetica-Bold').fontSize(10).fillColor(ink).text(value, summaryX + summaryLabelWidth, summaryY, {
-      width: summaryValueWidth,
-      align: 'right',
-    });
+    doc.font('Helvetica').fontSize(10).fillColor(muted)
+      .text(`${label} :`, valueX, summaryY, { width: summaryLabelWidth });
+    doc.font('Helvetica-Bold').fontSize(10).fillColor(ink)
+      .text(value, valueX + summaryLabelWidth, summaryY, { width: summaryValueWidth, align: 'right' });
     summaryY += 18;
   });
 
-  doc.moveTo(summaryX, summaryY + 4).lineTo(summaryX + summaryLabelWidth + summaryValueWidth, summaryY + 4).strokeColor(ink).stroke();
-  doc.font('Helvetica-Bold').fontSize(13).fillColor(ink).text('Grand Total :', summaryX, summaryY + 14, { width: summaryLabelWidth });
-  doc.text(formatPdfCurrency(totals.grandTotal), summaryX + summaryLabelWidth, summaryY + 10, {
-    width: summaryValueWidth,
-    align: 'right',
-  });
+  // Grand total divider + bold row
+  doc.moveTo(valueX, summaryY + 3)
+    .lineTo(valueX + summaryLabelWidth + summaryValueWidth, summaryY + 3)
+    .strokeColor(ink).lineWidth(1).stroke();
+  doc.font('Helvetica-Bold').fontSize(12).fillColor(ink)
+    .text('Grand Total :', valueX, summaryY + 10, { width: summaryLabelWidth });
+  doc.font('Helvetica-Bold').fontSize(12).fillColor(ink)
+    .text(formatPdfCurrency(totals.grandTotal), valueX + summaryLabelWidth, summaryY + 10, {
+      width: summaryValueWidth, align: 'right',
+    });
 
+  // ── FOOTER ───────────────────────────────────────────────
   const footerY = 664;
-  doc.moveTo(40, footerY - 8).lineTo(555, footerY - 8).strokeColor(border).stroke();
-  doc.font('Helvetica').fontSize(9).fillColor(muted).text('PAYMENT METHOD', 40, footerY + 18, { characterSpacing: 2.2 });
-  doc.font('Helvetica').fontSize(10).fillColor(ink).text('Bank Name:', 40, footerY + 42);
-  doc.font('Helvetica-Bold').fontSize(10).text(` ${settings?.bankAccountName || settings?.bankName || "Kiki's Gift Store"}`, 93, footerY + 42);
-  doc.font('Helvetica').fontSize(10).text('Account No :', 40, footerY + 64);
-  doc.font('Helvetica-Bold').fontSize(10).text(` ${settings?.bankAccountNumber || '9876543210'}`, 97, footerY + 64);
+  doc.moveTo(40, footerY - 8).lineTo(555, footerY - 8).strokeColor(border).lineWidth(0.8).stroke();
 
-  doc.roundedRect(248, footerY + 40, 24, 6, 2).fillAndStroke('#f29ab6', accent);
-  doc.roundedRect(249, footerY + 46, 22, 20, 2).fillAndStroke('#ffd6e2', accent);
-  doc.moveTo(260, footerY + 40).lineTo(260, footerY + 66).lineWidth(1.3).strokeColor(accent).stroke();
-  doc.moveTo(249, footerY + 46).lineTo(271, footerY + 46).lineWidth(1).strokeColor(accent).stroke();
-  doc.path(`M260 ${footerY + 39} C260 ${footerY + 36} 257 ${footerY + 34} 255 ${footerY + 35.5} C253.5 ${footerY + 36.6} 254 ${footerY + 39} 256.3 ${footerY + 39} L260 ${footerY + 39} Z`).fill(accent);
-  doc.path(`M260 ${footerY + 39} C260 ${footerY + 36} 263 ${footerY + 34} 265 ${footerY + 35.5} C266.5 ${footerY + 36.6} 266 ${footerY + 39} 263.7 ${footerY + 39} L260 ${footerY + 39} Z`).fill(accent);
-  doc.circle(260, footerY + 40, 1.8).fill('#f9a8c0');
-  doc.font('Times-Italic').fontSize(34).fillColor(ink).text('Thank you', 286, footerY + 24);
+  // Payment method
+  doc.font('Helvetica').fontSize(8.5).fillColor(muted)
+    .text('PAYMENT METHOD', 40, footerY + 14, { characterSpacing: 2.2 });
+  doc.font('Helvetica').fontSize(10).fillColor(ink).text('Bank Name:', 40, footerY + 36);
+  doc.font('Helvetica-Bold').fontSize(10).fillColor(ink)
+    .text(` ${settings?.bankAccountName || settings?.bankName || "Kiki's Gift Store"}`, 97, footerY + 36);
+  doc.font('Helvetica').fontSize(10).fillColor(ink).text('Account No :', 40, footerY + 56);
+  doc.font('Helvetica-Bold').fontSize(10).fillColor(ink)
+    .text(` ${settings?.bankAccountNumber || '9876543210'}`, 101, footerY + 56);
 
-  doc.fillColor('#f09ab7').fontSize(22).text('\u2665', 418, footerY + 24);
-  doc.font('Helvetica').fontSize(9).fillColor(muted).text('SIGNATURE', 458, footerY + 62, { characterSpacing: 3.2 });
-  doc.font('Helvetica-Oblique').fontSize(8.5).fillColor(muted).text('Please send payment within 30 days of receiving this invoice.', 170, footerY + 92);
+  // Gift icon (footer)
+  const fgx = 248, fgy = footerY + 36;
+  doc.roundedRect(fgx - 1, fgy + 4, 24, 6, 2).fillAndStroke('#f29ab6', accent);
+  doc.roundedRect(fgx, fgy + 10, 22, 20, 2).fillAndStroke('#ffd6e2', accent);
+  doc.moveTo(fgx + 11, fgy + 4).lineTo(fgx + 11, fgy + 30).lineWidth(1.3).strokeColor(accent).stroke();
+  doc.moveTo(fgx, fgy + 10).lineTo(fgx + 22, fgy + 10).lineWidth(1).strokeColor(accent).stroke();
+  doc.path(`M${fgx+11} ${fgy+3} C${fgx+11} ${fgy} ${fgx+8} ${fgy-2} ${fgx+6} ${fgy-0.5} C${fgx+4.5} ${fgy+0.6} ${fgx+5} ${fgy+3} ${fgx+7.3} ${fgy+3} L${fgx+11} ${fgy+3} Z`).fill(accent);
+  doc.path(`M${fgx+11} ${fgy+3} C${fgx+11} ${fgy} ${fgx+14} ${fgy-2} ${fgx+16} ${fgy-0.5} C${fgx+17.5} ${fgy+0.6} ${fgx+17} ${fgy+3} ${fgx+14.7} ${fgy+3} L${fgx+11} ${fgy+3} Z`).fill(accent);
+  doc.circle(fgx + 11, fgy + 4, 1.8).fill('#f9a8c0');
+
+  // "Thank you"
+  doc.font('Times-Italic').fontSize(32).fillColor(ink).text('Thank you', 280, footerY + 30);
+
+  // Signature
+  doc.font('Helvetica').fontSize(8.5).fillColor(muted)
+    .text('SIGNATURE', 460, footerY + 58, { characterSpacing: 3 });
+
+  // Terms
+  doc.font('Helvetica-Oblique').fontSize(8.5).fillColor(muted)
+    .text('Please send payment within 30 days of receiving this invoice.', 40, footerY + 90, {
+      align: 'center', width: pageW,
+    });
 
   doc.end();
 };
