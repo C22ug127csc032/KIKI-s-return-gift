@@ -31,8 +31,8 @@ export default function ForgotPasswordPage({ role = 'user' }) {
 
   const accentClass = isAdmin ? 'bg-slate-900 text-white' : 'bg-rose-600 text-white';
   const buttonClass = isAdmin
-    ? 'w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3.5 rounded-xl transition-all disabled:opacity-60'
-    : 'btn-primary w-full py-3.5 disabled:opacity-60';
+    ? 'auth-submit-btn w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3.5 rounded-xl transition-all disabled:opacity-60'
+    : 'auth-submit-btn btn-primary w-full py-3.5 disabled:opacity-60';
 
   const handleSubmit = async (e) => {
     e.preventDefault();

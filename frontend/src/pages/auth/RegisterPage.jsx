@@ -87,7 +87,7 @@ export default function RegisterPage() {
           />
 
           <button type="submit" disabled={loading}
-            className="btn-primary w-full flex items-center justify-center gap-2 py-3.5 disabled:opacity-60">
+            className="auth-submit-btn btn-primary w-full flex items-center justify-center gap-2 py-3.5 disabled:opacity-60">
             {loading
               ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               : 'Create Account'}

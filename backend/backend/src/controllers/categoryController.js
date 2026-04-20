@@ -4,14 +4,7 @@ import asyncHandler from '../utils/asyncHandler.js';
 import { sendResponse, sendPaginatedResponse } from '../utils/apiResponse.js';
 import { getPagination } from '../utils/pagination.js';
 import { cloudinary } from '../config/cloudinary.js';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { buildLocalUploadPath, getLocalUploadFileName } from '../utils/uploadPaths.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const uploadsRoot = path.resolve(__dirname, '../../uploads');
+import { buildLocalUploadPath, deleteLocalUploadFile } from '../utils/uploadPaths.js';
 
 const buildCategoryImageUrl = (req, file) => {
   if (!file) return { imageUrl: null, imagePublicId: null };
@@ -24,12 +17,7 @@ const buildCategoryImageUrl = (req, file) => {
   };
 };
 
-const removeLocalCategoryImage = (imageUrl) => {
-  const fileName = getLocalUploadFileName(imageUrl, 'categories');
-  if (!fileName) return;
-  const filePath = path.join(uploadsRoot, 'categories', path.basename(fileName));
-  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-};
+const removeLocalCategoryImage = (imageUrl) => deleteLocalUploadFile(imageUrl, 'categories');
 
 const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 

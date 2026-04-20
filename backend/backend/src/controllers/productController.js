@@ -7,15 +7,13 @@ import asyncHandler from '../utils/asyncHandler.js';
 import { sendResponse, sendPaginatedResponse } from '../utils/apiResponse.js';
 import { getPagination, buildSortQuery } from '../utils/pagination.js';
 import { cloudinary } from '../config/cloudinary.js';
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { calculateLinePricing, getProductDiscountPercentage, getTaxableAmountFromInclusive } from '../utils/pricing.js';
-import { buildLocalUploadPath, getLocalUploadFileName } from '../utils/uploadPaths.js';
+import { buildLocalUploadPath, deleteLocalUploadFile } from '../utils/uploadPaths.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const uploadsRoot = path.resolve(__dirname, '../../uploads');
 
 const buildProductImage = (req, file) => {
   if (!file) return null;
@@ -28,12 +26,7 @@ const buildProductImage = (req, file) => {
   };
 };
 
-const removeLocalProductImage = (imageUrl) => {
-  const fileName = getLocalUploadFileName(imageUrl, 'products');
-  if (!fileName) return;
-  const filePath = path.join(uploadsRoot, 'products', path.basename(fileName));
-  if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
-};
+const removeLocalProductImage = (imageUrl) => deleteLocalUploadFile(imageUrl, 'products');
 
 const escapeRegex = (value = '') => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 

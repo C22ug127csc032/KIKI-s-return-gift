@@ -29,8 +29,8 @@ export default function ResetPasswordPage({ role = 'user' }) {
     ? 'bg-white rounded-3xl shadow-2xl p-8 w-full max-w-md'
     : 'bg-white rounded-3xl shadow-xl border border-rose-100 p-8 w-full max-w-md';
   const buttonClass = isAdmin
-    ? 'w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3.5 rounded-xl transition-all disabled:opacity-60'
-    : 'btn-primary w-full py-3.5 disabled:opacity-60';
+    ? 'auth-submit-btn w-full bg-slate-900 hover:bg-slate-800 text-white font-semibold py-3.5 rounded-xl transition-all disabled:opacity-60'
+    : 'auth-submit-btn btn-primary w-full py-3.5 disabled:opacity-60';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
