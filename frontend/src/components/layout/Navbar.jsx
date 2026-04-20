@@ -167,32 +167,34 @@ export default function Navbar() {
 
                   <AnimatePresence>
                     {categoriesOpen && navCategories.length > 0 && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        transition={{ duration: 0.18, ease: 'easeOut' }}
-                        className="absolute left-0 top-full z-[130] mt-4 w-[900px] max-w-[calc(100vw-80px)] rounded-[22px] border border-rose-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.14)]"
-                      >
-                        <div className="mb-5">
-                          <p className="font-display text-[20px] font-bold text-gray-900">Shop by Categories</p>
-                        </div>
-                        <div
-                          className="max-h-[360px] space-y-3 overflow-y-auto overscroll-contain pr-2"
-                          onWheel={(event) => event.stopPropagation()}
+                      <div className="fixed left-1/2 top-[76px] z-[130] w-[840px] max-w-[calc(100vw-80px)] -translate-x-1/2">
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: 10 }}
+                          transition={{ duration: 0.18, ease: 'easeOut' }}
+                          className="rounded-[22px] border border-rose-100 bg-white p-6 shadow-[0_18px_60px_rgba(15,23,42,0.14)]"
                         >
-                          {navCategories.map((category) => (
-                            <Link
-                              key={category._id}
-                              to={`/shop?category=${category._id}`}
-                              onClick={() => setCategoriesOpen(false)}
-                              className="flex min-h-[58px] items-center justify-center rounded-2xl bg-gray-50 px-6 text-center text-[15px] font-semibold uppercase tracking-[0.08em] text-slate-800 transition-colors hover:bg-rose-50 hover:text-rose-600"
-                            >
-                              {category.name}
-                            </Link>
-                          ))}
-                        </div>
-                      </motion.div>
+                          <div className="mb-5">
+                            <p className="font-display text-[20px] font-bold text-gray-900">Shop by Categories</p>
+                          </div>
+                          <div
+                            className="max-h-[360px] space-y-3 overflow-y-auto overscroll-contain pr-2"
+                            onWheel={(event) => event.stopPropagation()}
+                          >
+                            {navCategories.map((category) => (
+                              <Link
+                                key={category._id}
+                                to={`/shop?category=${category._id}`}
+                                onClick={() => setCategoriesOpen(false)}
+                                className="flex min-h-[58px] items-center justify-center rounded-2xl bg-gray-50 px-6 text-center text-[15px] font-semibold uppercase tracking-[0.08em] text-slate-800 transition-colors hover:bg-rose-50 hover:text-rose-600"
+                              >
+                                {category.name}
+                              </Link>
+                            ))}
+                          </div>
+                        </motion.div>
+                      </div>
                     )}
                   </AnimatePresence>
                 </div>
@@ -214,7 +216,9 @@ export default function Navbar() {
                   onSubmit={handleSearch}
                   className="flex h-11 min-w-[240px] items-center gap-2 rounded-full border border-gray-200 bg-white px-4 shadow-sm"
                 >
-                  <FiSearch size={16} className="flex-shrink-0 text-gray-400" />
+                  <button type="submit" className="flex-shrink-0 text-gray-400 transition-colors hover:text-rose-600" aria-label="Search products">
+                    <FiSearch size={16} />
+                  </button>
                   <input
                     value={searchQ}
                     onChange={(e) => setSearchQ(e.target.value)}
