@@ -32,6 +32,10 @@ export default function CheckoutPage() {
     actualTotal,
     discountTotal,
     discountPercentage,
+    cgstPercentage,
+    sgstPercentage,
+    igstPercentage,
+    gstPercentage,
     clearCart,
   } = useCart();
   const { user } = useAuth();
@@ -239,7 +243,7 @@ export default function CheckoutPage() {
                           ) : null}
                         </div>
                         <p className="mt-1 text-[11px] text-gray-400">
-                          After Discount: Rs.{Number(item.price || 0).toFixed(2)} | GST: Rs.{Number((item.gstAmount || 0) / Number(item.quantity || 1)).toFixed(2)}
+                          After Discount: Rs.{Number(item.price || 0).toFixed(2)} | GST ({Number(item.gstRate || 0).toFixed(2).replace(/\.?0+$/, '')}%): Rs.{Number((item.gstAmount || 0) / Number(item.quantity || 1)).toFixed(2)}
                         </p>
                         <p className="text-sm font-bold text-gray-800 mt-1 sm:hidden">
                           Rs.{Number(item.roundedTotalAmount || item.totalAmount || 0).toFixed(2)}
@@ -270,22 +274,22 @@ export default function CheckoutPage() {
                   </div>
                   {cgstTotal > 0 ? (
                     <div className="flex justify-between text-sm text-gray-500">
-                      <span>CGST</span><span className="font-semibold text-gray-800">Rs.{cgstTotal.toFixed(2)}</span>
+                      <span>CGST ({cgstPercentage.toFixed(2).replace(/\.?0+$/, '')}%)</span><span className="font-semibold text-gray-800">Rs.{cgstTotal.toFixed(2)}</span>
                     </div>
                   ) : null}
                   {sgstTotal > 0 ? (
                     <div className="flex justify-between text-sm text-gray-500">
-                      <span>SGST</span><span className="font-semibold text-gray-800">Rs.{sgstTotal.toFixed(2)}</span>
+                      <span>SGST ({sgstPercentage.toFixed(2).replace(/\.?0+$/, '')}%)</span><span className="font-semibold text-gray-800">Rs.{sgstTotal.toFixed(2)}</span>
                     </div>
                   ) : null}
                   {igstTotal > 0 ? (
                     <div className="flex justify-between text-sm text-gray-500">
-                      <span>IGST</span><span className="font-semibold text-gray-800">Rs.{igstTotal.toFixed(2)}</span>
+                      <span>IGST ({igstPercentage.toFixed(2).replace(/\.?0+$/, '')}%)</span><span className="font-semibold text-gray-800">Rs.{igstTotal.toFixed(2)}</span>
                     </div>
                   ) : null}
                   {gstTotal > 0 ? (
                     <div className="flex justify-between text-sm text-gray-500">
-                      <span>GST</span><span className="font-semibold text-gray-800">Rs.{gstTotal.toFixed(2)}</span>
+                      <span>GST ({gstPercentage.toFixed(2).replace(/\.?0+$/, '')}%)</span><span className="font-semibold text-gray-800">Rs.{gstTotal.toFixed(2)}</span>
                     </div>
                   ) : null}
                   <div className="flex justify-between text-sm text-gray-500">

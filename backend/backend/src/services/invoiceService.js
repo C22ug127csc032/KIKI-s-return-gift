@@ -29,6 +29,15 @@ const formatDiscountPercentage = (value) => Number(value || 0)
   .toFixed(2)
   .replace(/\.?0+$/, '');
 
+const formatRatePercentage = (value) => Number(value || 0)
+  .toFixed(2)
+  .replace(/\.?0+$/, '');
+
+const getItemGstPercentage = (item = {}) => {
+  const fallbackRate = Number(item.cgstRate || 0) + Number(item.sgstRate || 0) + Number(item.igstRate || 0);
+  return Number(item.gstRate ?? fallbackRate ?? 0);
+};
+
 const INVOICE_READY_STATUSES = ['Shipped', 'Completed'];
 
 const calculateInvoiceTotals = (items = [], fallbackSubtotal = 0, fallbackTax = 0, fallbackTotal = 0) => {
@@ -55,6 +64,10 @@ const calculateInvoiceTotals = (items = [], fallbackSubtotal = 0, fallbackTax = 
   const grandTotal = Number(fallbackTotal || (taxableSubtotal + gst));
   const roundOff = grandTotal - (taxableSubtotal + gst);
   const discountPercentage = sellingPriceTotal > 0 ? (discount / sellingPriceTotal) * 100 : 0;
+  const cgstPercentage = taxableSubtotal > 0 ? (cgst / taxableSubtotal) * 100 : 0;
+  const sgstPercentage = taxableSubtotal > 0 ? (sgst / taxableSubtotal) * 100 : 0;
+  const igstPercentage = taxableSubtotal > 0 ? (igst / taxableSubtotal) * 100 : 0;
+  const gstPercentage = taxableSubtotal > 0 ? (gst / taxableSubtotal) * 100 : 0;
 
   return {
     mrpTotal: mrpTotal || grandTotal,
@@ -66,6 +79,10 @@ const calculateInvoiceTotals = (items = [], fallbackSubtotal = 0, fallbackTax = 
     cgst,
     sgst,
     igst,
+    cgstPercentage: formatDiscountPercentage(cgstPercentage),
+    sgstPercentage: formatDiscountPercentage(sgstPercentage),
+    igstPercentage: formatDiscountPercentage(igstPercentage),
+    gstPercentage: formatDiscountPercentage(gstPercentage),
     roundOff,
     grandTotal,
   };
@@ -75,7 +92,8 @@ const normalizeItemsForInvoice = (items = []) => items.map((item) => {
   const source = typeof item.toObject === 'function' ? item.toObject() : item;
   const quantity = Number(source.quantity || 0);
   const totalAmount = Number(source.totalAmount || (Number(source.price || 0) * quantity));
-  const gstRate = Number(source.gstRate ?? source.product?.gstRate ?? 0);
+  const resolvedGstRate = source.gstRate ?? source.product?.gstRate ?? 0;
+  const gstRate = Number(resolvedGstRate);
   const taxableAmount = Number(source.taxableAmount ?? getTaxableAmountFromInclusive(totalAmount, gstRate));
   const gstAmount = Number(source.gstAmount ?? getGstAmountFromInclusive(totalAmount, gstRate));
   return {
@@ -84,7 +102,7 @@ const normalizeItemsForInvoice = (items = []) => items.map((item) => {
     basePrice: Number(source.basePrice || 0),
     discountPercentage: Number(source.discountPercentage || 0),
     discountAmount: Number(source.discountAmount || 0),
-    gstRate: gstRate || getProductGstRate(source.product),
+    gstRate,
     cgstRate: Number(source.cgstRate || 0),
     sgstRate: Number(source.sgstRate || 0),
     igstRate: Number(source.igstRate || 0),
@@ -117,10 +135,20 @@ const buildInvoiceHtml = (data, settings) => {
     const sgstAmount = Number(item.sgstAmount || 0);
     const igstAmount = Number(item.igstAmount || 0);
     const total = Number(item.totalAmount || (quantity * price));
+    const itemDiscountPercentage = formatRatePercentage(item.discountPercentage || 0);
+    const itemGstPercentage = formatRatePercentage(getItemGstPercentage(item));
+    const itemMeta = showGstDetails
+      ? `Discount (${escapeHtml(itemDiscountPercentage)}%) | GST (${escapeHtml(itemGstPercentage)}%)`
+      : `Discount (${escapeHtml(itemDiscountPercentage)}%)`;
 
     return `
         <tr>
-          <td>${escapeHtml(item.name || 'product/service')}</td>
+          <td>
+            <div>${escapeHtml(item.name || 'product/service')}</div>
+            <div style="margin-top:4px;font-size:11px;color:#7a5566;">
+              ${itemMeta}
+            </div>
+          </td>
           <td>${quantity}</td>
           <td>${formatCurrency(item.basePrice || price)}</td>
           <td>${formatCurrency(discountAmount)}</td>
@@ -610,22 +638,22 @@ const buildInvoiceHtml = (data, settings) => {
       </div>
       ${showGstDetails ? `
       <div class="totals-row">
-        <span class="label">CGST :</span>
+        <span class="label">CGST (${totals.cgstPercentage}%) :</span>
         <span id="cgstTotal">${formatCurrency(totals.cgst)}</span>
       </div>` : ''}
       ${showGstDetails ? `
       <div class="totals-row">
-        <span class="label">SGST :</span>
+        <span class="label">SGST (${totals.sgstPercentage}%) :</span>
         <span id="sgstTotal">${formatCurrency(totals.sgst)}</span>
       </div>` : ''}
       ${showGstDetails ? `
       <div class="totals-row">
-        <span class="label">IGST :</span>
+        <span class="label">IGST (${totals.igstPercentage}%) :</span>
         <span id="igstTotal">${formatCurrency(totals.igst)}</span>
       </div>` : ''}
       ${showGstDetails ? `
       <div class="totals-row">
-        <span class="label">GST :</span>
+        <span class="label">GST (${totals.gstPercentage}%) :</span>
         <span id="gstTotal">${formatCurrency(totals.gst)}</span>
       </div>` : ''}
       ${Math.abs(totals.roundOff) > 0.001 ? `
@@ -816,8 +844,13 @@ doc.font('Times-Bold').fontSize(16).fillColor(ink)
   y = drawPdfTableHeader(doc, y, tableHeaders, widths);
 
   (data.items || []).forEach((item) => {
+    const itemDiscountPercentage = formatRatePercentage(item.discountPercentage || 0);
+    const itemGstPercentage = formatRatePercentage(getItemGstPercentage(item));
+    const productLabel = showGstDetails
+      ? `${String(item.name || 'Product')} (Discount ${itemDiscountPercentage}%, GST ${itemGstPercentage}%)`
+      : `${String(item.name || 'Product')} (Discount ${itemDiscountPercentage}%)`;
     const row = [
-      String(item.name || 'Product'),
+      productLabel,
       Number(item.quantity || 0),
       formatPdfCurrency(item.basePrice || item.price || 0),
       formatPdfCurrency(item.totalAmount || 0),
@@ -839,10 +872,10 @@ doc.font('Times-Bold').fontSize(16).fillColor(ink)
     [`Discount (${totals.discountPercentage}%)`, `- ${formatPdfCurrency(totals.discount)}`],
     ['Sub Total', formatPdfCurrency(totals.taxableSubtotal)],
     ...(showGstDetails ? [
-      ['CGST', formatPdfCurrency(totals.cgst)],
-      ['SGST', formatPdfCurrency(totals.sgst)],
-      ['IGST', formatPdfCurrency(totals.igst)],
-      ['GST', formatPdfCurrency(totals.gst)],
+      [`CGST (${totals.cgstPercentage}%)`, formatPdfCurrency(totals.cgst)],
+      [`SGST (${totals.sgstPercentage}%)`, formatPdfCurrency(totals.sgst)],
+      [`IGST (${totals.igstPercentage}%)`, formatPdfCurrency(totals.igst)],
+      [`GST (${totals.gstPercentage}%)`, formatPdfCurrency(totals.gst)],
     ] : []),
     ...(Math.abs(totals.roundOff) > 0.001 ? [['Round Off', formatPdfCurrency(totals.roundOff)]] : []),
   ];

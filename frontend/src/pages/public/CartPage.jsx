@@ -22,6 +22,10 @@ export default function CartPage() {
     actualTotal,
     discountTotal,
     discountPercentage,
+    cgstPercentage,
+    sgstPercentage,
+    igstPercentage,
+    gstPercentage,
     totalItems,
   } = useCart();
   const navigate = useNavigate();
@@ -116,25 +120,25 @@ export default function CartPage() {
                   </div>
                   {cgstTotal > 0 ? (
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">CGST</span>
+                      <span className="text-gray-500">CGST ({cgstPercentage.toFixed(2).replace(/\.?0+$/, '')}%)</span>
                       <span className="font-semibold text-gray-800">Rs.{Math.round(cgstTotal)}</span>
                     </div>
                   ) : null}
                   {sgstTotal > 0 ? (
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">SGST</span>
+                      <span className="text-gray-500">SGST ({sgstPercentage.toFixed(2).replace(/\.?0+$/, '')}%)</span>
                       <span className="font-semibold text-gray-800">Rs.{Math.round(sgstTotal)}</span>
                     </div>
                   ) : null}
                   {igstTotal > 0 ? (
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">IGST</span>
+                      <span className="text-gray-500">IGST ({igstPercentage.toFixed(2).replace(/\.?0+$/, '')}%)</span>
                       <span className="font-semibold text-gray-800">Rs.{Math.round(igstTotal)}</span>
                     </div>
                   ) : null}
                   {gstTotal > 0 ? (
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-500">GST</span>
+                      <span className="text-gray-500">GST ({gstPercentage.toFixed(2).replace(/\.?0+$/, '')}%)</span>
                       <span className="font-semibold text-gray-800">Rs.{Math.round(gstTotal)}</span>
                     </div>
                   ) : null}
@@ -156,8 +160,10 @@ export default function CartPage() {
                     <span className="font-bold text-rose-600 text-lg">Rs.{Math.round(roundedGrandTotal)}</span>
                   </div>
                 </div>
-                <button onClick={() => navigate('/checkout')}
-                  className="btn-primary w-full flex items-center justify-center gap-2 py-3.5">
+                <button
+                  onClick={() => navigate('/checkout')}
+                  className="group flex w-full min-h-[54px] items-center justify-center gap-2 rounded-2xl bg-rose-600 px-6 py-3.5 text-sm font-semibold text-white shadow-[0_14px_30px_rgba(225,29,72,0.22)] transition-all hover:-translate-y-0.5 hover:bg-rose-700 hover:shadow-[0_18px_36px_rgba(225,29,72,0.28)]"
+                >
                   Proceed to Checkout <FiArrowRight size={16} />
                 </button>
                 <Link to="/shop" className="block text-center text-xs text-gray-400 hover:text-rose-600 mt-4 transition-colors font-medium">

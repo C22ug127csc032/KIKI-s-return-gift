@@ -11,6 +11,7 @@ const STATUS_OPTIONS = ['Pending', 'Confirmed', 'Processing', 'Shipped', 'Comple
 const PAYMENT_OPTIONS = ['Pending', 'Paid', 'Refunded'];
 const orderHasStockIssue = (order) => order.hasStockIssue || order.items?.some((item) => item.hasStockIssue || Number(item.backorderQuantity || 0) > 0);
 const formatOrderAmount = (value) => `Rs.${Math.round(Number(value || 0))}`;
+const getOrderItemImage = (item) => item.image || item.product?.images?.[0]?.url || '';
 const formatPercentage = (value) => Number(value || 0)
   .toFixed(2)
   .replace(/\.?0+$/, '');
@@ -42,6 +43,7 @@ const calculateOrderTotals = (order) => {
   const cgstPercentage = taxableSubtotal > 0 ? (cgst / taxableSubtotal) * 100 : 0;
   const sgstPercentage = taxableSubtotal > 0 ? (sgst / taxableSubtotal) * 100 : 0;
   const igstPercentage = taxableSubtotal > 0 ? (igst / taxableSubtotal) * 100 : 0;
+  const gstPercentage = taxableSubtotal > 0 ? (gst / taxableSubtotal) * 100 : 0;
 
   return {
     mrpTotal: mrpTotal || sellingPriceTotal || grandTotal,
@@ -56,6 +58,7 @@ const calculateOrderTotals = (order) => {
     cgstPercentage: formatPercentage(cgstPercentage),
     sgstPercentage: formatPercentage(sgstPercentage),
     igstPercentage: formatPercentage(igstPercentage),
+    gstPercentage: formatPercentage(gstPercentage),
     roundOff,
     grandTotal,
   };
@@ -216,8 +219,18 @@ export default function AdminOrders() {
                               className={`rounded-lg px-3 py-2 text-sm ${item.hasStockIssue || Number(item.backorderQuantity || 0) > 0 ? 'bg-amber-50' : 'bg-gray-50'}`}
                             >
                               <div className="flex justify-between gap-3">
-                                <div className="min-w-0">
-                                  <p className="font-medium text-gray-700">{item.name} x{item.quantity}</p>
+                                <div className="flex min-w-0 gap-3">
+                                  <div className="h-12 w-12 overflow-hidden rounded-lg border border-gray-200 bg-white flex-shrink-0">
+                                    {getOrderItemImage(item) ? (
+                                      <img src={getOrderItemImage(item)} alt={item.name} className="h-full w-full object-contain p-1" />
+                                    ) : (
+                                      <div className="flex h-full w-full items-center justify-center text-rose-200">
+                                        <span className="text-[10px] font-semibold uppercase tracking-wide">No Img</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="min-w-0">
+                                    <p className="font-medium text-gray-700">{item.name} x{item.quantity}</p>
                                   <p className="text-xs text-gray-500 mt-1">
                                     Available stock: <span className="font-semibold text-gray-700">{Number(item.product?.stock || 0)}</span>
                                   </p>
@@ -226,6 +239,7 @@ export default function AdminOrders() {
                                       Needs confirmation for {item.backorderQuantity || item.quantity} item(s)
                                     </p>
                                   ) : null}
+                                  </div>
                                 </div>
                                 <span className="font-medium text-gray-800 whitespace-nowrap">{formatOrderAmount(item.totalAmount || (item.price * item.quantity))}</span>
                               </div>
@@ -269,7 +283,7 @@ export default function AdminOrders() {
                             </div>
                           ) : null}
                           <div className="flex justify-between text-gray-500">
-                            <span>GST</span>
+                            <span>GST ({orderTotals.gstPercentage}%)</span>
                             <span>{formatOrderAmount(orderTotals.gst)}</span>
                           </div>
                           {Math.abs(orderTotals.roundOff) > 0.001 ? (

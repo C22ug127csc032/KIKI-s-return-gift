@@ -135,6 +135,10 @@ export const CartProvider = ({ children }) => {
   const actualTotal = items.reduce((sum, i) => sum + (Number(i.sellingPrice || i.price || 0) * i.quantity), 0);
   const discountTotal = items.reduce((sum, i) => sum + Number(i.discountAmount || 0), 0);
   const discountPercentage = actualTotal > 0 ? Math.round((discountTotal / actualTotal) * 10000) / 100 : 0;
+  const cgstPercentage = taxableSubtotal > 0 ? Math.round((cgstTotal / taxableSubtotal) * 10000) / 100 : 0;
+  const sgstPercentage = taxableSubtotal > 0 ? Math.round((sgstTotal / taxableSubtotal) * 10000) / 100 : 0;
+  const igstPercentage = taxableSubtotal > 0 ? Math.round((igstTotal / taxableSubtotal) * 10000) / 100 : 0;
+  const gstPercentage = taxableSubtotal > 0 ? Math.round((gstTotal / taxableSubtotal) * 10000) / 100 : 0;
   const totalItems = items.reduce((sum, i) => sum + i.quantity, 0);
   const cartCount = items.length;
   const roundedGrandTotal = Math.round(subtotal);
@@ -159,6 +163,10 @@ export const CartProvider = ({ children }) => {
       actualTotal,
       discountTotal,
       discountPercentage,
+      cgstPercentage,
+      sgstPercentage,
+      igstPercentage,
+      gstPercentage,
       totalItems,
       cartCount,
     }}>

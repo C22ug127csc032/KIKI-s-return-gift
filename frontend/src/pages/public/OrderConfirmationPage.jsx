@@ -24,7 +24,6 @@ const formatOrderAmount = (value) => `Rs.${Math.round(Number(value || 0))}`;
 const formatDiscountPercentage = (value) => Number(value || 0)
   .toFixed(2)
   .replace(/\.?0+$/, '');
-
 export default function OrderConfirmationPage() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -71,6 +70,7 @@ export default function OrderConfirmationPage() {
     const cgstPercentage = taxableSubtotal > 0 ? (cgst / taxableSubtotal) * 100 : 0;
     const sgstPercentage = taxableSubtotal > 0 ? (sgst / taxableSubtotal) * 100 : 0;
     const igstPercentage = taxableSubtotal > 0 ? (igst / taxableSubtotal) * 100 : 0;
+    const gstPercentage = taxableSubtotal > 0 ? (gst / taxableSubtotal) * 100 : 0;
 
     return {
       mrpTotal: mrpTotal || sellingPriceTotal || grandTotal,
@@ -82,6 +82,7 @@ export default function OrderConfirmationPage() {
       cgst,
       sgst,
       igst,
+      gstPercentage: formatDiscountPercentage(gstPercentage),
       cgstPercentage: formatDiscountPercentage(cgstPercentage),
       sgstPercentage: formatDiscountPercentage(sgstPercentage),
       igstPercentage: formatDiscountPercentage(igstPercentage),
@@ -261,7 +262,7 @@ export default function OrderConfirmationPage() {
                         </div>
                       ) : null}
                       <div className="flex justify-between text-sm text-gray-500">
-                        <span>GST</span>
+                        <span>GST ({orderTotals.gstPercentage}%)</span>
                         <span>{formatOrderAmount(orderTotals.gst)}</span>
                       </div>
                       {Math.abs(orderTotals.roundOff) > 0.001 ? (

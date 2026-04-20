@@ -23,6 +23,15 @@ const formatDiscountPercentage = (value) => Number(value || 0)
   .toFixed(2)
   .replace(/\.?0+$/, '');
 
+const formatRatePercentage = (value) => Number(value || 0)
+  .toFixed(2)
+  .replace(/\.?0+$/, '');
+
+const getItemGstPercentage = (item) => {
+  const fallbackRate = Number(item?.cgstRate || 0) + Number(item?.sgstRate || 0) + Number(item?.igstRate || 0);
+  return Number(item?.gstRate ?? fallbackRate ?? 0);
+};
+
 const formatMultilineText = (value) => String(value || '')
   .split(/\r?\n/)
   .map((line) => line.trim())
@@ -43,6 +52,10 @@ const calculateOrderDiscountSummary = (order) => {
   const igst = order.items.reduce((sum, item) => sum + Number(item.igstAmount || 0), 0);
   const discount = Math.max(mrpTotal - grandTotal, 0);
   const discountPercentage = mrpTotal > 0 ? (discount / mrpTotal) * 100 : 0;
+  const cgstPercentage = taxableSubtotal > 0 ? (cgst / taxableSubtotal) * 100 : 0;
+  const sgstPercentage = taxableSubtotal > 0 ? (sgst / taxableSubtotal) * 100 : 0;
+  const igstPercentage = taxableSubtotal > 0 ? (igst / taxableSubtotal) * 100 : 0;
+  const gstPercentage = taxableSubtotal > 0 ? (gst / taxableSubtotal) * 100 : 0;
 
   return {
     mrpTotal: mrpTotal || grandTotal,
@@ -53,6 +66,10 @@ const calculateOrderDiscountSummary = (order) => {
     cgst,
     sgst,
     igst,
+    cgstPercentage: formatDiscountPercentage(cgstPercentage),
+    sgstPercentage: formatDiscountPercentage(sgstPercentage),
+    igstPercentage: formatDiscountPercentage(igstPercentage),
+    gstPercentage: formatDiscountPercentage(gstPercentage),
     grandTotal,
   };
 };
@@ -70,7 +87,8 @@ const buildWhatsAppMessage = (order, settings) => {
         `Qty: ${quantity}`,
         `Unit MRP: Rs.${formatMessageAmount(unitMrp)}`,
         `Line MRP: Rs.${formatMessageAmount(lineMrp)}`,
-        `Discount: Rs.${formatMessageAmount(i.discountAmount || 0)}`,
+        `Discount (${formatRatePercentage(i.discountPercentage)}%): Rs.${formatMessageAmount(i.discountAmount || 0)}`,
+        `GST (${formatRatePercentage(getItemGstPercentage(i))}%): Rs.${formatMessageAmount(i.gstAmount || 0)}`,
         `Taxable Amount: Rs.${formatMessageAmount(i.taxableAmount || 0)}`,
         `CGST: Rs.${formatMessageAmount(i.cgstAmount || 0)}`,
         `SGST: Rs.${formatMessageAmount(i.sgstAmount || 0)}`,
@@ -97,10 +115,10 @@ const buildWhatsAppMessage = (order, settings) => {
     `MRP Total: Rs.${formatMessageAmount(totals.mrpTotal)}\n` +
     `Discount (${totals.discountPercentage}%): - Rs.${formatMessageAmount(totals.discount)}\n` +
     `Taxable Amount: Rs.${formatMessageAmount(totals.taxableSubtotal)}\n` +
-    `CGST: Rs.${formatMessageAmount(totals.cgst)}\n` +
-    `SGST: Rs.${formatMessageAmount(totals.sgst)}\n` +
-    `IGST: Rs.${formatMessageAmount(totals.igst)}\n` +
-    `GST: Rs.${formatMessageAmount(totals.gst)}\n` +
+    `CGST (${totals.cgstPercentage}%): Rs.${formatMessageAmount(totals.cgst)}\n` +
+    `SGST (${totals.sgstPercentage}%): Rs.${formatMessageAmount(totals.sgst)}\n` +
+    `IGST (${totals.igstPercentage}%): Rs.${formatMessageAmount(totals.igst)}\n` +
+    `GST (${totals.gstPercentage}%): Rs.${formatMessageAmount(totals.gst)}\n` +
     `*Grand Total: Rs.${formatMessageAmount(totals.grandTotal)}*\n\n` +
     (order.customerNotes ? `Notes: ${formatMultilineText(order.customerNotes)}\n\n` : '') +
     `Please confirm this order. Thank you!`;
@@ -288,7 +306,7 @@ export const getAllOrders = asyncHandler(async (req, res) => {
   });
   const [orders, total] = await Promise.all([
     Order.find(filter)
-      .populate('items.product', 'name stock lowStockThreshold')
+      .populate('items.product', 'name images stock lowStockThreshold')
       .sort(sort)
       .skip(skip)
       .limit(limit),

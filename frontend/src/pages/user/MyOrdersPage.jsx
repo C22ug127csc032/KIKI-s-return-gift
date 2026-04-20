@@ -10,6 +10,7 @@ import { downloadInvoiceFile, showInvoiceDownloadError } from '../../utils/invoi
 const INVOICE_READY_STATUSES = ['Shipped', 'Completed'];
 const isInvoiceReady = (order) => INVOICE_READY_STATUSES.includes(order?.orderStatus);
 const formatOrderAmount = (value) => `Rs.${Math.round(Number(value || 0))}`;
+const getOrderItemImage = (item) => item.image || item.product?.images?.[0]?.url || '';
 const formatPercentage = (value) => Number(value || 0)
   .toFixed(2)
   .replace(/\.?0+$/, '');
@@ -41,6 +42,7 @@ const calculateOrderTotals = (order) => {
   const cgstPercentage = taxableSubtotal > 0 ? (cgst / taxableSubtotal) * 100 : 0;
   const sgstPercentage = taxableSubtotal > 0 ? (sgst / taxableSubtotal) * 100 : 0;
   const igstPercentage = taxableSubtotal > 0 ? (igst / taxableSubtotal) * 100 : 0;
+  const gstPercentage = taxableSubtotal > 0 ? (gst / taxableSubtotal) * 100 : 0;
 
   return {
     mrpTotal: mrpTotal || sellingPriceTotal || grandTotal,
@@ -55,6 +57,7 @@ const calculateOrderTotals = (order) => {
     cgstPercentage: formatPercentage(cgstPercentage),
     sgstPercentage: formatPercentage(sgstPercentage),
     igstPercentage: formatPercentage(igstPercentage),
+    gstPercentage: formatPercentage(gstPercentage),
     roundOff,
     grandTotal,
   };
@@ -170,8 +173,12 @@ export default function MyOrdersPage() {
                               {order.items.map((item, index) => (
                                 <div key={index} className="flex items-center justify-between text-sm gap-3">
                                   <div className="flex items-center gap-2 min-w-0">
-                                    <div className="w-8 h-8 bg-white rounded-lg border border-gray-100 flex items-center justify-center flex-shrink-0">
-                                      <RiGiftLine size={14} className="text-rose-300" />
+                                    <div className="w-10 h-10 overflow-hidden bg-white rounded-lg border border-gray-100 flex items-center justify-center flex-shrink-0">
+                                      {getOrderItemImage(item) ? (
+                                        <img src={getOrderItemImage(item)} alt={item.name} className="h-full w-full object-contain p-1" />
+                                      ) : (
+                                        <RiGiftLine size={14} className="text-rose-300" />
+                                      )}
                                     </div>
                                     <div className="min-w-0">
                                       <p className="text-gray-700 font-medium">{item.name}</p>
@@ -221,7 +228,7 @@ export default function MyOrdersPage() {
                                 </div>
                               ) : null}
                               <div className="flex justify-between text-gray-500">
-                                <span>GST</span>
+                                <span>GST ({orderTotals.gstPercentage}%)</span>
                                 <span>{formatOrderAmount(orderTotals.gst)}</span>
                               </div>
                               {Math.abs(orderTotals.roundOff) > 0.001 ? (

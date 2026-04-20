@@ -724,36 +724,36 @@
 }
 
 :root[data-theme-key='kiki-noir'] .admin-shell aside {
-  background-image: linear-gradient(180deg, #18181b 0%, #232326 52%, #2f2f33 100%) !important;
-  border-right-color: rgba(255, 255, 255, 0.08) !important;
+  background: #ffffff !important;
+  border-right-color: rgba(17, 17, 17, 0.08) !important;
 }
 
 :root[data-theme-key='kiki-noir'] .admin-shell aside .border-brand-200\/70 {
-  border-color: rgba(255, 255, 255, 0.12) !important;
+  border-color: rgba(17, 17, 17, 0.08) !important;
 }
 
 :root[data-theme-key='kiki-noir'] .admin-shell aside .text-gray-900,
 :root[data-theme-key='kiki-noir'] .admin-shell aside .text-gray-700 {
-  color: rgba(255, 255, 255, 0.88) !important;
+  color: #111111 !important;
 }
 
 :root[data-theme-key='kiki-noir'] .admin-shell aside .text-brand-600,
 :root[data-theme-key='kiki-noir'] .admin-shell aside .text-brand-700 {
-  color: rgba(255, 255, 255, 0.64) !important;
+  color: rgba(17, 17, 17, 0.6) !important;
 }
 
 :root[data-theme-key='kiki-noir'] .admin-shell aside .bg-brand-100 {
-  background: rgba(255, 255, 255, 0.14) !important;
+  background: rgba(17, 17, 17, 0.08) !important;
 }
 
 :root[data-theme-key='kiki-noir'] .admin-shell aside a:not([aria-current='page']) {
-  color: rgba(255, 255, 255, 0.72) !important;
+  color: rgba(17, 17, 17, 0.74) !important;
 }
 
 :root[data-theme-key='kiki-noir'] .admin-shell aside a:not([aria-current='page']):hover,
 :root[data-theme-key='kiki-noir'] .admin-shell aside button:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
-  color: #ffffff !important;
+  background: rgba(17, 17, 17, 0.06) !important;
+  color: #111111 !important;
 }
 
 @media (prefers-reduced-motion: reduce) {
