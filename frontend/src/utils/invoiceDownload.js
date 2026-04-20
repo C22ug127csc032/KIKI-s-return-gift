@@ -4,7 +4,7 @@ const getSafeInvoiceCode = (value) => String(value || 'invoice').replace(/[^a-zA
 
 export const downloadInvoiceFile = (blob, invoiceCode) => {
   const invoiceBlob = blob instanceof Blob ? blob : new Blob([blob], { type: 'application/octet-stream' });
-  const extension = invoiceBlob.type === 'application/pdf' ? 'pdf' : 'html';
+  const extension = invoiceBlob.type.startsWith('application/pdf') ? 'pdf' : 'html';
   const fileName = `invoice-${getSafeInvoiceCode(invoiceCode)}.${extension}`;
   const url = URL.createObjectURL(invoiceBlob);
   const link = document.createElement('a');

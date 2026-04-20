@@ -209,6 +209,21 @@ export default function Navbar() {
                 >
                   Shop
                 </NavLink>
+                {user ? (
+                  <>
+                    <span className="px-3 text-gray-300">|</span>
+                    <NavLink
+                      to="/my-orders"
+                      className={({ isActive }) =>
+                        `site-nav-link inline-flex items-center border-b-2 px-1 py-2 text-[15px] font-semibold uppercase tracking-[0.12em] transition-colors ${
+                          isActive ? 'border-rose-500 text-rose-600' : 'border-transparent text-gray-900 hover:text-rose-600'
+                        }`
+                      }
+                    >
+                      My Orders
+                    </NavLink>
+                  </>
+                ) : null}
               </nav>
 
               <div className="flex items-center gap-2 justify-self-end">
@@ -331,17 +346,26 @@ export default function Navbar() {
               </button>
 
               {user ? (
-                <Link to="/wishlist" className="relative rounded-full p-1.5 text-gray-900 transition-all hover:bg-black/5 sm:p-2.5">
-                  {wishlistItems.length > 0 ? <RiHeart3Fill size={17} /> : <RiHeart3Line size={17} />}
-                  <AnimatePresence>
-                    {wishlistItems.length > 0 && (
-                      <motion.span key="wishlist-badge" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                        className="absolute -top-0.5 -right-0.5 bg-white text-rose-700 text-[10px] min-w-[20px] h-5 rounded-full flex items-center justify-center font-bold leading-none px-1">
-                        {wishlistItems.length > 9 ? '9+' : wishlistItems.length}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </Link>
+                <>
+                  <Link
+                    to="/my-orders"
+                    className="rounded-full p-1.5 text-gray-900 transition-all hover:bg-black/5 sm:p-2.5"
+                    aria-label="My Orders"
+                  >
+                    <FiPackage size={16} />
+                  </Link>
+                  <Link to="/wishlist" className="relative rounded-full p-1.5 text-gray-900 transition-all hover:bg-black/5 sm:p-2.5">
+                    {wishlistItems.length > 0 ? <RiHeart3Fill size={17} /> : <RiHeart3Line size={17} />}
+                    <AnimatePresence>
+                      {wishlistItems.length > 0 && (
+                        <motion.span key="wishlist-badge" initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
+                          className="absolute -top-0.5 -right-0.5 bg-white text-rose-700 text-[10px] min-w-[20px] h-5 rounded-full flex items-center justify-center font-bold leading-none px-1">
+                          {wishlistItems.length > 9 ? '9+' : wishlistItems.length}
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </Link>
+                </>
               ) : null}
 
               <Link to="/cart" className="relative rounded-full p-1.5 text-gray-900 transition-all hover:bg-black/5 sm:p-2.5">

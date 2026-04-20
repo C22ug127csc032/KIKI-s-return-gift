@@ -729,7 +729,7 @@ const ensurePdfPageSpace = (doc, currentY, requiredHeight, redrawHeader) => {
   return redrawHeader ? redrawHeader() : doc.y;
 };
 
-const sendOfflineSaleInvoicePdf = (res, invoiceNumber, data, settings) => {
+const sendInvoicePdf = (res, invoiceNumber, data, settings) => {
   const storeName = String((settings?.storeName || "KIKI'S").replace(' RETURN GIFT STORE', ''));
   const tagline = settings?.storeTagline === 'Perfect Gifts for Every Occasion'
     ? 'Return Gifts'
@@ -799,6 +799,10 @@ doc.font('Times-Bold').fontSize(16).fillColor(ink)
   doc.font('Helvetica').fontSize(9).fillColor(muted);
   if (data.customerAddress) {
     doc.text(`address: ${data.customerAddress}`, 40, addrY, { width: 260, lineBreak: false, ellipsis: true });
+    addrY += 16;
+  }
+  if (data.customerEmail) {
+    doc.text(`email: ${data.customerEmail}`, 40, addrY, { width: 260, lineBreak: false, ellipsis: true });
     addrY += 16;
   }
   if (data.customerPhone) {
@@ -920,7 +924,7 @@ export const generateOrderInvoice = asyncHandler(async (req, res) => {
   }
   const invoiceNumber = order.invoiceNumber;
 
-  sendInvoiceHtml(res, invoiceNumber, {
+  sendInvoicePdf(res, invoiceNumber, {
     invoiceNumber,
     date: order.createdAt,
     customerName: order.customerName,
@@ -941,7 +945,7 @@ export const generateOfflineSaleInvoice = asyncHandler(async (req, res) => {
 
   const settings = await AppSetting.findOne();
 
-  sendOfflineSaleInvoicePdf(res, sale.invoiceNumber, {
+  sendInvoicePdf(res, sale.invoiceNumber, {
     invoiceNumber: sale.invoiceNumber,
     date: sale.createdAt,
     customerName: sale.customerName,
