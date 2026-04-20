@@ -7,6 +7,9 @@ import { useTheme } from '../../context/ThemeContext.jsx';
 
 const themeDescriptions = {
   'kiki-classic': 'Soft rose with festive gold warmth.',
+  'kiki-saffron': 'Bright saffron orange for a bold festive storefront.',
+  'kiki-leaf': 'Fresh green styling for a clean and lively shopping feel.',
+  'kiki-noir': 'Deep charcoal tones for a modern premium look.',
 };
 
 const normalizeHexColor = (value, fallback) => {
@@ -69,104 +72,20 @@ export default function AdminThemePage() {
 
   if (loading) return <PageLoader />;
 
-  const orderedPresets = [...presets].sort((a, b) => a.name.localeCompare(b.name));
+  const orderedPresets = [...presets];
 
   return (
     <div>
       <div className="mb-8">
         <h1 className="font-display text-3xl font-bold text-gray-900">Theme</h1>
-        <p className="mt-1 text-sm text-gray-500">The admin module now keeps a single classic color theme across the full application.</p>
+        <p className="mt-1 text-sm text-gray-500">Manage the live application theme here. Your current theme stays available, and you can add custom colors on top of any preset.</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-5">
-        {orderedPresets.map((preset) => {
-          const active = selectedTheme === preset.key;
-          return (
-            <div
-              key={preset.key}
-              className={`admin-card text-left transition-all ${active ? 'ring-2 ring-brand-400 border-brand-300' : 'hover:border-gray-200 hover:shadow-md'}`}
-            >
-              <div className="mb-5 flex items-start justify-between gap-4">
-                <div>
-                  <h2 className="text-2xl font-semibold text-gray-900">{preset.name}</h2>
-                  <p className="mt-1 text-sm text-gray-500">{themeDescriptions[preset.key] || 'Custom preset theme for the storefront.'}</p>
-                </div>
-                {theme.themeKey === preset.key ? (
-                  <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
-                    <FiCheckCircle size={13} /> Active
-                  </span>
-                ) : null}
-              </div>
-
-              <div
-                className="mb-5 h-24 rounded-2xl border border-gray-100"
-                onClick={() => setSelectedTheme(preset.key)}
-                style={{
-                  background: useCustomColors
-                    ? `linear-gradient(135deg, ${primaryColor}22 0%, ${primaryColor}55 45%, ${accentColor}44 100%)`
-                    : `linear-gradient(135deg, ${preset.colors.adminSidebarFrom} 0%, ${preset.colors.primary100} 45%, ${preset.colors.accentSoft} 100%)`,
-                }}
-              />
-
-              <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3" onClick={() => setSelectedTheme(preset.key)}>
-                <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
-                  <FiDroplet size={15} className="text-brand-500" /> Theme Preview
-                </div>
-                <div className="flex flex-wrap items-center gap-3">
-                  <span
-                    className="h-10 w-10 rounded-full border border-white shadow-sm"
-                    style={{ backgroundColor: useCustomColors ? primaryColor : preset.colors.primary600 }}
-                  />
-                  <span
-                    className="h-10 w-10 rounded-full border border-white shadow-sm"
-                    style={{ backgroundColor: useCustomColors ? `${primaryColor}33` : preset.colors.adminSidebarFrom }}
-                  />
-                  <span
-                    className="h-10 w-10 rounded-full border border-white shadow-sm"
-                    style={{ backgroundColor: useCustomColors ? `${accentColor}33` : preset.colors.adminSidebarTo }}
-                  />
-                  <span
-                    className="h-10 w-10 rounded-full border border-white shadow-sm"
-                    style={{ backgroundColor: useCustomColors ? accentColor : preset.colors.accent }}
-                  />
-                  <span
-                    className="rounded-full px-4 py-2 text-sm font-semibold text-white"
-                    style={{ backgroundColor: useCustomColors ? primaryColor : preset.colors.primary600 }}
-                  >
-                    {useCustomColors ? 'Custom Colors' : preset.name}
-                  </span>
-                </div>
-              </div>
-
-              <div className="mt-5 flex items-center justify-between gap-3">
-                <button
-                  type="button"
-                  onClick={() => setSelectedTheme(preset.key)}
-                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
-                    active ? 'bg-brand-50 text-brand-700' : 'border border-gray-200 text-gray-600'
-                  }`}
-                >
-                  {active ? 'Selected' : 'Select Theme'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleApplyTheme(preset.key)}
-                  disabled={saving}
-                  className="btn-primary"
-                >
-                  {saving && applyingThemeKey === preset.key ? 'Applying...' : 'Apply Theme'}
-                </button>
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      <div className="admin-card mt-5">
+      <div className="admin-card">
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
             <h2 className="text-2xl font-semibold text-gray-900">Color Picker</h2>
-            <p className="mt-1 text-sm text-gray-500">Customize the selected theme with your own primary and accent colors.</p>
+            <p className="mt-1 text-sm text-gray-500">Place custom colors on top of the selected preset theme whenever you want a personalized version.</p>
           </div>
           <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
             <input
@@ -254,6 +173,90 @@ export default function AdminThemePage() {
             {saving && applyingThemeKey === selectedTheme ? 'Applying...' : 'Apply Custom Colors'}
           </button>
         </div>
+      </div>
+
+      <div className="mt-5 grid grid-cols-1 gap-5">
+        {orderedPresets.map((preset) => {
+          const active = selectedTheme === preset.key;
+          return (
+            <div
+              key={preset.key}
+              className={`admin-card text-left transition-all ${active ? 'ring-2 ring-brand-400 border-brand-300' : 'hover:border-gray-200 hover:shadow-md'}`}
+            >
+              <div className="mb-5 flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-semibold text-gray-900">{preset.name}</h2>
+                  <p className="mt-1 text-sm text-gray-500">{themeDescriptions[preset.key] || 'Custom preset theme for the storefront.'}</p>
+                </div>
+                {theme.themeKey === preset.key ? (
+                  <span className="inline-flex items-center gap-1 rounded-full bg-brand-50 px-3 py-1 text-xs font-semibold text-brand-700">
+                    <FiCheckCircle size={13} /> Active
+                  </span>
+                ) : null}
+              </div>
+
+              <div
+                className="mb-5 h-24 cursor-pointer rounded-2xl border border-gray-100"
+                onClick={() => setSelectedTheme(preset.key)}
+                style={{
+                  background: useCustomColors && selectedTheme === preset.key
+                    ? `linear-gradient(135deg, ${primaryColor}22 0%, ${primaryColor}55 45%, ${accentColor}44 100%)`
+                    : `linear-gradient(135deg, ${preset.colors.adminSidebarFrom} 0%, ${preset.colors.primary100} 45%, ${preset.colors.accentSoft} 100%)`,
+                }}
+              />
+
+              <div className="cursor-pointer rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3" onClick={() => setSelectedTheme(preset.key)}>
+                <div className="mb-2 flex items-center gap-2 text-sm font-medium text-gray-700">
+                  <FiDroplet size={15} className="text-brand-500" /> Theme Preview
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <span
+                    className="h-10 w-10 rounded-full border border-white shadow-sm"
+                    style={{ backgroundColor: useCustomColors && selectedTheme === preset.key ? primaryColor : preset.colors.primary600 }}
+                  />
+                  <span
+                    className="h-10 w-10 rounded-full border border-white shadow-sm"
+                    style={{ backgroundColor: useCustomColors && selectedTheme === preset.key ? `${primaryColor}33` : preset.colors.adminSidebarFrom }}
+                  />
+                  <span
+                    className="h-10 w-10 rounded-full border border-white shadow-sm"
+                    style={{ backgroundColor: useCustomColors && selectedTheme === preset.key ? `${accentColor}33` : preset.colors.adminSidebarTo }}
+                  />
+                  <span
+                    className="h-10 w-10 rounded-full border border-white shadow-sm"
+                    style={{ backgroundColor: useCustomColors && selectedTheme === preset.key ? accentColor : preset.colors.accent }}
+                  />
+                  <span
+                    className="rounded-full px-4 py-2 text-sm font-semibold text-white"
+                    style={{ backgroundColor: useCustomColors && selectedTheme === preset.key ? primaryColor : preset.colors.primary600 }}
+                  >
+                    {useCustomColors && selectedTheme === preset.key ? 'Custom Colors' : preset.name}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-5 flex items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={() => setSelectedTheme(preset.key)}
+                  className={`rounded-xl px-4 py-2 text-sm font-semibold transition-all ${
+                    active ? 'bg-brand-50 text-brand-700' : 'border border-gray-200 text-gray-600'
+                  }`}
+                >
+                  {active ? 'Selected' : 'Select Theme'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handleApplyTheme(preset.key)}
+                  disabled={saving}
+                  className="btn-primary"
+                >
+                  {saving && applyingThemeKey === preset.key ? 'Applying...' : 'Apply Theme'}
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

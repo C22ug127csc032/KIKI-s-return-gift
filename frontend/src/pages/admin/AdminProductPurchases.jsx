@@ -45,7 +45,7 @@ function SearchableSelectField({ options, value, onChange, placeholder = 'Search
         onFocus={() => !disabled && setOpen(true)}
         label={getFieldLabel(placeholder)}
         disabled={disabled}
-        className={disabled ? 'pr-12 cursor-not-allowed bg-gray-100 text-gray-400' : 'pr-12'}
+        className={disabled ? 'pr-12 cursor-not-allowed bg-gray-100 text-base font-semibold text-gray-400' : 'pr-12 text-base font-semibold text-gray-800'}
       />
       {query ? (
         <button
@@ -72,14 +72,14 @@ function SearchableSelectField({ options, value, onChange, placeholder = 'Search
                 onChange(option.value);
                 setOpen(false);
               }}
-              className={`flex w-full rounded-xl px-3 py-2.5 text-left text-sm transition ${
+              className={`flex w-full rounded-xl px-3 py-3 text-left text-base font-semibold transition ${
                 value === option.value ? 'bg-rose-100 text-rose-700' : 'text-gray-700 hover:bg-rose-50 hover:text-rose-600'
               }`}
             >
               {option.label}
             </button>
           )) : (
-            <div className="px-3 py-3 text-sm text-gray-400">No matching options found.</div>
+            <div className="px-3 py-3 text-base font-medium text-gray-500">No matching options found.</div>
           )}
         </div>
       ) : null}
@@ -170,8 +170,8 @@ export default function AdminProductPurchases() {
   return (
     <div>
       <div className="mb-8">
-        <h1 className="font-display text-3xl font-bold text-gray-900">Product Purchases</h1>
-        <p className="mt-1 text-sm text-gray-500">Buy stock from suppliers for products that already exist in your catalog.</p>
+        <h1 className="font-display text-4xl font-bold text-gray-900">Product Purchases</h1>
+        <p className="mt-2 text-base font-medium text-gray-600">Buy stock from suppliers for products that already exist in your catalog.</p>
       </div>
 
       <div ref={formRef} className="admin-card mb-6">
@@ -180,8 +180,8 @@ export default function AdminProductPurchases() {
             <FiTruck size={22} />
           </div>
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900">Record Purchase</h2>
-            <p className="text-sm text-gray-500">Buy the new product first from a supplier. After this, it can be selected from the product module dropdown.</p>
+            <h2 className="text-3xl font-bold text-gray-900">Record Purchase</h2>
+            <p className="text-base font-medium text-gray-600">Buy the new product first from a supplier. After this, it can be selected from the product module dropdown.</p>
           </div>
         </div>
 
@@ -198,10 +198,10 @@ export default function AdminProductPurchases() {
           <FloatingField type="number" label="Buy Rate" min="0" step="0.01" value={form.purchasePrice} onChange={(event) => setForm({ ...form, purchasePrice: event.target.value })} required />
           <FloatingField label="Invoice Number" value={form.invoiceNumber} onChange={(event) => setForm({ ...form, invoiceNumber: event.target.value })} />
           <FloatingField type="date" label="Purchase Date" value={form.purchaseDate} onChange={(event) => setForm({ ...form, purchaseDate: event.target.value })} />
-          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-700">
+          <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-base font-bold text-emerald-700">
             Total: Rs.{totalAmount}
           </div>
-          <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+          <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 text-base font-medium text-gray-700">
             This bought product will appear in the product module dropdown after saving.
           </div>
           <FloatingField as="textarea" label="Purchase Note" value={form.note} onChange={(event) => setForm({ ...form, note: event.target.value })} rows={3} className="resize-none xl:col-span-4" wrapperClassName="xl:col-span-4" />
@@ -222,10 +222,10 @@ export default function AdminProductPurchases() {
           <div className="admin-card overflow-hidden">
             <div className="mb-5 flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-semibold text-gray-900">Purchase History</h2>
-                <p className="mt-1 text-sm text-gray-500">These bought products show the remaining quantity available to move into the product module.</p>
+                <h2 className="text-3xl font-bold text-gray-900">Purchase History</h2>
+                <p className="mt-2 text-base font-medium text-gray-600">These bought products show the remaining quantity available to move into the product module.</p>
               </div>
-              <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-500">
+              <div className="rounded-xl border border-gray-200 bg-gray-50 px-3 py-2 text-base font-semibold text-gray-700">
                 Total: {meta.total || purchases.length}
               </div>
             </div>
@@ -237,43 +237,43 @@ export default function AdminProductPurchases() {
                   value={filters.search}
                   onChange={(event) => setFilters({ ...filters, search: event.target.value, page: 1 })}
                   placeholder="Search supplier, product or invoice..."
-                  className="input-field h-11 py-2 pl-10 text-sm"
+                  className="input-field h-11 py-2 pl-10 text-base font-medium"
                 />
               </div>
-              <select value={filters.limit} onChange={(event) => setFilters({ ...filters, limit: Number(event.target.value), page: 1 })} className="input-field h-11 w-full max-w-[130px] py-2 text-sm">
+              <select value={filters.limit} onChange={(event) => setFilters({ ...filters, limit: Number(event.target.value), page: 1 })} className="input-field h-11 w-full max-w-[130px] py-2 text-base font-medium">
                 {[10, 20, 50].map((size) => <option key={size} value={size}>{size} / page</option>)}
               </select>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+              <table className="w-full text-base">
                 <thead>
-                  <tr className="border-b border-gray-100 bg-gray-50/80 text-left text-xs text-gray-500">
+                  <tr className="border-b border-gray-100 bg-gray-50/80 text-left text-sm font-bold text-gray-700">
                     {['#', 'Date', 'Supplier', 'Bought Product', 'Remaining Qty', 'Rate', 'Total', 'Invoice', 'Status', 'By'].map((head) => (
-                      <th key={head} className="px-4 py-3 font-medium">{head}</th>
+                      <th key={head} className="px-4 py-3 font-bold">{head}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
                   {purchases.map((purchase, index) => (
                     <tr key={purchase._id} className="hover:bg-brand-50/40">
-                      <td className="px-4 py-3 text-gray-500">{(meta.page - 1) * meta.limit + index + 1}</td>
-                      <td className="px-4 py-3 text-gray-700">{new Date(purchase.purchaseDate || purchase.createdAt).toLocaleDateString('en-IN')}</td>
-                      <td className="px-4 py-3 text-gray-700">{purchase.supplier?.name || '-'}</td>
+                      <td className="px-4 py-3 font-medium text-gray-600">{(meta.page - 1) * meta.limit + index + 1}</td>
+                      <td className="px-4 py-3 font-medium text-gray-800">{new Date(purchase.purchaseDate || purchase.createdAt).toLocaleDateString('en-IN')}</td>
+                      <td className="px-4 py-3 font-semibold text-gray-800">{purchase.supplier?.name || '-'}</td>
                       <td className="px-4 py-3">
-                        <div className="font-medium text-gray-800">{purchase.productName || '-'}</div>
-                        {purchase.linkedProduct?.sku ? <div className="text-xs text-gray-400">{purchase.linkedProduct.sku}</div> : null}
+                        <div className="text-base font-bold text-gray-900">{purchase.productName || '-'}</div>
+                        {purchase.linkedProduct?.sku ? <div className="text-sm font-medium text-gray-500">{purchase.linkedProduct.sku}</div> : null}
                       </td>
-                      <td className="px-4 py-3 font-semibold text-gray-800">{purchase.quantity}</td>
-                      <td className="px-4 py-3 text-gray-700">Rs.{Math.round(Number(purchase.purchasePrice || 0))}</td>
-                      <td className="px-4 py-3 font-semibold text-gray-800">Rs.{Math.round(Number(purchase.totalAmount || 0))}</td>
-                      <td className="px-4 py-3 text-gray-700">{purchase.invoiceNumber || '-'}</td>
+                      <td className="px-4 py-3 text-base font-bold text-gray-900">{purchase.quantity}</td>
+                      <td className="px-4 py-3 font-semibold text-gray-800">Rs.{Math.round(Number(purchase.purchasePrice || 0))}</td>
+                      <td className="px-4 py-3 text-base font-bold text-gray-900">Rs.{Math.round(Number(purchase.totalAmount || 0))}</td>
+                      <td className="px-4 py-3 font-medium text-gray-800">{purchase.invoiceNumber || '-'}</td>
                       <td className="px-4 py-3">
                         <span className={purchase.quantity > 0 ? 'badge badge-yellow' : 'badge badge-green'}>
                           {purchase.quantity > 0 ? 'Available' : 'Used'}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-gray-700">{purchase.createdBy?.name || '-'}</td>
+                      <td className="px-4 py-3 font-medium text-gray-800">{purchase.createdBy?.name || '-'}</td>
                     </tr>
                   ))}
                 </tbody>

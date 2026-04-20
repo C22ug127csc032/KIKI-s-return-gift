@@ -128,6 +128,11 @@ const buildCustomThemeColors = (primaryHex, accentHex) => ({
 });
 
 const isValidHexColor = (value) => /^#([A-Fa-f0-9]{6})$/.test(String(value || '').trim());
+const buildPresetFromPrimary = (key, name, primaryHex, accentHex = primaryHex) => ({
+  key,
+  name,
+  colors: buildCustomThemeColors(primaryHex, accentHex),
+});
 
 export const themePresets = [
   {
@@ -154,6 +159,9 @@ export const themePresets = [
       heroGradientTo: 'rgba(255, 255, 255, 0)',
     },
   },
+  buildPresetFromPrimary('kiki-saffron', 'Kiki Saffron', '#F37021'),
+  buildPresetFromPrimary('kiki-leaf', 'Kiki Leaf', '#4CAF50'),
+  buildPresetFromPrimary('kiki-noir', 'Kiki Noir', '#121212'),
 ];
 
 const defaultTheme = themePresets.find((theme) => theme.key === 'kiki-classic') || themePresets[0];

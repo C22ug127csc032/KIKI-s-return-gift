@@ -210,7 +210,7 @@ export default function HomePage() {
       {/* ── HERO SLIDER ── */}
       <section
         ref={heroSectionRef}
-        className="relative h-[92vh] min-h-[560px] max-h-[820px] overflow-hidden"
+        className="relative h-[100svh] min-h-[620px] max-h-[820px] overflow-hidden sm:h-[92vh] sm:min-h-[560px]"
         onTouchStart={handleHeroTouchStart}
         onTouchEnd={handleHeroTouchEnd}
       >
@@ -235,7 +235,7 @@ export default function HomePage() {
                 <img
                   src={s.image}
                   alt={s.tag}
-                  className="h-full w-full object-cover object-center"
+                  className="absolute inset-0 h-full w-full min-h-full min-w-full scale-[1.08] object-cover object-center sm:scale-100"
                   loading={i === 0 ? 'eager' : 'lazy'}
                 />
                 <div className="absolute inset-0 bg-black/20" />
