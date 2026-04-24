@@ -1,4 +1,4 @@
-const DEFAULT_API_BASE_URL = 'https://api.kiki.ematixsolutions.com/api';
+const DEFAULT_API_BASE_URL = 'http://localhost:5000/api';
 
 const LOCAL_UPLOAD_HOSTS = new Set(['localhost', '127.0.0.1', '0.0.0.0']);
 

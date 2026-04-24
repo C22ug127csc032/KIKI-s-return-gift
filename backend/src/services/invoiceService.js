@@ -14,10 +14,9 @@ const escapeHtml = (value = '') => String(value ?? '')
   .replaceAll('"', '&quot;')
   .replaceAll("'", '&#039;');
 
-const formatCurrency = (value) => `&#8377; ${Number(value || 0).toLocaleString('en-IN', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-})}`;
+const roundDisplayAmount = (value) => Math.round(Number(value || 0));
+
+const formatCurrency = (value) => `&#8377; ${roundDisplayAmount(value).toLocaleString('en-IN')}`;
 
 const formatDate = (value) => new Date(value).toLocaleDateString('en-IN', {
   day: '2-digit',
@@ -61,8 +60,9 @@ const calculateInvoiceTotals = (items = [], fallbackSubtotal = 0, fallbackTax = 
   const sgst = items.reduce((sum, item) => sum + Number(item.sgstAmount || 0), 0);
   const igst = items.reduce((sum, item) => sum + Number(item.igstAmount || 0), 0);
   const gst = Number(fallbackTax || items.reduce((sum, item) => sum + Number(item.gstAmount || 0), 0));
-  const grandTotal = Number(fallbackTotal || (taxableSubtotal + gst));
-  const roundOff = grandTotal - (taxableSubtotal + gst);
+  const calculatedGrandTotal = Number(fallbackTotal || (taxableSubtotal + gst));
+  const grandTotal = roundDisplayAmount(calculatedGrandTotal);
+  const roundOff = grandTotal - calculatedGrandTotal;
   const discountPercentage = sellingPriceTotal > 0 ? (discount / sellingPriceTotal) * 100 : 0;
   const cgstPercentage = taxableSubtotal > 0 ? (cgst / taxableSubtotal) * 100 : 0;
   const sgstPercentage = taxableSubtotal > 0 ? (sgst / taxableSubtotal) * 100 : 0;
@@ -126,6 +126,7 @@ const buildInvoiceHtml = (data, settings) => {
   const bankName = escapeHtml(settings?.bankAccountName || settings?.bankName || 'WXYZ Bank');
   const accountNo = escapeHtml(settings?.bankAccountNumber || 'xxx xxxx xxx');
   const totals = calculateInvoiceTotals(data.items, data.subtotal, data.tax, data.totalAmount);
+  const showRoundOff = roundDisplayAmount(totals.roundOff) !== 0;
   const rows = (data.items || []).map((item) => {
     const quantity = Number(item.quantity || 0);
     const price = Number(item.price || 0);
@@ -656,7 +657,7 @@ const buildInvoiceHtml = (data, settings) => {
         <span class="label">GST (${totals.gstPercentage}%) :</span>
         <span id="gstTotal">${formatCurrency(totals.gst)}</span>
       </div>` : ''}
-      ${Math.abs(totals.roundOff) > 0.001 ? `
+      ${showRoundOff ? `
       <div class="totals-row">
         <span class="label">Round Off :</span>
         <span id="roundOffTotal">${formatCurrency(totals.roundOff)}</span>
@@ -709,10 +710,7 @@ const sendInvoiceHtml = (res, invoiceNumber, data, settings) => {
   res.send(buildInvoiceHtml(data, settings));
 };
 
-const formatPdfCurrency = (value) => `Rs.${Number(value || 0).toLocaleString('en-IN', {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2,
-})}`;
+const formatPdfCurrency = (value) => `Rs.${roundDisplayAmount(value).toLocaleString('en-IN')}`;
 
 const drawPdfTableHeader = (doc, y, headers, widths) => {
   let x = doc.page.margins.left;
@@ -766,6 +764,7 @@ const sendInvoicePdf = (res, invoiceNumber, data, settings) => {
   const showGstDetails = data.showGstNumber !== false;
   const showGstNumber = showGstDetails && Boolean(gstNumber);
   const totals = calculateInvoiceTotals(data.items, data.subtotal, data.tax, data.totalAmount);
+  const showRoundOff = roundDisplayAmount(totals.roundOff) !== 0;
   const tableHeaders = ['Product', 'Qty', 'Price', 'Total'];
   const widths = [285, 55, 95, 80];
 
@@ -877,7 +876,7 @@ doc.font('Times-Bold').fontSize(16).fillColor(ink)
       [`IGST (${totals.igstPercentage}%)`, formatPdfCurrency(totals.igst)],
       [`GST (${totals.gstPercentage}%)`, formatPdfCurrency(totals.gst)],
     ] : []),
-    ...(Math.abs(totals.roundOff) > 0.001 ? [['Round Off', formatPdfCurrency(totals.roundOff)]] : []),
+    ...(showRoundOff ? [['Round Off', formatPdfCurrency(totals.roundOff)]] : []),
   ];
 
   let summaryY = y;
