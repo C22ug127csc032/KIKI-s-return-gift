@@ -8,6 +8,7 @@ import { fileURLToPath } from 'url';
 
 import authRoutes from './src/routes/authRoutes.js';
 import categoryRoutes from './src/routes/categoryRoutes.js';
+import occasionRoutes from './src/routes/occasionRoutes.js';
 import productRoutes from './src/routes/productRoutes.js';
 import orderRoutes from './src/routes/orderRoutes.js';
 import supplierRoutes from './src/routes/supplierRoutes.js';
@@ -51,6 +52,7 @@ app.get('/health', (req, res) => res.json({ status: 'OK', store: "KIKI'S RETURN 
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/categories', categoryRoutes);
+app.use('/api/occasions', occasionRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/suppliers', supplierRoutes);

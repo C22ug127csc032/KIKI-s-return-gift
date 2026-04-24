@@ -8,7 +8,7 @@ import ProductCard from '../../components/shop/ProductCard.jsx';
 import { SkeletonCard, Pagination, EmptyState } from '../../components/ui/index.jsx';
 import FloatingField from '../../components/forms/FloatingField.jsx';
 
-const occasions = ['Wedding', 'Birthday', 'Diwali', 'Pooja', 'Baby Shower', 'Anniversary', 'Housewarming', 'Corporate'];
+const fallbackOccasions = ['Wedding', 'Birthday', 'Diwali', 'Pooja', 'Baby Shower', 'Anniversary', 'Housewarming', 'Corporate', 'Festive', 'Return Gift'];
 
 const getFiltersFromSearch = (search) => {
   const params = new URLSearchParams(search);
@@ -66,7 +66,7 @@ function FilterSection({ title, children, defaultOpen = true }) {
   );
 }
 
-function FilterPanel({ filters, categories, hasActive, setFilter, clearFilters, onSelect }) {
+function FilterPanel({ filters, categories, occasions, hasActive, setFilter, clearFilters, onSelect }) {
   return (
     <div>
       <FilterSection title="Price Range">
@@ -141,6 +141,7 @@ export default function ShopPage() {
 
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [occasions, setOccasions] = useState(fallbackOccasions);
   const [loading, setLoading] = useState(true);
   const [meta, setMeta] = useState({ page: 1, totalPages: 1, total: 0 });
   const [filterOpen, setFilterOpen] = useState(false);
@@ -173,6 +174,10 @@ export default function ShopPage() {
   // Load categories once
   useEffect(() => {
     api.get('/categories/all').then((r) => setCategories(r.data.data));
+    api.get('/occasions').then((r) => {
+      const occasionNames = (r.data.data || []).map((occasion) => occasion.name).filter(Boolean);
+      if (occasionNames.length) setOccasions(occasionNames);
+    }).catch(() => {});
     document.title = "Shop - KIKI'S Return Gift Store";
   }, []);
 
@@ -352,6 +357,7 @@ export default function ShopPage() {
                 <FilterPanel
                   filters={filters}
                   categories={categories}
+                  occasions={occasions}
                   hasActive={hasActive}
                   setFilter={setFilter}
                   clearFilters={clearFilters}
@@ -518,6 +524,7 @@ export default function ShopPage() {
                 <FilterPanel
                   filters={filters}
                   categories={categories}
+                  occasions={occasions}
                   hasActive={hasActive}
                   setFilter={setFilter}
                   clearFilters={clearFilters}

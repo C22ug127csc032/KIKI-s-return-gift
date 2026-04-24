@@ -21,7 +21,6 @@ export default function AdminThemePage() {
   const { theme, refreshTheme } = useTheme();
   const [presets, setPresets] = useState([]);
   const [selectedTheme, setSelectedTheme] = useState(theme.themeKey);
-  const [useCustomColors, setUseCustomColors] = useState(false);
   const [primaryColor, setPrimaryColor] = useState('#e11d48');
   const [accentColor, setAccentColor] = useState('#f59e0b');
   const [loading, setLoading] = useState(true);
@@ -35,7 +34,6 @@ export default function AdminThemePage() {
         const activeTheme = response.data.data?.activeTheme || {};
         setPresets(response.data.data?.presets || []);
         setSelectedTheme(activeTheme.themeKey || 'kiki-classic');
-        setUseCustomColors(Boolean(activeTheme.useCustomColors));
         setPrimaryColor(normalizeHexColor(activeTheme.customPrimaryHex, activeTheme.colors?.primary600 || '#e11d48'));
         setAccentColor(normalizeHexColor(activeTheme.customAccentHex, activeTheme.colors?.accent || '#f59e0b'));
       })
@@ -44,12 +42,11 @@ export default function AdminThemePage() {
 
   useEffect(() => {
     setSelectedTheme(theme.themeKey);
-    setUseCustomColors(Boolean(theme.useCustomColors));
     setPrimaryColor(normalizeHexColor(theme.customPrimaryHex, theme.colors?.primary600 || '#e11d48'));
     setAccentColor(normalizeHexColor(theme.customAccentHex, theme.colors?.accent || '#f59e0b'));
   }, [theme]);
 
-  const handleApplyTheme = async (themeKey) => {
+  const handleApplyTheme = async (themeKey, { useCustomColors = false } = {}) => {
     setSaving(true);
     setApplyingThemeKey(themeKey);
     try {
@@ -61,7 +58,7 @@ export default function AdminThemePage() {
         accentColor,
       });
       await refreshTheme();
-      toast.success(useCustomColors ? 'Custom theme colors applied' : 'Theme applied across the application');
+      toast.success(useCustomColors ? 'Custom colors applied across the application' : 'Theme applied across the application');
     } catch (error) {
       toast.error(error.response?.data?.message || 'Failed to update theme');
     } finally {
@@ -78,24 +75,15 @@ export default function AdminThemePage() {
     <div>
       <div className="mb-8">
         <h1 className="font-display text-3xl font-bold text-gray-900">Theme</h1>
-        <p className="mt-1 text-sm text-gray-500">Manage the live application theme here. Your current theme stays available, and you can add custom colors on top of any preset.</p>
+        <p className="mt-1 text-sm text-gray-500">Manage the live application theme here. Preset themes and custom colors now work as separate apply actions, so the last one you apply becomes active.</p>
       </div>
 
       <div className="admin-card">
-        <div className="mb-5 flex items-start justify-between gap-4">
+        <div className="mb-5">
           <div>
             <h2 className="text-2xl font-semibold text-gray-900">Color Picker</h2>
-            <p className="mt-1 text-sm text-gray-500">Place custom colors on top of the selected preset theme whenever you want a personalized version.</p>
+            <p className="mt-1 text-sm text-gray-500">Choose your own primary and accent colors, then apply them directly. If you later apply a preset theme, that preset will replace the custom colors.</p>
           </div>
-          <label className="inline-flex items-center gap-2 text-sm font-medium text-gray-700">
-            <input
-              type="checkbox"
-              checked={useCustomColors}
-              onChange={(event) => setUseCustomColors(event.target.checked)}
-              className="h-4 w-4 rounded text-brand-500"
-            />
-            Use custom colors
-          </label>
         </div>
 
         <div className="rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4">
@@ -166,7 +154,7 @@ export default function AdminThemePage() {
         <div className="mt-5 flex items-center justify-end">
           <button
             type="button"
-            onClick={() => handleApplyTheme(selectedTheme)}
+            onClick={() => handleApplyTheme(selectedTheme, { useCustomColors: true })}
             disabled={saving}
             className="btn-primary"
           >
@@ -199,9 +187,7 @@ export default function AdminThemePage() {
                 className="mb-5 h-24 cursor-pointer rounded-2xl border border-gray-100"
                 onClick={() => setSelectedTheme(preset.key)}
                 style={{
-                  background: useCustomColors && selectedTheme === preset.key
-                    ? `linear-gradient(135deg, ${primaryColor}22 0%, ${primaryColor}55 45%, ${accentColor}44 100%)`
-                    : `linear-gradient(135deg, ${preset.colors.adminSidebarFrom} 0%, ${preset.colors.primary100} 45%, ${preset.colors.accentSoft} 100%)`,
+                  background: `linear-gradient(135deg, ${preset.colors.adminSidebarFrom} 0%, ${preset.colors.primary100} 45%, ${preset.colors.accentSoft} 100%)`,
                 }}
               />
 
@@ -212,25 +198,25 @@ export default function AdminThemePage() {
                 <div className="flex flex-wrap items-center gap-3">
                   <span
                     className="h-10 w-10 rounded-full border border-white shadow-sm"
-                    style={{ backgroundColor: useCustomColors && selectedTheme === preset.key ? primaryColor : preset.colors.primary600 }}
+                    style={{ backgroundColor: preset.colors.primary600 }}
                   />
                   <span
                     className="h-10 w-10 rounded-full border border-white shadow-sm"
-                    style={{ backgroundColor: useCustomColors && selectedTheme === preset.key ? `${primaryColor}33` : preset.colors.adminSidebarFrom }}
+                    style={{ backgroundColor: preset.colors.adminSidebarFrom }}
                   />
                   <span
                     className="h-10 w-10 rounded-full border border-white shadow-sm"
-                    style={{ backgroundColor: useCustomColors && selectedTheme === preset.key ? `${accentColor}33` : preset.colors.adminSidebarTo }}
+                    style={{ backgroundColor: preset.colors.adminSidebarTo }}
                   />
                   <span
                     className="h-10 w-10 rounded-full border border-white shadow-sm"
-                    style={{ backgroundColor: useCustomColors && selectedTheme === preset.key ? accentColor : preset.colors.accent }}
+                    style={{ backgroundColor: preset.colors.accent }}
                   />
                   <span
                     className="rounded-full px-4 py-2 text-sm font-semibold text-white"
-                    style={{ backgroundColor: useCustomColors && selectedTheme === preset.key ? primaryColor : preset.colors.primary600 }}
+                    style={{ backgroundColor: preset.colors.primary600 }}
                   >
-                    {useCustomColors && selectedTheme === preset.key ? 'Custom Colors' : preset.name}
+                    {preset.name}
                   </span>
                 </div>
               </div>

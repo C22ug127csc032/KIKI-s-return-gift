@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import toast from 'react-hot-toast';
-import { FiChevronDown, FiGift, FiSearch, FiShoppingBag, FiStar, FiX } from 'react-icons/fi';
+import { FiChevronDown, FiEdit2, FiGift, FiSearch, FiShoppingBag, FiStar, FiTrash2, FiX } from 'react-icons/fi';
 import api from '../../api/api.js';
 import { EmptyState, PageLoader, Pagination } from '../../components/ui/index.jsx';
 import { calculatePricing, getDiscountPercentage, getMrpPrice, getSellingPrice } from '../../utils/pricing.js';
+import { occasionIconOptions, resolveOccasionDisplay } from '../../utils/occasionDisplay.js';
 import FloatingField from '../../components/forms/FloatingField.jsx';
 
 const getFieldLabel = (placeholder = '') => String(placeholder || '').replace(/\*/g, '').trim();
@@ -28,8 +29,6 @@ const emptyForm = {
   lowStockThreshold: 5,
   isActive: true,
 };
-
-const occasionOptions = ['Wedding', 'Birthday', 'Diwali', 'Pooja', 'Baby Shower', 'Anniversary', 'Housewarming', 'Corporate', 'Festive', 'Return Gift'];
 
 const normalizeOccasionLabel = (value = '') => value
   .trim()
@@ -174,6 +173,13 @@ export default function AdminProducts() {
   const [images, setImages] = useState([]);
   const [saving, setSaving] = useState(false);
   const [customOccasion, setCustomOccasion] = useState('');
+  const [customOccasionIcon, setCustomOccasionIcon] = useState('gift');
+  const [occasionRecords, setOccasionRecords] = useState([]);
+  const [occasionLoading, setOccasionLoading] = useState(true);
+  const [occasionSaving, setOccasionSaving] = useState(false);
+  const [editingOccasionId, setEditingOccasionId] = useState('');
+  const [editingOccasionName, setEditingOccasionName] = useState('');
+  const [editingOccasionIcon, setEditingOccasionIcon] = useState('gift');
   const categoryOptions = categories.map((category) => ({
     value: category._id,
     label: category.name,
@@ -183,10 +189,21 @@ export default function AdminProducts() {
     label: purchase.productName,
   }));
 
+  const fetchOccasions = async () => {
+    setOccasionLoading(true);
+    try {
+      const response = await api.get('/occasions/admin/all');
+      setOccasionRecords(response.data.data || []);
+    } finally {
+      setOccasionLoading(false);
+    }
+  };
+
   useEffect(() => {
     document.title = 'Products - Admin';
     api.get('/categories/all').then((r) => setCategories(r.data.data));
     api.get('/product-purchases', { params: { unlinked: true, limit: 500 } }).then((r) => setBoughtProducts(r.data.data));
+    fetchOccasions();
   }, []);
 
   const fetchProducts = () => {
@@ -207,6 +224,7 @@ export default function AdminProducts() {
     setForm(emptyForm);
     setImages([]);
     setCustomOccasion('');
+    setCustomOccasionIcon('gift');
   };
 
   const openEdit = (product) => {
@@ -233,6 +251,7 @@ export default function AdminProducts() {
     });
     setImages([]);
     setCustomOccasion('');
+    setCustomOccasionIcon('gift');
     requestAnimationFrame(() => {
       formRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -381,10 +400,10 @@ export default function AdminProducts() {
       .filter(Boolean)
   )).sort((a, b) => a.localeCompare(b));
   const allOccasionOptions = Array.from(new Set([
+    ...occasionRecords.filter((occasion) => occasion.isActive).map((occasion) => normalizeOccasionLabel(occasion.name)),
     ...existingOccasionOptions,
-    ...occasionOptions.map((occasion) => normalizeOccasionLabel(occasion)),
     ...form.occasions.map((occasion) => normalizeOccasionLabel(occasion)),
-  ]));
+  ])).sort((a, b) => a.localeCompare(b));
   const toggleOccasion = (occasion) => {
     setForm((current) => ({
       ...current,
@@ -393,19 +412,128 @@ export default function AdminProducts() {
         : [...current.occasions, occasion],
     }));
   };
-  const addCustomOccasion = () => {
+  const addCustomOccasion = async () => {
     const normalizedOccasion = normalizeOccasionLabel(customOccasion);
     if (!normalizedOccasion) {
       toast.error('Enter an occasion name');
       return;
     }
-    setForm((current) => ({
-      ...current,
-      occasions: current.occasions.includes(normalizedOccasion)
-        ? current.occasions
-        : [...current.occasions, normalizedOccasion],
-    }));
-    setCustomOccasion('');
+    setOccasionSaving(true);
+    try {
+      const response = await api.post('/occasions', { name: normalizedOccasion, iconKey: customOccasionIcon });
+      const createdOccasion = response.data.data;
+      setOccasionRecords((current) => [...current, createdOccasion].sort((a, b) => a.name.localeCompare(b.name)));
+      setForm((current) => ({
+        ...current,
+        occasions: current.occasions.includes(createdOccasion.name)
+          ? current.occasions
+          : [...current.occasions, createdOccasion.name],
+      }));
+      setCustomOccasion('');
+      setCustomOccasionIcon('gift');
+      toast.success('Occasion added');
+    } catch (err) {
+      if (err.response?.status === 409) {
+        await fetchOccasions();
+        setForm((current) => ({
+          ...current,
+          occasions: current.occasions.includes(normalizedOccasion)
+            ? current.occasions
+            : [...current.occasions, normalizedOccasion],
+        }));
+        setCustomOccasion('');
+        setCustomOccasionIcon('gift');
+        toast.success('Occasion already existed and has been selected');
+      } else {
+        toast.error(err.response?.data?.message || 'Failed to add occasion');
+      }
+    } finally {
+      setOccasionSaving(false);
+    }
+  };
+
+  const startEditingOccasion = (occasion) => {
+    setEditingOccasionId(occasion._id);
+    setEditingOccasionName(occasion.name);
+    setEditingOccasionIcon(occasion.iconKey || 'gift');
+  };
+
+  const cancelEditingOccasion = () => {
+    setEditingOccasionId('');
+    setEditingOccasionName('');
+    setEditingOccasionIcon('gift');
+  };
+
+  const saveOccasionEdit = async () => {
+    const normalizedOccasion = normalizeOccasionLabel(editingOccasionName);
+    if (!editingOccasionId || !normalizedOccasion) {
+      toast.error('Enter an occasion name');
+      return;
+    }
+
+    const previousOccasion = occasionRecords.find((occasion) => occasion._id === editingOccasionId);
+    setOccasionSaving(true);
+    try {
+      const response = await api.put(`/occasions/${editingOccasionId}`, {
+        name: normalizedOccasion,
+        iconKey: editingOccasionIcon,
+      });
+      const updatedOccasion = response.data.data;
+      setOccasionRecords((current) => current
+        .map((occasion) => (occasion._id === updatedOccasion._id ? updatedOccasion : occasion))
+        .sort((a, b) => a.name.localeCompare(b.name)));
+      if (previousOccasion?.name && previousOccasion.name !== updatedOccasion.name) {
+        setProducts((current) => current.map((product) => {
+          const nextOccasions = (product.occasions?.length ? product.occasions : (product.occasion ? [product.occasion] : []))
+            .map((occasion) => occasion === previousOccasion.name ? updatedOccasion.name : occasion);
+          return {
+            ...product,
+            occasion: nextOccasions[0] || '',
+            occasions: nextOccasions,
+          };
+        }));
+        setForm((current) => ({
+          ...current,
+          occasions: current.occasions.map((occasion) => occasion === previousOccasion.name ? updatedOccasion.name : occasion),
+        }));
+      }
+      fetchProducts();
+      cancelEditingOccasion();
+      toast.success('Occasion updated');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to update occasion');
+    } finally {
+      setOccasionSaving(false);
+    }
+  };
+
+  const deleteOccasion = async (occasion) => {
+    if (!confirm(`Delete "${occasion.name}"? This will remove it from products using it.`)) return;
+    setOccasionSaving(true);
+    try {
+      await api.delete(`/occasions/${occasion._id}`);
+      setOccasionRecords((current) => current.filter((item) => item._id !== occasion._id));
+      setProducts((current) => current.map((product) => {
+        const nextOccasions = (product.occasions?.length ? product.occasions : (product.occasion ? [product.occasion] : []))
+          .filter((item) => item !== occasion.name);
+        return {
+          ...product,
+          occasion: nextOccasions[0] || '',
+          occasions: nextOccasions,
+        };
+      }));
+      setForm((current) => ({
+        ...current,
+        occasions: current.occasions.filter((item) => item !== occasion.name),
+      }));
+      if (editingOccasionId === occasion._id) cancelEditingOccasion();
+      fetchProducts();
+      toast.success('Occasion deleted');
+    } catch (err) {
+      toast.error(err.response?.data?.message || 'Failed to delete occasion');
+    } finally {
+      setOccasionSaving(false);
+    }
   };
 
   return (
@@ -548,21 +676,120 @@ export default function AdminProducts() {
               <div className="flex flex-wrap gap-2">
                 {allOccasionOptions.map((occasion) => {
                   const selected = form.occasions.includes(occasion);
+                  const occasionRecord = occasionRecords.find((item) => item.name === occasion);
+                  const isEditing = editingOccasionId === occasionRecord?._id;
+                  const { icon: OccasionIcon } = resolveOccasionDisplay({
+                    label: occasion,
+                    iconKey: occasionRecord?.iconKey,
+                  });
                   return (
-                    <button
+                    <div
                       key={occasion}
-                      type="button"
-                      onClick={() => toggleOccasion(occasion)}
-                      className={`rounded-full border px-4 py-2 text-sm font-medium transition-all ${
+                      className={`flex items-center gap-1 rounded-full border pr-1 transition-all ${
                         selected
                           ? 'border-brand-500 bg-brand-500 text-white'
-                          : 'border-gray-200 bg-white text-gray-600 hover:border-brand-300 hover:text-brand-600'
+                          : 'border-gray-200 bg-white text-gray-600'
                       }`}
                     >
-                      {occasion}
-                    </button>
+                      {isEditing ? (
+                        <>
+                          <select
+                            value={editingOccasionIcon}
+                            onChange={(e) => setEditingOccasionIcon(e.target.value)}
+                            className="rounded-full border border-gray-200 bg-white px-2 py-1 text-xs font-medium text-gray-700 outline-none"
+                          >
+                            {occasionIconOptions.map((option) => (
+                              <option key={option.key} value={option.key}>{option.label}</option>
+                            ))}
+                          </select>
+                          <input
+                            value={editingOccasionName}
+                            onChange={(e) => setEditingOccasionName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                saveOccasionEdit();
+                              }
+                              if (e.key === 'Escape') {
+                                e.preventDefault();
+                                cancelEditingOccasion();
+                              }
+                            }}
+                            className={`min-w-[120px] bg-transparent px-3 py-2 text-sm font-medium outline-none ${
+                              selected ? 'placeholder:text-white/80 text-white' : 'placeholder:text-gray-400 text-gray-700'
+                            }`}
+                            placeholder="Occasion name"
+                          />
+                          <button
+                            type="button"
+                            onClick={saveOccasionEdit}
+                            disabled={occasionSaving}
+                            className={`rounded-full border px-3 py-1 text-xs font-semibold transition disabled:opacity-60 ${
+                              selected
+                                ? 'border-white/30 bg-white text-brand-600 hover:bg-white/90'
+                                : 'border-brand-200 bg-brand-50 text-brand-700 hover:bg-brand-100'
+                            }`}
+                          >
+                            Save
+                          </button>
+                          <button
+                            type="button"
+                            onClick={cancelEditingOccasion}
+                            className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                              selected
+                                ? 'border-white/30 bg-transparent text-white hover:bg-white/15'
+                                : 'border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
+                            }`}
+                          >
+                            Cancel
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            type="button"
+                            onClick={() => toggleOccasion(occasion)}
+                            className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
+                              selected ? 'text-white' : 'hover:text-brand-600'
+                            }`}
+                          >
+                            <span className="inline-flex items-center gap-2">
+                              <OccasionIcon size={15} />
+                              {occasion}
+                            </span>
+                          </button>
+                          {occasionRecord ? (
+                            <>
+                              <button
+                                type="button"
+                                onClick={() => startEditingOccasion(occasionRecord)}
+                                className={`rounded-full p-2 transition ${
+                                  selected ? 'text-white hover:bg-white/15' : 'text-gray-400 hover:bg-gray-100 hover:text-brand-600'
+                                }`}
+                                aria-label={`Edit ${occasion}`}
+                              >
+                                <FiEdit2 size={13} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => deleteOccasion(occasionRecord)}
+                                className={`rounded-full p-2 transition ${
+                                  selected ? 'text-white hover:bg-white/15' : 'text-gray-400 hover:bg-gray-100 hover:text-rose-600'
+                                }`}
+                                aria-label={`Delete ${occasion}`}
+                              >
+                                <FiTrash2 size={13} />
+                              </button>
+                            </>
+                          ) : null}
+                        </>
+                      )}
+                    </div>
                   );
                 })}
+                {!allOccasionOptions.length && !occasionLoading ? (
+                  <p className="text-sm text-gray-400">No occasions available yet.</p>
+                ) : null}
               </div>
               <div className="mt-3 flex flex-col gap-2 sm:flex-row">
                 <input
@@ -577,12 +804,21 @@ export default function AdminProducts() {
                   placeholder="Add new occasion"
                   className="input-field"
                 />
-                <button type="button" onClick={addCustomOccasion} className="btn-outline whitespace-nowrap">
-                  Add Occasion
+                <select
+                  value={customOccasionIcon}
+                  onChange={(e) => setCustomOccasionIcon(e.target.value)}
+                  className="input-field sm:max-w-[180px]"
+                >
+                  {occasionIconOptions.map((option) => (
+                    <option key={option.key} value={option.key}>{option.label} Icon</option>
+                  ))}
+                </select>
+                <button type="button" onClick={addCustomOccasion} disabled={occasionSaving} className="btn-outline whitespace-nowrap disabled:opacity-60">
+                  {occasionSaving ? 'Saving...' : 'Add Occasion'}
                 </button>
               </div>
               <p className="mt-2 text-xs text-gray-400">
-                Choose from existing occasions or add a new one here. One product can belong to multiple occasions.
+                Choose from existing occasions or add a new one here. You can also rename or delete an occasion from this list.
               </p>
             </div>
           </div>

@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import Occasion from '../models/Occasion.js';
 import Product from '../models/Product.js';
 import ProductPurchase from '../models/ProductPurchase.js';
 import InventoryMovement from '../models/InventoryMovement.js';
@@ -60,6 +61,19 @@ const parseOccasions = (value) => {
   if (!Array.isArray(parsed)) return [];
 
   return [...new Set(parsed.map((item) => String(item).trim()).filter(Boolean))];
+};
+
+const syncOccasionRecords = async (occasionNames = []) => {
+  const uniqueOccasions = [...new Set((occasionNames || []).map((item) => String(item || '').trim()).filter(Boolean))];
+  if (!uniqueOccasions.length) return;
+
+  await Promise.all(uniqueOccasions.map((name) => (
+    Occasion.updateOne(
+      { name: new RegExp(`^${escapeRegex(name)}$`, 'i') },
+      { $setOnInsert: { name, isActive: true } },
+      { upsert: true }
+    )
+  )));
 };
 
 const ensureUniqueProductName = async (name, productId = null) => {
@@ -271,6 +285,7 @@ export const createProduct = asyncHandler(async (req, res) => {
   if (resolvedMrp !== null && (Number.isNaN(resolvedMrp) || resolvedMrp < 0)) throw new ApiError(400, 'MRP must be a valid number');
   if (resolvedMrp !== null && resolvedSellingPrice > resolvedMrp) throw new ApiError(400, 'Selling price cannot be more than MRP');
   if (!Number.isFinite(normalizedGstRate) || normalizedGstRate < 0 || normalizedGstRate > 100) throw new ApiError(400, 'GST rate must be between 0 and 100');
+  await syncOccasionRecords(occasions);
 
   const product = await Product.create({
     name: resolvedName,
@@ -356,6 +371,7 @@ export const updateProduct = asyncHandler(async (req, res) => {
   });
   if (req.body.occasions !== undefined || req.body.occasion !== undefined) {
     const occasions = parseOccasions(req.body.occasions ?? req.body.occasion);
+    await syncOccasionRecords(occasions);
     product.occasions = occasions;
     product.occasion = occasions?.[0] || '';
   }

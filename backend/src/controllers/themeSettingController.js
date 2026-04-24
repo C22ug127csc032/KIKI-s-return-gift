@@ -225,9 +225,10 @@ export const updateThemeSetting = asyncHandler(async (req, res) => {
 
   const themeSetting = await ensureThemeSetting();
   themeSetting.themeKey = selectedTheme.key;
-  themeSetting.useCustomColors = useCustomColors === true || useCustomColors === 'true';
+  const shouldUseCustomColors = useCustomColors === true || useCustomColors === 'true';
+  themeSetting.useCustomColors = shouldUseCustomColors;
 
-  if (themeSetting.useCustomColors) {
+  if (shouldUseCustomColors) {
     if (!isValidHexColor(primaryColor) || !isValidHexColor(accentColor)) {
       throw new ApiError(400, 'Valid custom colors are required');
     }

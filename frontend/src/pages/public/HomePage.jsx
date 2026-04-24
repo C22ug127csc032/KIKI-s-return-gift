@@ -2,19 +2,19 @@ import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence, useScroll, useSpring, useTransform } from 'framer-motion';
 import {
-  FiArrowRight, FiStar, FiTruck, FiShield, FiHeart, FiGift,
-  FiSun, FiCheckCircle, FiHome, FiBriefcase
+  FiArrowRight, FiStar, FiTruck, FiShield, FiHeart, FiGift, FiSun, FiCheckCircle
 } from 'react-icons/fi';
 import { RiGiftLine, RiSparklingLine, RiStarSmileLine, RiCake2Line } from 'react-icons/ri';
-import { FaWhatsapp, FaRing, FaBaby, FaHeart } from 'react-icons/fa';
+import { FaWhatsapp, FaRing } from 'react-icons/fa';
 import { GiPartyPopper } from 'react-icons/gi';
 import { PiHandsPrayingLight } from 'react-icons/pi';
-import { MdCelebration, MdLocalShipping } from 'react-icons/md';
+import { MdLocalShipping } from 'react-icons/md';
 import { TbRosetteDiscountCheck } from 'react-icons/tb';
 import api from '../../api/api.js';
 import ProductCard from '../../components/shop/ProductCard.jsx';
 import { SkeletonCard } from '../../components/ui/index.jsx';
 import { useStoreWhatsappNumber } from '../../hooks/useStoreWhatsappNumber.js';
+import { occasionColorStyles, resolveOccasionDisplay } from '../../utils/occasionDisplay.js';
 
 const heroSlides = [
   {
@@ -64,16 +64,7 @@ const heroSlides = [
   },
 ];
 
-const occasions = [
-  { label: 'Wedding', icon: FaRing, color: 'bg-pink-50 text-pink-700 border-pink-200 hover:bg-pink-600 hover:text-white hover:border-pink-600' },
-  { label: 'Birthday', icon: RiCake2Line, color: 'bg-violet-50 text-violet-700 border-violet-200 hover:bg-violet-600 hover:text-white hover:border-violet-600' },
-  { label: 'Diwali', icon: FiSun, color: 'bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-500 hover:text-white hover:border-amber-500' },
-  { label: 'Pooja', icon: PiHandsPrayingLight, color: 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-500 hover:text-white hover:border-orange-500' },
-  { label: 'Baby Shower', icon: FaBaby, color: 'bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-500 hover:text-white hover:border-blue-500' },
-  { label: 'Anniversary', icon: FiHeart, color: 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-600 hover:text-white hover:border-rose-600' },
-  { label: 'Housewarming', icon: FiHome, color: 'bg-teal-50 text-teal-700 border-teal-200 hover:bg-teal-500 hover:text-white hover:border-teal-500' },
-  { label: 'Corporate', icon: FiBriefcase, color: 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-600 hover:text-white hover:border-slate-600' },
-];
+const fallbackOccasions = Object.keys(occasionColorStyles).map((label) => resolveOccasionDisplay({ label }));
 
 const trustBadges = [
   { icon: FiTruck, text: 'Fast Delivery Pan India' },
@@ -111,6 +102,7 @@ const mergeHeroSlides = (slides = []) =>
 export default function HomePage() {
   const [featured, setFeatured] = useState([]);
   const [categories, setCategories] = useState([]);
+  const [occasions, setOccasions] = useState(fallbackOccasions);
   const [dynamicHeroSlides, setDynamicHeroSlides] = useState([]);
   const [heroReady, setHeroReady] = useState(false);
   const [heroContentReady, setHeroContentReady] = useState(false);
@@ -178,10 +170,18 @@ export default function HomePage() {
 
   useEffect(() => {
     document.title = "KIKI'S Return Gift Store - Perfect Gifts for Every Occasion";
-    Promise.all([api.get('/products/featured'), api.get('/categories/all'), api.get('/hero-section')])
-      .then(([prodRes, catRes, heroRes]) => {
+    Promise.all([api.get('/products/featured'), api.get('/categories/all'), api.get('/hero-section'), api.get('/occasions')])
+      .then(([prodRes, catRes, heroRes, occasionRes]) => {
         setFeatured(prodRes.data.data);
         setCategories(catRes.data.data.slice(0, 8));
+        const resolvedOccasions = (occasionRes.data.data || [])
+          .map((occasion) => ({
+            label: String(occasion.name || '').trim(),
+            iconKey: occasion.iconKey,
+          }))
+          .filter((occasion) => occasion.label)
+          .map((occasion) => resolveOccasionDisplay(occasion));
+        if (resolvedOccasions.length) setOccasions(resolvedOccasions);
         const resolvedSlides = mergeHeroSlides(heroRes.data.data?.slides || []);
         setDynamicHeroSlides(resolvedSlides);
         setHeroIndex(0);
@@ -316,7 +316,7 @@ export default function HomePage() {
           <div className="flex flex-wrap justify-center gap-3">
             {occasions.map(({ label, icon: Icon, color }, i) => (
               <motion.div key={label} initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.06 }}>
-                <Link to={`/shop?occasion=${label}`} className={`inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition-all duration-200 ${color}`}>
+                <Link to={`/shop?occasion=${encodeURIComponent(label)}`} className={`inline-flex items-center gap-2 rounded-full border px-5 py-2.5 text-sm font-semibold transition-all duration-200 ${color}`}>
                   <Icon size={16} /> {label}
                 </Link>
               </motion.div>

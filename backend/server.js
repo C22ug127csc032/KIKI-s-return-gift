@@ -5,6 +5,7 @@ import app from './app.js';
 import connectDB from './src/config/db.js';
 import User from './src/models/User.js';
 import AppSetting from './src/models/AppSetting.js';
+import { ensureDefaultOccasions } from './src/controllers/occasionController.js';
 
 const bootstrapAdmin = async () => {
   try {
@@ -34,6 +35,8 @@ const bootstrapAdmin = async () => {
       });
       console.log('Default settings initialized');
     }
+
+    await ensureDefaultOccasions();
   } catch (err) {
     console.error('Bootstrap error:', err.message);
   }
